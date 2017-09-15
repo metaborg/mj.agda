@@ -38,4 +38,5 @@ P ⊗ Q = mp
 _⇒_ : (ℓ₁ ℓ₂ : Level) → Set _
 ℓ₁ ⇒ ℓ₂ = MP ℓ₁ → MP ℓ₂
 
-MPT = zero ⇒ zero
+MP₀  = MP zero
+MPT₀ = zero ⇒ zero
