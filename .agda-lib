@@ -1,0 +1,6 @@
+name: fwj
+depend:
+  standard-library
+  standard-library++
+include:
+  ./
