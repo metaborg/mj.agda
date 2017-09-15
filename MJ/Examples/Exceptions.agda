@@ -16,7 +16,9 @@ open import MJ.Examples.Integer
 
 open import MJ.Types
 open import MJ.Classtable
+open import MJ.Classtable.Code Σ
 open import MJ.Syntax Σ
+open import MJ.Syntax.Program Σ
 open import MJ.Semantics Σ Lib
 open import MJ.Semantics.Values Σ
 
