@@ -47,7 +47,7 @@ record _⇒_ {p q}(P : MP p)(Q : MP q) : Set (p ⊔ q ⊔ ℓ₁) where
   field
     apply : ∀ {c} → P · c → Q · c
 
-open _⇒_
+open _⇒_ public
 
 infixl 100 _∘_
 _∘_ : ∀ {ℓ₁ ℓ₂ ℓ₃}{P : MP ℓ₁}{Q : MP ℓ₂}{R : MP ℓ₃} → Q ⇒ R → P ⇒ Q → P ⇒ R
@@ -144,7 +144,9 @@ module Monoid where
     left-inv = λ p → PropEq.refl ;
     right-inv = λ p → PropEq.refl }
 
--- it's easy to lift predicates to monotone predicates using the product
+  -- TODO: coherence conditions
+
+-- it's easy to lift predicates to monotone predicates using a product
 pack : ∀ {ℓ} → Pred Carrier ℓ → MP _
 pack P = mp
   (λ c → ∃ λ c' → c' ∼ c × P c') (record {
