@@ -9,6 +9,7 @@ open import Relation.Unary using (Pred)
 open import Data.Product
 import Relation.Binary.PropositionalEquality as PropEq
 open PropEq.≡-Reasoning
+open import Function.Inverse using (Inverse)
 
 record IsMP {ℓ}(P : Carrier → Set ℓ) : Set (ℓ ⊔ ℓ₁ ⊔ ℓ₃) where
   field
@@ -33,6 +34,10 @@ _·_ : ∀ {ℓ} → MP ℓ → Carrier → Set _
 _≗_ : ∀ {ℓ₁} → MP ℓ₁ → MP ℓ₁ → Set _
 P ≗ Q = ∀ {c} → P · c PropEq.≡ Q · c
 
+import Data.Unit as Unit
+⊤ : MP zero
+⊤ = mp (λ _ → Unit.⊤) (record { monotone = λ {c} {c'} _ _ → Unit.tt })
+
 -- we package the Agda function that represents morphisms
 -- in this category in a record such that P ⇒ Q doesn't get
 -- reduced to the simple underlying type of `apply`
@@ -55,6 +60,14 @@ id P = mk⇒ Fun.id
 infixl 20 _⇒≡_
 _⇒≡_  : ∀ {ℓ₁ ℓ₂}{P : MP ℓ₁}{Q : MP ℓ₂}(F G : P ⇒ Q) → Set _
 _⇒≡_ {P = P}{Q} F G = ∀ {c}(p : P · c) → apply F p PropEq.≡ apply G p
+
+-- isomorphism
+record _≅_ {ℓ}(P Q : MP ℓ) : Set (ℓ₁ ⊔ ℓ) where
+  field
+    to    : P ⇒ Q
+    from  : Q ⇒ P
+    left-inv  : to ∘ from ⇒≡ id Q
+    right-inv : from ∘ to ⇒≡ id P
 
 module Properties where
   ∘-assoc : ∀ {p q r s}{P : MP p}{Q : MP q}{R : MP r}{S : MP s}
@@ -96,12 +109,40 @@ module Product where
     π₁-comm _ = PropEq.refl
 
     π₂-comm : ∀ {y p q}{Y : MP y}{P : MP p}{Q : MP q}{F : Y ⇒ P}{G : Y ⇒ Q} →
-            π₁ ∘ ⟨ F , G ⟩ ⇒≡ F
+            π₂ ∘ ⟨ F , G ⟩ ⇒≡ G
     π₂-comm _ = PropEq.refl
 
     unique : ∀ {y p q}{Y : MP y}{P : MP p}{Q : MP q}{g : Y ⇒ (P ⊗ Q)} → ⟨ π₁ ∘ g , π₂ ∘ g ⟩ ⇒≡ g
     unique _ = PropEq.refl
 
+module Monoid where
+  -- identifies _⊗_ as a tensor/monoidal product
+  open Product
+
+  -- associator
+  assoc : ∀ {p q r}{P : MP p}{Q : MP q}{R : MP r} →
+                  (P ⊗ Q) ⊗ R ≅ P ⊗ (Q ⊗ R)
+  assoc = record {
+    to = mk⇒ (λ{ ((p , q) , r) → p , (q , r) }) ;
+    from = mk⇒ (λ{ (p , (q , r)) → (p , q) , r }) ;
+    left-inv = λ _ → PropEq.refl ;
+    right-inv = λ _ → PropEq.refl }
+
+  -- left unitor
+  ⊗-left-id : ∀ {p}{P : MP p} → ⊤ ⊗ P ≅ P
+  ⊗-left-id = record {
+    to = π₂ ;
+    from = ⟨ mk⇒ (λ x → Unit.tt) , id _ ⟩ ;
+    left-inv = λ p → PropEq.refl ;
+    right-inv = λ p → PropEq.refl }
+
+  -- right unitor
+  ⊗-right-id : ∀ {p}{P : MP p} → P ⊗ ⊤ ≅ P
+  ⊗-right-id = record {
+    to = π₁ ;
+    from = ⟨ mk⇒ (λ {c} z → z) , mk⇒ (λ {c} _ → Unit.tt) ⟩ ;
+    left-inv = λ p → PropEq.refl ;
+    right-inv = λ p → PropEq.refl }
 
 -- it's easy to lift predicates to monotone predicates using the product
 pack : ∀ {ℓ} → Pred Carrier ℓ → MP _
