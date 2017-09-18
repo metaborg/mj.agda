@@ -22,9 +22,49 @@ record MP ℓ : Set (suc ℓ ⊔ ℓ₁ ⊔ ℓ₃) where
 
   open IsMP is-mp public
 
+MP₀ = MP zero
+
 -- application
 _·_ : ∀ {ℓ} → MP ℓ → Carrier → Set _
 (mp P _) · c = P c
+
+-- monotone-predicate equality
+_≗_ : ∀ {ℓ₁} → MP ℓ₁ → MP ℓ₁ → Set _
+P ≗ Q = ∀ {c} → P · c PropEq.≡ Q · c
+
+-- we package the Agda function that represents morphisms
+-- in this category in a record such that P ⇒ Q doesn't get
+-- reduced to the simple underlying type of `apply`
+record _⇒_ {p q}(P : MP p)(Q : MP q) : Set (p ⊔ q ⊔ ℓ₁) where
+  constructor mk⇒
+  field
+    apply : ∀ {c} → P · c → Q · c
+
+open _⇒_
+
+infixl 100 _∘_
+_∘_ : ∀ {ℓ₁ ℓ₂ ℓ₃}{P : MP ℓ₁}{Q : MP ℓ₂}{R : MP ℓ₃} → P ⇒ Q → Q ⇒ R → P ⇒ R
+F ∘ G = mk⇒ λ p → apply G (apply F p)
+
+id : ∀ {ℓ}(P : MP ℓ) → P ⇒ P
+id P = mk⇒ Fun.id
+
+-- morphism equality
+infixl 20 _⇒≡_
+_⇒≡_  : ∀ {ℓ₁ ℓ₂}{P : MP ℓ₁}{Q : MP ℓ₂}(F G : P ⇒ Q) → Set _
+_⇒≡_ {P = P}{Q} F G = ∀ {c}(p : P · c) → apply F p PropEq.≡ apply G p
+
+module Properties where
+  ∘-assoc : ∀ {p q r s}{P : MP p}{Q : MP q}{R : MP r}{S : MP s}
+              {F : P ⇒ Q}{G : Q ⇒ R}{H : R ⇒ S} →
+              F ∘ (G ∘ H) ⇒≡ (F ∘ G) ∘ H
+  ∘-assoc _ = PropEq.refl
+
+  ∘-left-id : ∀ {P Q : MP ℓ₁}{F : P ⇒ Q} → (id P) ∘ F ⇒≡ F
+  ∘-left-id _ = PropEq.refl
+
+  ∘-right-id : ∀ {P Q : MP ℓ₁}{F : P ⇒ Q} → F ∘ (id Q) ⇒≡ F
+  ∘-right-id p = PropEq.refl
 
 -- product
 open import Data.Product
@@ -39,25 +79,6 @@ P ⊗ Q = mp
       }
     })
 
-_⇒_ : ∀ {ℓ₁ ℓ₂} → MP ℓ₁ → MP ℓ₂ → Set _
-P ⇒ Q = ∀ {c} → P · c → Q · c
-
--- monotone-predicate equality
-_≗_ : ∀ {ℓ₁} → MP ℓ₁ → MP ℓ₁ → Set _
-P ≗ Q = ∀ {c} → P · c PropEq.≡ Q · c
-
-_∘_ : ∀ {ℓ₁ ℓ₂ ℓ₃}{P : MP ℓ₁}{Q : MP ℓ₂}{R : MP ℓ₃} → P ⇒ Q → Q ⇒ R → P ⇒ R
-F ∘ G = λ p → G (F p)
-
-id : ∀ {ℓ}(P : MP ℓ) → P ⇒ P
-id P = Fun.id
-
-MP₀ = MP zero
-
--- the underlying ~ relations is itself a monotone predicate
-~mp : ∀ c → IsMP (_∼_ c)
-~mp c = record { monotone = flip trans }
-
 -- it's easy to lift predicates to monotone predicates
 pack : ∀ {ℓ} → Pred Carrier ℓ → MP _
 pack P = mp
@@ -65,19 +86,6 @@ pack P = mp
     monotone = λ{ c~c' (c'' , c~c'' , pc') → c'' , trans c~c'' c~c' , pc' }
   })
 
-module Properties where
-  -- associativity
-  ∘-assoc : ∀ {ℓ₁}{P Q R S : MP ℓ₁}{F : P ⇒ Q}{G : Q ⇒ R}{H : R ⇒ S} →
-            ∀ {c}(p : P · c) →
-            (_∘_ {P = P}{Q}{S} F (_∘_ {P = Q}{R}{S} G H)) p
-            PropEq.≡
-            (_∘_ {P = P}{R}{S} (_∘_ {P = P}{Q}{R} F G) H) p
-  ∘-assoc p = PropEq.refl
-
-  ∘-left-id : ∀ {P Q : MP ℓ₁}{F : P ⇒ Q} →
-              ∀ {c}(p : P · c) → (_∘_ {P = P}{P}{Q} (id P) F) p PropEq.≡ F p
-  ∘-left-id {P = P}{Q}{F} p = PropEq.refl
-
-  ∘-right-id : ∀ {P Q : MP ℓ₁}{F : P ⇒ Q} →
-              ∀ {c}(p : P · c) → (_∘_ {P = P}{Q}{Q} F (id Q)) p PropEq.≡ F p
-  ∘-right-id {P = P}{Q}{F} p = PropEq.refl
+-- the underlying ~ relations is itself a monotone predicate
+~mp : ∀ c → IsMP (_∼_ c)
+~mp c = record { monotone = flip trans }
