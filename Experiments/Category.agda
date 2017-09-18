@@ -6,6 +6,7 @@ open import Level
 open Preorder APO
 open import Function as Fun using (flip)
 open import Relation.Unary using (Pred)
+open import Data.Product
 import Relation.Binary.PropositionalEquality as PropEq
 open PropEq.≡-Reasoning
 
@@ -35,6 +36,7 @@ P ≗ Q = ∀ {c} → P · c PropEq.≡ Q · c
 -- we package the Agda function that represents morphisms
 -- in this category in a record such that P ⇒ Q doesn't get
 -- reduced to the simple underlying type of `apply`
+infixl 30 _⇒_
 record _⇒_ {p q}(P : MP p)(Q : MP q) : Set (p ⊔ q ⊔ ℓ₁) where
   constructor mk⇒
   field
@@ -43,8 +45,8 @@ record _⇒_ {p q}(P : MP p)(Q : MP q) : Set (p ⊔ q ⊔ ℓ₁) where
 open _⇒_
 
 infixl 100 _∘_
-_∘_ : ∀ {ℓ₁ ℓ₂ ℓ₃}{P : MP ℓ₁}{Q : MP ℓ₂}{R : MP ℓ₃} → P ⇒ Q → Q ⇒ R → P ⇒ R
-F ∘ G = mk⇒ λ p → apply G (apply F p)
+_∘_ : ∀ {ℓ₁ ℓ₂ ℓ₃}{P : MP ℓ₁}{Q : MP ℓ₂}{R : MP ℓ₃} → Q ⇒ R → P ⇒ Q → P ⇒ R
+F ∘ G = mk⇒ λ p → apply F (apply G p)
 
 id : ∀ {ℓ}(P : MP ℓ) → P ⇒ P
 id P = mk⇒ Fun.id
@@ -56,30 +58,52 @@ _⇒≡_ {P = P}{Q} F G = ∀ {c}(p : P · c) → apply F p PropEq.≡ apply G p
 
 module Properties where
   ∘-assoc : ∀ {p q r s}{P : MP p}{Q : MP q}{R : MP r}{S : MP s}
-              {F : P ⇒ Q}{G : Q ⇒ R}{H : R ⇒ S} →
+              {F : R ⇒ S}{G : Q ⇒ R}{H : P ⇒ Q} →
               F ∘ (G ∘ H) ⇒≡ (F ∘ G) ∘ H
   ∘-assoc _ = PropEq.refl
 
-  ∘-left-id : ∀ {P Q : MP ℓ₁}{F : P ⇒ Q} → (id P) ∘ F ⇒≡ F
+  ∘-left-id : ∀ {P Q : MP ℓ₁}{F : P ⇒ Q} → (id Q) ∘ F ⇒≡ F
   ∘-left-id _ = PropEq.refl
 
-  ∘-right-id : ∀ {P Q : MP ℓ₁}{F : P ⇒ Q} → F ∘ (id Q) ⇒≡ F
+  ∘-right-id : ∀ {P Q : MP ℓ₁}{F : P ⇒ Q} → F ∘ (id P) ⇒≡ F
   ∘-right-id p = PropEq.refl
 
--- product
-open import Data.Product
-infixl 30 _⊗_
-_⊗_ : ∀ {ℓ₁ ℓ₂} → MP ℓ₁ → MP ℓ₂ → MP (ℓ₁ ⊔ ℓ₂)
-P ⊗ Q = mp
-    (λ c → (P · c) × (Q · c))
-    (record {
-      monotone = λ{ c~c' (p , q) →
-          MP.monotone P c~c' p
-        , MP.monotone Q c~c' q
-      }
-    })
+module Product where
 
--- it's easy to lift predicates to monotone predicates
+  infixl 40 _⊗_
+  _⊗_ : ∀ {ℓ₁ ℓ₂} → MP ℓ₁ → MP ℓ₂ → MP (ℓ₁ ⊔ ℓ₂)
+  P ⊗ Q = mp
+      (λ c → (P · c) × (Q · c))
+      (record {
+        monotone = λ{ c~c' (p , q) →
+            MP.monotone P c~c' p
+          , MP.monotone Q c~c' q
+        }
+      })
+
+  ⟨_,_⟩ : ∀ {y p q}{Y : MP y}{P : MP p}{Q : MP q} → Y ⇒ P → Y ⇒ Q → Y ⇒ P ⊗ Q
+  ⟨ F , G ⟩ = mk⇒ (λ x → apply F x , apply G x)
+
+  π₁ : ∀ {ℓ₁ ℓ₂}{P : MP ℓ₁}{Q : MP ℓ₂} → P ⊗ Q ⇒ P
+  π₁ = mk⇒ (λ{ (pc , qc) → pc})
+
+  π₂ : ∀ {ℓ₁ ℓ₂}{P : MP ℓ₁}{Q : MP ℓ₂} → P ⊗ Q ⇒ Q
+  π₂ = mk⇒ (λ{ (pc , qc) → qc})
+
+  module ⊗-Properties where
+    π₁-comm : ∀ {y p q}{Y : MP y}{P : MP p}{Q : MP q}{F : Y ⇒ P}{G : Y ⇒ Q} →
+            π₁ ∘ ⟨ F , G ⟩ ⇒≡ F
+    π₁-comm _ = PropEq.refl
+
+    π₂-comm : ∀ {y p q}{Y : MP y}{P : MP p}{Q : MP q}{F : Y ⇒ P}{G : Y ⇒ Q} →
+            π₁ ∘ ⟨ F , G ⟩ ⇒≡ F
+    π₂-comm _ = PropEq.refl
+
+    unique : ∀ {y p q}{Y : MP y}{P : MP p}{Q : MP q}{g : Y ⇒ (P ⊗ Q)} → ⟨ π₁ ∘ g , π₂ ∘ g ⟩ ⇒≡ g
+    unique _ = PropEq.refl
+
+
+-- it's easy to lift predicates to monotone predicates using the product
 pack : ∀ {ℓ} → Pred Carrier ℓ → MP _
 pack P = mp
   (λ c → ∃ λ c' → c' ∼ c × P c') (record {
