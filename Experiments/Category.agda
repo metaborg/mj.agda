@@ -16,13 +16,9 @@ record IsMP {ℓ}(P : Carrier → Set ℓ) : Set (ℓ ⊔ ℓ₁ ⊔ ℓ₃) whe
   field
     monotone : ∀ {c c'} → c ∼ c' → P c → P c'
 
-    {-
-    -- Morally these should hold I feel; but we haven't needed them yet..
-
-    monotone-refl : ∀ {c p} → monotone (refl {c}) p PEq.≡ p
-    monotone-trans : ∀ {c c' c'' p}{c~c' : c ∼ c'}{c'~c'' : c' ∼ c''} →
-      monotone (trans c~c' c'~c'') p PEq.≡ monotone c'~c'' (monotone c~c' p)
-    -}
+    monotone-refl  : ∀ {c} p → monotone (refl {c}) p PEq.≡ p
+    monotone-trans : ∀ {c c' c''} p (c~c' : c ∼ c')(c'~c'' : c' ∼ c'') →
+                     monotone (trans c~c' c'~c'') p PEq.≡ monotone c'~c'' (monotone c~c' p)
 
 -- monotone predicates over a fixed carrier
 record MP ℓ : Set (suc ℓ ⊔ ℓ₁ ⊔ ℓ₃) where
@@ -45,7 +41,11 @@ P ≗ Q = ∀ {c} → P · c PEq.≡ Q · c
 
 import Data.Unit as Unit
 ⊤ : MP zero
-⊤ = mp (λ _ → Unit.⊤) (record { monotone = λ {c} {c'} _ _ → Unit.tt })
+⊤ = mp (λ _ → Unit.⊤) (record {
+    monotone = λ {c} {c'} _ _ → Unit.tt ;
+    monotone-refl = λ _ → PEq.refl ;
+    monotone-trans = λ _ _ _ → PEq.refl
+  })
 
 -- we package the Agda function that represents morphisms
 -- in this category in a record such that P ⇒ Q doesn't get
@@ -110,7 +110,9 @@ module Product where
         monotone = λ{ c~c' (p , q) →
             MP.monotone P c~c' p
           , MP.monotone Q c~c' q
-        }
+        };
+        monotone-refl = λ _ → PEq.cong₂ _,_ (MP.monotone-refl P _) (MP.monotone-refl Q _) ;
+        monotone-trans = λ _ _ _ → PEq.cong₂ _,_ (MP.monotone-trans P _ _ _) (MP.monotone-trans Q _ _ _)
       })
 
   ⟨_,_⟩ : ∀ {y p q}{Y : MP y}{P : MP p}{Q : MP q} → Y ⇒ P → Y ⇒ Q → Y ⇒ P ⊗ Q
@@ -167,13 +169,21 @@ module Monoid where
 
   -- TODO: coherence conditions
 
+{-}
 -- it's easy to lift predicates to monotone predicates using a product
 pack : ∀ {ℓ} → Pred Carrier ℓ → MP _
 pack P = mp
   (λ c → ∃ λ c' → c' ∼ c × P c') (record {
-    monotone = λ{ c~c' (c'' , c~c'' , pc') → c'' , trans c~c'' c~c' , pc' }
+    monotone = λ{ c~c' (c'' , c~c'' , pc') → c'' , trans c~c'' c~c' , pc' } ;
+    monotone-refl = ? ;
+    monotone-trans = ?
   })
 
 -- the underlying ~ relations is itself a monotone predicate
 ~mp : ∀ c → IsMP (_∼_ c)
-~mp c = record { monotone = flip trans }
+~mp c = record {
+  monotone = flip trans
+  monotone-refl = ? ;
+  monotone-trans = ?
+  }
+-}
