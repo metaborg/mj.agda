@@ -51,8 +51,8 @@ M P = mp (λ Σ → ∀ Σ₁ → Σ ⊑ Σ₁ → Store Σ₁ → ∃ λ Σ₂ 
       MP.monotone (M P) c~c' (λ z ext μ → z , ⊑-refl , μ , MP.monotone P ext p)
     ∎)
 
-μ : ∀ {p}{P : MP p} → M (M P) ⇒ M P
-μ = mk⇒
+μ : ∀ {p}(P : MP p) → M (M P) ⇒ M P
+μ P = mk⇒
   (λ pc Σ₁ ext μ →
     case pc _ ext μ of λ{
       (Σ₂ , ext₁ , μ₁ , f) →
@@ -70,11 +70,12 @@ fmap F = mk⇒
   (λ c~c' → refl)
 
 bind : ∀ {p q}{P : MP p}{Q : MP q} → (P ⇒ M Q) → M P ⇒ M Q
-bind {Q = Q} F = μ {P = Q} ∘ fmap F
+bind {Q = Q} F = μ Q ∘ fmap F
 
 module Coherence where
 
-  -- We prove that η is the component of a natural transformation.
+  -- We prove that η is the component of a natural transformation between the functors
+  -- 𝕀 and M where 𝕀 is the identity functor.
   η-natural : ∀ {p q}(P : MP p)(Q : MP q)(F : P ⇒ Q) → η Q ∘ F ⇒≡ (fmap F) ∘ η P
   η-natural P Q F p =
     begin
@@ -92,6 +93,11 @@ module Coherence where
         ≡⟨ refl ⟩
       apply (fmap F ∘ η P) p
     ∎
+
+  -- We prove that μ is the component of a natural transformation between
+  -- the functors M² and M.
+  μ-natural : ∀ {p q}(P : MP p)(Q : MP q)(F : P ⇒ Q) → μ Q ∘ (fmap (fmap F)) ⇒≡ (fmap F) ∘ μ P
+  μ-natural P Q F = λ p → refl
 
 {-
 -- tensorial strength
