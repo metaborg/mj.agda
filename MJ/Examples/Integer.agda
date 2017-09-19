@@ -60,7 +60,9 @@ IntegerSig = (class Object (int ∷ []) decls)
     Object → ε };
   Σ-Object = refl }
 
+open import MJ.Classtable.Code Σ
 open import MJ.Syntax Σ
+open import MJ.Syntax.Program Σ
 
 -- Integer class body
 IntegerImpl : Implementation INT
@@ -90,7 +92,7 @@ IntegerImpl = implementation
     )
 
 -- Implementation of the class table
-Lib : Classes
+Lib : Code
 Lib (cls zero) = IntegerImpl
 Lib (cls (suc ()))
 Lib Object = implementation (body (body ε unit)) []

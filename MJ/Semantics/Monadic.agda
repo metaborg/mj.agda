@@ -3,12 +3,13 @@ import MJ.Classtable
 import MJ.Syntax as Syntax
 import MJ.Semantics.Values as Values
 import MJ.Classtable.Core as Core
+import MJ.Classtable.Code as Code
 
 --
 -- Substitution-free interpretation of welltyped MJ
 --
 
-module MJ.Semantics.Monadic {c} (Ct : Core.Classtable c)(ℂ : Syntax.Classes Ct) where
+module MJ.Semantics.Monadic {c} (Ct : Core.Classtable c)(ℂ : Code.Code Ct) where
 
 open import Prelude
 open import Data.Vec hiding (init; _>>=_; _∈_)
@@ -21,9 +22,11 @@ import Data.Vec.All as Vec∀
 
 open Values Ct
 open Syntax Ct
+open Code Ct
 open Core c
 open Classtable Ct
 
+open import MJ.Syntax.Program Ct
 open import MJ.Classtable.Membership Ct
 open import MJ.Types
 open import MJ.LexicalScope Ct
