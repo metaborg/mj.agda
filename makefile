@@ -11,7 +11,7 @@ all: lib src/Readme.agdai
 lib: lib/agda/std-lib lib/stdlib++.agda
 
 lib/stdlib++.agda:
-	git clone -b 2.6 git@github.com:ElessarWebb/stdlib-plusplus.agda.git $(STDPP)
+	git clone -b 2.6 https://github.com/ElessarWebb/stdlib-plusplus.agda.git $(STDPP)
 
 # checkout the compatible agda release source
 lib/agda:
