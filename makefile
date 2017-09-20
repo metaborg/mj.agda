@@ -2,10 +2,15 @@
 STDPP = lib/stdlib++.agda
 AGDALIB = lib/agda
 
+doc/%.html: src/%.agda
+	agda $< --html --html-dir=./doc/
+
 %.agdai: %.agda
 	agda $<
 
 all: lib src/Readme.agdai
+
+doc: lib doc/Readme.html
 
 ### libraries
 lib: lib/agda/std-lib lib/stdlib++.agda
