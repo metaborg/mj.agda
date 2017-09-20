@@ -1,6 +1,5 @@
-name: fwj
-depend:
-  standard-library
-  standard-library++
+name: mj
 include:
-  ./
+  ./src/
+  ./lib/agda/std-lib/src/
+  ./lib/stdlib++.agda/src/

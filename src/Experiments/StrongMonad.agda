@@ -8,7 +8,7 @@ open import Data.Product
 open import Data.List.Most
 open import Data.List.All as List∀
 open import Data.List.Prefix
-open import Function using (case_of_)
+open import Function as Fun using (case_of_)
 open ≡-Reasoning
 
 World = List Type
@@ -21,11 +21,17 @@ postulate Val : Type → MP₀
 Store : World → Set
 Store Σ = All (λ a → Val a · Σ) Σ
 
+import Relation.Binary.HeterogeneousEquality as H
+
 -- functional extensionality for the type of predicates that our monad builds
 meq : ∀ {Σ' b}{B : World → Set b}{f g : (Σ : World) → Σ' ⊑ Σ → Store Σ → B Σ} →
       (∀ Σ → (ext : Σ' ⊑ Σ) → (μ : Store Σ) → f Σ ext μ ≡ g Σ ext μ) →
       f ≡ g
 meq p = funext λ Σ → funext λ ext → funext λ μ → p Σ ext μ
+
+mcong : ∀ {Σₛ Σ Σ' ℓ}{P : MP ℓ}{μ : Store Σ}{μ' : Store Σ'}{p : Σ ⊒ Σₛ}{p' : Σ' ⊒ Σₛ}{q : P · Σ}{q' : P · Σ'} →
+        Σ ≡ Σ' → p H.≅ p' → μ H.≅ μ' → q H.≅ q' → (Σ , p , μ , q) ≡ (Σ' , p' , μ' , q')
+mcong refl H.refl H.refl H.refl = refl
 
 -- The monad takes monotone predicates over worlds
 -- to monotone functions over stores in these worlds.
@@ -42,7 +48,7 @@ M P = mp (λ Σ → ∀ Σ₁ → Σ ⊑ Σ₁ → Store Σ₁ → ∃ λ Σ₂ 
 η : ∀ {p}(P : MP p) → P ⇒ M P
 η P =
   mk⇒
-    (λ p _ ext μ → _ , ⊑-refl , μ , MP.monotone P ext p)
+    (λ p Σ ext μ → Σ , ⊑-refl , μ , MP.monotone P ext p)
     (λ c~c' {p} → begin
       (λ z ext μ → z , ⊑-refl , μ , MP.monotone P ext (MP.monotone P c~c' p))
         ≡⟨ meq (λ z ext μ → cong (λ u → z , ⊑-refl , μ , u) (sym (MP.monotone-trans P p c~c' ext))) ⟩
@@ -54,17 +60,17 @@ M P = mp (λ Σ → ∀ Σ₁ → Σ ⊑ Σ₁ → Store Σ₁ → ∃ λ Σ₂ 
 μ : ∀ {p}(P : MP p) → M (M P) ⇒ M P
 μ P = mk⇒
   (λ pc Σ₁ ext μ →
-    case pc _ ext μ of λ{
+    case pc Σ₁ ext μ of λ{
       (Σ₂ , ext₁ , μ₁ , f) →
-        case f _ ⊑-refl μ₁ of λ{
-          (Σ₃ , ext₂ , μ₂ , v) → _ , ⊑-trans ext₁ ext₂ , μ₂ , v
+        case f Σ₂ ⊑-refl μ₁ of λ{
+          (Σ₃ , ext₂ , μ₂ , v) → Σ₃ , ⊑-trans ext₁ ext₂ , μ₂ , v
         }
     })
   (λ c~c' → refl)
 
 fmap : ∀ {p q}{P : MP p}{Q : MP q} → (P ⇒ Q) → M P ⇒ M Q
 fmap F = mk⇒
-  (λ x Σ₁ ext μ → case x _ ext μ of λ{
+  (λ x Σ₁ ext μ → case x Σ₁ ext μ of λ{
     (Σ₂ , ext₁ , μ₁ , v) → Σ₂ , ext₁ , μ₁ , apply F v
   })
   (λ c~c' → refl)
@@ -98,6 +104,20 @@ module Coherence where
   -- the functors M² and M.
   μ-natural : ∀ {p q}(P : MP p)(Q : MP q)(F : P ⇒ Q) → μ Q ∘ (fmap (fmap F)) ⇒≡ (fmap F) ∘ μ P
   μ-natural P Q F = λ p → refl
+
+  -- from these facts we can prove the monad laws
+  left-id : ∀ {p q}{P : MP p}{Q : MP q}(F : P ⇒ Q) → μ P ∘ fmap (η P) ⇒≡ id (M P)
+  left-id {P = P} F {c = Σ'} p =
+    begin
+      apply (μ P ∘ (fmap (η P))) p
+        ≡⟨ refl ⟩
+      apply (μ P) (apply (fmap (η P)) p)
+        ≡⟨ refl ⟩
+      apply (μ P) (λ Σ₁ ext μ → case p Σ₁ ext μ of λ{ (Σ₂ , ext₁ , μ₁ , v) → Σ₂ , ext₁ , μ₁ , apply (η P) v })
+        ≡⟨ meq (λ Σ₁ ext μ₁ → mcong refl {!H.refl!} H.refl {!!}) ⟩
+      p
+        ≡⟨ refl ⟩
+      apply (id (M P)) p ∎
 
 {-
 -- tensorial strength
