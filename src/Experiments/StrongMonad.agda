@@ -1,7 +1,3 @@
-open import Relation.Binary.PropositionalEquality
-
-module Experiments.StrongMonad (Type : Set)(funext : ∀ {a b} → Extensionality a b)  where
-
 open import Level
 open import Relation.Unary using (Pred)
 open import Data.Product
@@ -9,14 +5,21 @@ open import Data.List.Most
 open import Data.List.All as List∀
 open import Data.List.Prefix
 open import Function as Fun using (case_of_)
+open import Relation.Binary.PropositionalEquality
 open ≡-Reasoning
+
+import Experiments.Category as Cat
+
+module Experiments.StrongMonad
+  (Type : Set)
+  (Val : Type → Cat.MP₀ (⊑-preorder {A = Type}))
+  (funext : ∀ {a b} → Extensionality a b) where
+
+open Cat (⊑-preorder {A = Type})
 
 World = List Type
 
-open import Experiments.Category (⊑-preorder {A = Type})
 open Product
-
-postulate Val : Type → MP₀
 
 Store : World → Set
 Store Σ = All (λ a → Val a · Σ) Σ
@@ -105,6 +108,7 @@ module Coherence where
   μ-natural : ∀ {p q}(P : MP p)(Q : MP q)(F : P ⇒ Q) → μ Q ∘ (fmap (fmap F)) ⇒≡ (fmap F) ∘ μ P
   μ-natural P Q F = λ p → refl
 
+  {-}
   -- from these facts we can prove the monad laws
   left-id : ∀ {p q}{P : MP p}{Q : MP q}(F : P ⇒ Q) → μ P ∘ fmap (η P) ⇒≡ id (M P)
   left-id {P = P} F {c = Σ'} p =
@@ -118,7 +122,7 @@ module Coherence where
       p
         ≡⟨ refl ⟩
       apply (id (M P)) p ∎
-
+  -}
 {-
 -- tensorial strength
 ts : ∀ {p q}{P : MP p}{Q : MP q} → P ⊗ M Q ⇒ M (P ⊗ Q)
