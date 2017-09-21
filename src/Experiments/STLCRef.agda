@@ -203,58 +203,58 @@ strength {_} {Q} =
       (λ c~c' → {!!})
 
 
-eval : ℕ → ∀ {Γ t} → Const (Expr Γ t) ⇒ M' Γ (Val' t)
-eval zero    = timeout {_} {Val' _}
-eval (suc k) =
-  mk⇒ (λ{ unit →
-          return {_} {Val' unit} unit
-        ; (var x) →
-          (mbind {_} {_} {Env' _} {Val' _}
-                 getEnv
-                 (mk⇒
-                   (λ E →
-                      return {_} {Val' _} (lookup E x))
-                   (λ c~c' → {- ugh -} {!!})))
-        ; (app {a} {b} e1 e2) →
-          (mbind {_} {_} {Val' (arrow a b)} {Val' b}
-                 (apply (eval k) e1)
-                 (mk⇒ (λ{ (⟨_,_⟩ {_} {Γ} e E) →
-                          (mbind {_} {_} {Env' Γ ⊗ Val' a} {Val' b}
-                                 (apply (strength {_} {Env' Γ} {Val' a}) (E , apply (eval k) e2))
-                                 (mk⇒
-                                   (λ{ (E' , v) →
-                                       setEnv {Val' b} (v ∷ E')
-                                              (apply (eval k) e) })
-                                   (λ c~c' → {!!})))
-                                  })
-                      λ c~c' → {!!} ))
-                
-        ; _ → {!!} })
-      (λ c~c' → {!!})
-
-
 -- eval : ℕ → ∀ {Γ t} → Const (Expr Γ t) ⇒ M' Γ (Val' t)
 -- eval zero    = timeout {_} {Val' _}
 -- eval (suc k) =
 --   mk⇒ (λ{ unit →
 --           return {_} {Val' unit} unit
 --         ; (var x) →
---           apply (bind' {_} {_} {Env' _} {Val' _}
---                        (mk⇒ (λ E →
---                                return {_} {Val' _} (lookup E x))
---                             (λ c~c' → {- ugh -} {!!})))
---                 getEnv
+--           (mbind {_} {_} {Env' _} {Val' _}
+--                  getEnv
+--                  (mk⇒
+--                    (λ E →
+--                       return {_} {Val' _} (lookup E x))
+--                    (λ c~c' → {- ugh -} {!!})))
 --         ; (app {a} {b} e1 e2) →
---           apply (bind' {_} {_} {Val' (arrow a b)} {Val' b}
---                        (mk⇒ (λ{ (⟨_,_⟩ {_} {Γ} e E) →
---                                 apply (bind' {_} {_} {Env' Γ ⊗ Val' a} {Val' b}
---                                              (mk⇒
---                                                (λ{ (E' , v) →
---                                                    setEnv {Val' b} (v ∷ E')
---                                                           (apply (eval k) e) })
---                                                (λ c~c' → {!!})))
---                                       (apply (strength {_} {Env' Γ} {Val' a}) (E , apply (eval k) e2)) })
---                             λ c~c' → {!!} ))
---                 (apply (eval k) e1)
+--           (mbind {_} {_} {Val' (arrow a b)} {Val' b}
+--                  (apply (eval k) e1)
+--                  (mk⇒ (λ{ (⟨_,_⟩ {_} {Γ} e E) →
+--                           (mbind {_} {_} {Env' Γ ⊗ Val' a} {Val' b}
+--                                  (apply (strength {_} {Env' Γ} {Val' a}) (E , apply (eval k) e2))
+--                                  (mk⇒
+--                                    (λ{ (E' , v) →
+--                                        setEnv {Val' b} (v ∷ E')
+--                                               (apply (eval k) e) })
+--                                    (λ c~c' → {!!})))
+--                                   })
+--                       λ c~c' → {!!} ))
+                
 --         ; _ → {!!} })
 --       (λ c~c' → {!!})
+
+
+eval : ℕ → ∀ {Γ t} → Const (Expr Γ t) ⇒ M' Γ (Val' t)
+eval zero    = timeout {_} {Val' _}
+eval (suc k) =
+  mk⇒ (λ{ unit →
+          apply (η' (Val' unit)) unit
+        ; (var x) →
+          apply (bind' {_} {_} {Env' _} {Val' _}
+                       (mk⇒ (λ E →
+                               apply (η' (Val' _)) (lookup E x))
+                            (λ c~c' → {- ugh -} {!!})))
+                getEnv
+        ; (app {a} {b} e1 e2) →
+          apply (bind' {_} {_} {Val' (arrow a b)} {Val' b}
+                       (mk⇒ (λ{ (⟨_,_⟩ {_} {Γ} e E) →
+                                apply (bind' {_} {_} {Env' Γ ⊗ Val' a} {Val' b}
+                                             (mk⇒
+                                               (λ{ (E' , v) →
+                                                   setEnv {Val' b} (v ∷ E')
+                                                          (apply (eval k) e) })
+                                               (λ c~c' → {!!})))
+                                      (apply (strength {_} {Env' Γ} {Val' a}) (E , apply (eval k) e2)) })
+                            λ c~c' → {!!} ))
+                (apply (eval k) e1)
+        ; _ → {!!} })
+      (λ c~c' → {!!})
