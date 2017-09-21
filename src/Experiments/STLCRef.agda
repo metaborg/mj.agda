@@ -106,9 +106,9 @@ M' Γ P = mp (λ Σ → ∀ Σ₁ → Σ ⊑ Σ₁ → Env' Γ · Σ₁ → Stor
     monotone-trans = λ f w₀ w₁ → meq' (λ Σ₁ w₂ E μ → cong (λ u → f Σ₁ u E μ) (sym ⊑-trans-assoc))
   }
 
-One : MP₀
-One = mp (λ _ → Unit.⊤) ((record {
-    monotone = λ _ _ → tt ;
+Const : ∀ (T : Set) → MP₀
+Const T = mp (λ _ → T) ((record {
+    monotone = λ x x₁ → x₁ ;
     monotone-refl = λ _ → refl ;
     monotone-trans = λ _ _ _ → refl
   }))
@@ -159,20 +159,39 @@ fmap' F = mk⇒
 bind' : ∀ {p q}{P : MP p}{Q : MP q}{Γ} → (P ⇒ M' Γ Q) → M' Γ P ⇒ M' Γ Q
 bind' {Q = Q} F = μ' Q ∘ fmap' F
 
-timeout  : ∀ {p : MP₀}{Γ} → M' Γ One ⇒ M' Γ p
+timeout  : ∀ {P Q : MP₀}{Γ} → P ⇒ M' Γ Q
 timeout = mk⇒ (λ _ _ _ _ _ → nothing) (λ _ → refl)
 
--- -- getEnv  :  ∀ {Γ Σ} → M' Γ (Env' Γ) · Σ
--- -- getEnv {Γ} _ _ E = apply (η' (Env' Γ)) E _ ⊑-refl E
+getEnv  :  ∀ {Γ Σ} → M' Γ (Env' Γ) · Σ
+getEnv = {!!}
+-- getEnv {Γ} _ _ E = apply (η' (Env' Γ)) E _ ⊑-refl E
 
--- getEnv  :  ∀ {Γ} → One ⇒ M' Γ (Env' Γ)
--- getEnv = mk⇒ (λ x Σ₁ ext E μ → just ( Σ₁ , ⊑-refl , μ , E )) (λ _ → refl)
+-- -- getEnv  :  ∀ {Γ} → One ⇒ M' Γ (Env' Γ)
+-- -- getEnv = mk⇒ (λ x Σ₁ ext E μ → just ( Σ₁ , ⊑-refl , μ , E )) (λ _ → refl)
 
 -- -- setEnv   :    ∀ {Σ Γ Γ'}{p : List Ty → Set} → Env Γ Σ → M Γ p Σ → M Γ' p Σ
 
-eval : ℕ → ∀ {Γ t} → Expr Γ t → M' Γ One ⇒ M' Γ (Val' t)
-eval zero    _       = timeout {Val' _}
-eval (suc k) unit    = {!!} -- bind' {_} {_} { (mk⇒ (λ x → apply (η' (Val' unit)) unit) (λ c~c' → refl))
+mutual
+  eval : ℕ → ∀ {Γ t} → Const (Expr Γ t) ⇒ M' Γ (Val' t)
+  eval zero    = timeout {_} {Val' _}
+  eval (suc k) =
+    mk⇒ (λ{ unit →
+            apply (η' (Val' unit)) unit
+          ; (var x) →
+            apply (bind' {_} {_} {Env' _} {Val' _}
+                         (mk⇒ (λ E → apply ((η' (Val' _))) (lookup E x))
+                              (λ c~c' → {- ugh -} {!!})))
+                  getEnv
+          ; (app e1 e2) →
+            apply (bind' {_} {_} {Val' (arrow _ _)} {Val' _}
+                         (mk⇒ (λ{ ⟨ e , E ⟩ → {!!} })
+                              {!!} ))
+                  {!!}
+          ; _ → {!!} })
+        (λ c~c' → {!!}) -- bind' {_} {_} { (mk⇒ (λ x → apply (η' (Val' unit)) unit) (λ c~c' → refl))
 -- -- eval (suc k) (var x) = -- apply {!!} {!!}
-eval _ _ = {!!}
 
+  -- eval' : ∀ {Γ t Σ} → Const (Expr Γ t) · Σ → M' Γ (Val' t) · Σ
+  -- eval' unit    = apply (η' (Val' unit)) unit
+  -- eval' (var x) = apply {!!} {!!}
+  -- eval' _       = {!!}
