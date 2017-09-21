@@ -188,10 +188,11 @@ eval : ℕ → ∀ {Γ t} → Const (Expr Γ t) ⇒ M' Γ (Val' t)
 eval zero    = timeout {_} {Val' _}
 eval (suc k) =
   mk⇒ (λ{ unit →
-          apply (η' (Val' unit)) unit
+          return {_} {Val' unit} unit
         ; (var x) →
           apply (bind' {_} {_} {Env' _} {Val' _}
-                       (mk⇒ (λ E → apply ((η' (Val' _))) (lookup E x))
+                       (mk⇒ (λ E →
+                               return {_} {Val' _} (lookup E x))
                             (λ c~c' → {- ugh -} {!!})))
                 getEnv
         ; (app {a} {b} e1 e2) →
