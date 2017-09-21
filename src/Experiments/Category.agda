@@ -40,6 +40,14 @@ _≗_ : ∀ {ℓ₁} → MP ℓ₁ → MP ℓ₁ → Set _
 P ≗ Q = ∀ {c} → P · c PEq.≡ Q · c
 
 import Data.Unit as Unit
+
+const : ∀ {ℓ}(P : Set ℓ) → MP ℓ
+const P = mp (λ _ → P) (record {
+    monotone = λ x p → p ;
+    monotone-refl = λ p → PEq.refl ;
+    monotone-trans = λ p c~c' c'~c'' → PEq.refl
+  })
+
 ⊤ : MP zero
 ⊤ = mp (λ _ → Unit.⊤) (record {
     monotone = λ {c} {c'} _ _ → Unit.tt ;
