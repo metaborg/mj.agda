@@ -16,10 +16,9 @@ module Experiments.StrongMonad
   (funext : ∀ {a b} → Extensionality a b) where
 
 open Cat (⊑-preorder {A = Type})
+open Product -- products in the category of monotone predicates
 
 World = List Type
-
-open Product
 
 Store : World → Set
 Store Σ = All (λ a → Val a · Σ) Σ
@@ -108,7 +107,6 @@ module Coherence where
   μ-natural : ∀ {p q}(P : MP p)(Q : MP q)(F : P ⇒ Q) → μ Q ∘ (fmap (fmap F)) ⇒≡ (fmap F) ∘ μ P
   μ-natural P Q F = λ p → refl
 
-  {-}
   -- from these facts we can prove the monad laws
   left-id : ∀ {p q}{P : MP p}{Q : MP q}(F : P ⇒ Q) → μ P ∘ fmap (η P) ⇒≡ id (M P)
   left-id {P = P} F {c = Σ'} p =
@@ -118,11 +116,15 @@ module Coherence where
       apply (μ P) (apply (fmap (η P)) p)
         ≡⟨ refl ⟩
       apply (μ P) (λ Σ₁ ext μ → case p Σ₁ ext μ of λ{ (Σ₂ , ext₁ , μ₁ , v) → Σ₂ , ext₁ , μ₁ , apply (η P) v })
-        ≡⟨ meq (λ Σ₁ ext μ₁ → mcong refl {!H.refl!} H.refl {!!}) ⟩
+        ≡⟨ meq (λ Σ₁ ext μ₁ → mcong {P = P} refl (lem refl) H.refl (H.≡-to-≅ (MP.monotone-refl P _))) ⟩
       p
         ≡⟨ refl ⟩
       apply (id (M P)) p ∎
-  -}
+    where
+      lem : ∀ {Σ Σ' Σ'' : World}{xs : Σ'' ⊒ Σ'}{ys : Σ'' ⊒ Σ} → Σ ≡ Σ' →  ⊑-trans xs ⊑-refl H.≅ ys
+      lem {xs = xs}{ys} refl with ⊑-unique xs ys
+      ... | refl = H.≡-to-≅ ⊑-trans-refl'
+
 {-
 -- tensorial strength
 ts : ∀ {p q}{P : MP p}{Q : MP q} → P ⊗ M Q ⇒ M (P ⊗ Q)
