@@ -108,22 +108,24 @@ module Coherence where
   μ-natural P Q F = λ p → refl
 
   -- from these facts we can prove the monad laws
-  left-id : ∀ {p q}{P : MP p}{Q : MP q}(F : P ⇒ Q) → μ P ∘ fmap (η P) ⇒≡ id (M P)
-  left-id {P = P} F {c = Σ'} p =
-    begin
-      apply (μ P ∘ (fmap (η P))) p
-        ≡⟨ refl ⟩
-      apply (μ P) (apply (fmap (η P)) p)
-        ≡⟨ refl ⟩
-      apply (μ P) (λ Σ₁ ext μ → case p Σ₁ ext μ of λ{ (Σ₂ , ext₁ , μ₁ , v) → Σ₂ , ext₁ , μ₁ , apply (η P) v })
-        ≡⟨ meq (λ Σ₁ ext μ₁ → mcong {P = P} refl (lem refl) H.refl (H.≡-to-≅ (MP.monotone-refl P _))) ⟩
-      p
-        ≡⟨ refl ⟩
-      apply (id (M P)) p ∎
+  left-id : ∀ {p}{P : MP p} → μ P ∘ fmap (η P) ⇒≡ id (M P)
+  left-id {P = P} p = meq λ Σ₁ ext μ₁ →
+      mcong {P = P} refl (lem refl) H.refl (H.≡-to-≅ (MP.monotone-refl P _))
     where
       lem : ∀ {Σ Σ' Σ'' : World}{xs : Σ'' ⊒ Σ'}{ys : Σ'' ⊒ Σ} → Σ ≡ Σ' →  ⊑-trans xs ⊑-refl H.≅ ys
       lem {xs = xs}{ys} refl with ⊑-unique xs ys
       ... | refl = H.≡-to-≅ ⊑-trans-refl'
+
+  {-}
+  right-id : ∀ {p}{P : MP p} → μ P ∘ (η (M P)) ⇒≡ id (M P)
+  right-id {P = P} p = meq λ Σ₁ ext μ₁ → mcong {!!} {!!} {!!} {!!}
+
+  -}
+
+  -- if we have a (M³ P) then it doesn't matter if we join
+  -- the outer or inner ones first.
+  assoc : ∀ {p}{P : MP p} → μ P ∘ (fmap (μ P)) ⇒≡ μ P ∘ μ (M P)
+  assoc {P = P} p = meq λ Σ₁ ext μ → mcong {P = P} refl (H.≡-to-≅ ⊑-trans-assoc) H.refl H.refl
 
 {-
 -- tensorial strength
