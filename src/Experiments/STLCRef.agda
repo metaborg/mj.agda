@@ -164,12 +164,22 @@ timeout = mk⇒ (λ _ _ _ _ _ → nothing) (λ _ → refl)
 
 getEnv  :  ∀ {Γ Σ} → M' Γ (Env' Γ) · Σ
 getEnv = {!!}
--- getEnv {Γ} _ _ E = apply (η' (Env' Γ)) E _ ⊑-refl E
 
--- -- getEnv  :  ∀ {Γ} → One ⇒ M' Γ (Env' Γ)
--- -- getEnv = mk⇒ (λ x Σ₁ ext E μ → just ( Σ₁ , ⊑-refl , μ , E )) (λ _ → refl)
+setEnv : ∀ {P : MP₀}{Γ Γ' Σ} → Env' Γ' · Σ → M' Γ' P · Σ → M' Γ P · Σ
+setEnv = {!!}
 
--- -- setEnv   :    ∀ {Σ Γ Γ'}{p : List Ty → Set} → Env Γ Σ → M Γ p Σ → M Γ' p Σ
+open Product
+
+strength : ∀ {Γ}{Q P : MP₀} → Q ⊗ M' Γ P ⇒ M' Γ (Q ⊗ P)
+strength {_} {Q} =
+  mk⇒ (λ p Σ ext E μ →
+         case p of λ{
+           (x , y) →
+             case y Σ ext E μ of Maybe.map (λ{
+               (Σ₁ , ext₁ , μ₁ , v) →
+                 (Σ₁ , ext₁ , μ₁ , (MP.monotone Q (⊑-trans ext ext₁) x , v))
+             })})
+      (λ c~c' → {!!})
 
 mutual
   eval : ℕ → ∀ {Γ t} → Const (Expr Γ t) ⇒ M' Γ (Val' t)
@@ -182,11 +192,18 @@ mutual
                          (mk⇒ (λ E → apply ((η' (Val' _))) (lookup E x))
                               (λ c~c' → {- ugh -} {!!})))
                   getEnv
-          ; (app e1 e2) →
-            apply (bind' {_} {_} {Val' (arrow _ _)} {Val' _}
-                         (mk⇒ (λ{ ⟨ e , E ⟩ → {!!} })
-                              {!!} ))
-                  {!!}
+          ; (app {a} {b} e1 e2) →
+            apply (bind' {_} {_} {Val' (arrow a b)} {Val' b}
+                         (mk⇒ (λ{ (⟨_,_⟩ {_} {Γ} e E) →
+                                  apply (bind' {_} {_} {Env' Γ ⊗ Val' a} {Val' b}
+                                               (mk⇒
+                                                 (λ{ (E' , v) →
+                                                     setEnv {Val' b} (v ∷ E')
+                                                            (apply (eval k) e) })
+                                                 (λ c~c' → {!!})))
+                                        (apply (strength {_} {Env' Γ} {Val' a}) (E , apply (eval k) e2)) })
+                              λ c~c' → {!!} ))
+                  (apply (eval k) e1)
           ; _ → {!!} })
         (λ c~c' → {!!}) -- bind' {_} {_} { (mk⇒ (λ x → apply (η' (Val' unit)) unit) (λ c~c' → refl))
 -- -- eval (suc k) (var x) = -- apply {!!} {!!}
