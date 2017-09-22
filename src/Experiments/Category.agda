@@ -153,6 +153,18 @@ module Product where
     unique : ∀ {y p q}{Y : MP y}{P : MP p}{Q : MP q}{g : Y ⇒ (P ⊗ Q)} → ⟨ π₁ ∘ g , π₂ ∘ g ⟩ ⇒≡ g
     unique _ = PEq.refl
 
+module Exists where
+
+  -- simple existential quantification for indexed monotone predicates
+  Exists : ∀ {ℓ₁ ℓ₂}{I : Set ℓ₁}(P : I → MP ℓ₂) → MP _
+  Exists {I = I} P = mp (λ x → Prod.∃ λ (i : I) → P i · x) (record {
+      monotone = λ{ c~c' (i , px) → i , MP.monotone (P i) c~c' px } ;
+      monotone-refl = λ{
+        (i , px) → PEq.cong (λ u → i , u) (MP.monotone-refl (P i) px) };
+      monotone-trans = (λ {
+        (i , px) p q → PEq.cong (λ u → i , u) (MP.monotone-trans (P i) px p q)})
+    })
+
 module Monoid where
   -- identifies _⊗_ as a tensor/monoidal product
   open Product
