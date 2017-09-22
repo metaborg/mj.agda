@@ -1,6 +1,6 @@
 open import Level
 open import Relation.Unary using (Pred)
-open import Data.Product
+open import Data.Product hiding (swap)
 open import Data.List.Most
 open import Data.List.All as List∀
 open import Data.List.Prefix
@@ -40,7 +40,7 @@ mcong refl H.refl H.refl H.refl = refl
 -- to monotone functions over stores in these worlds.
 -- (this is a monotone-predicate transfomer)
 M : ∀ {ℓ} → MP ℓ → MP ℓ
-M P = mp (λ Σ → ∀ Σ₁ → Σ ⊑ Σ₁ → Store Σ₁ → ∃ λ Σ₂ → Σ₂ ⊒ Σ₁ × Store Σ₂ × P · Σ₂)
+M P = mp (λ Σ → ∀ Σ₁ → (ext : Σ ⊑ Σ₁) → (μ : Store Σ₁) → ∃ λ Σ₂ → Σ₂ ⊒ Σ₁ × Store Σ₂ × P · Σ₂)
   record {
     monotone = λ w₀ f Σ w₁ μ → f Σ (⊑-trans w₀ w₁) μ ;
     monotone-refl = λ f → meq (λ Σ₁ _ μ → cong (λ u → f Σ₁ u μ) ⊑-trans-refl) ;
@@ -110,8 +110,7 @@ module Coherence where
 
   -- from these facts we can prove the monad laws
   left-id : ∀ {p}{P : MP p} → μ P ∘ fmap (η P) ⇒≡ id (M P)
-  left-id {P = P} p = meq λ Σ₁ ext μ₁ →
-      mcong {P = P} refl (lem refl) H.refl (H.≡-to-≅ (MP.monotone-refl P _))
+  left-id {P = P} p = meq λ Σ₁ ext μ₁ → mcong {P = P} refl (lem refl) H.refl (H.≡-to-≅ (MP.monotone-refl P _))
     where
       lem : ∀ {Σ Σ' Σ'' : World}{xs : Σ'' ⊒ Σ'}{ys : Σ'' ⊒ Σ} → Σ ≡ Σ' →  ⊑-trans xs ⊑-refl H.≅ ys
       lem {xs = xs}{ys} refl with ⊑-unique xs ys
@@ -129,8 +128,8 @@ module Coherence where
   assoc {P = P} p = meq λ Σ₁ ext μ → mcong {P = P} refl (H.≡-to-≅ ⊑-trans-assoc) H.refl H.refl
 
 -- tensorial strength
-ts : ∀ {p q}{P : MP p}{Q : MP q} → P ⊗ M Q ⇒ M (P ⊗ Q)
-ts {P = P}{Q} = mk⇒
+ts : ∀ {p q}(P : MP p)(Q : MP q) → P ⊗ M Q ⇒ M (P ⊗ Q)
+ts P Q = mk⇒
   (λ x Σ₁ ext μ →
     case (proj₂ x) Σ₁ ext μ of λ{
       (_ , ext₁ , μ₁ , v ) → _ , ext₁ , μ₁ , (MP.monotone P (⊑-trans ext ext₁) (proj₁ x)) , v
@@ -151,3 +150,6 @@ ts {P = P}{Q} = mk⇒
         ∎))
         H.refl
     ))
+
+ts' : ∀ {p q}(P : MP p)(Q : MP q) → M P ⊗ Q ⇒ M (P ⊗ Q)
+ts' P Q = fmap (swap Q P) ∘ ts Q P ∘ swap (M P) Q

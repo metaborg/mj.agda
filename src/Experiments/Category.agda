@@ -6,7 +6,7 @@ open import Level
 open Preorder APO
 open import Function as Fun using (flip)
 open import Relation.Unary using (Pred)
-open import Data.Product
+open import Data.Product as Prod using (_,_; _×_)
 import Relation.Binary.PropositionalEquality as PEq
 open PEq.≡-Reasoning
 open import Function.Inverse using (Inverse)
@@ -67,6 +67,10 @@ record _⇒_ {p q}(P : MP p)(Q : MP q) : Set (p ⊔ q ⊔ ℓ₁ ⊔ ℓ₃) whe
                     apply {c'} (MP.monotone P c~c' p) PEq.≡ MP.monotone Q c~c' (apply p)
 
 open _⇒_ public
+
+-- ⊤ is a terminal object in our category
+terminal : ∀ {ℓ}{P : MP ℓ} → P ⇒ ⊤
+terminal = mk⇒ (λ x → Unit.tt) λ c~c' → λ {p} → PEq.refl
 
 infixl 100 _∘_
 _∘_ : ∀ {ℓ₁ ℓ₂ ℓ₃}{P : MP ℓ₁}{Q : MP ℓ₂}{R : MP ℓ₃} → Q ⇒ R → P ⇒ Q → P ⇒ R
@@ -133,6 +137,9 @@ module Product where
 
   π₂ : ∀ {ℓ₁ ℓ₂}{P : MP ℓ₁}{Q : MP ℓ₂} → P ⊗ Q ⇒ Q
   π₂ = mk⇒ (λ{ (pc , qc) → qc}) (λ c~c' → PEq.refl)
+
+  swap : ∀ {ℓ₁ ℓ₂}(P : MP ℓ₁)(Q : MP ℓ₂) → P ⊗ Q ⇒ Q ⊗ P
+  swap _ _ = mk⇒ Prod.swap λ c~c' → PEq.refl
 
   module ⊗-Properties where
     π₁-comm : ∀ {y p q}{Y : MP y}{P : MP p}{Q : MP q}{F : Y ⇒ P}{G : Y ⇒ Q} →
