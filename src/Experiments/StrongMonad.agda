@@ -24,6 +24,7 @@ Store : World → Set
 Store Σ = All (λ a → Val a · Σ) Σ
 
 import Relation.Binary.HeterogeneousEquality as H
+module HR = H.≅-Reasoning
 
 -- functional extensionality for the type of predicates that our monad builds
 meq : ∀ {Σ' b}{B : World → Set b}{f g : (Σ : World) → Σ' ⊑ Σ → Store Σ → B Σ} →
@@ -127,17 +128,26 @@ module Coherence where
   assoc : ∀ {p}{P : MP p} → μ P ∘ (fmap (μ P)) ⇒≡ μ P ∘ μ (M P)
   assoc {P = P} p = meq λ Σ₁ ext μ → mcong {P = P} refl (H.≡-to-≅ ⊑-trans-assoc) H.refl H.refl
 
-{-
 -- tensorial strength
 ts : ∀ {p q}{P : MP p}{Q : MP q} → P ⊗ M Q ⇒ M (P ⊗ Q)
-ts {P = P} = mk⇒
+ts {P = P}{Q} = mk⇒
   (λ x Σ₁ ext μ →
-    case x of λ{
-      (px , m) →
-        case m _ ext μ of λ{
-          (_ , ext₁ , μ₁ , v ) → _ , ext₁ , μ₁ , (MP.monotone P (⊑-trans ext ext₁) px) , v
-        }
+    case (proj₂ x) Σ₁ ext μ of λ{
+      (_ , ext₁ , μ₁ , v ) → _ , ext₁ , μ₁ , (MP.monotone P (⊑-trans ext ext₁) (proj₁ x)) , v
     }
   )
-  {!!}
--}
+  (λ c~c' →
+    meq λ Σ₁ ext μ₁ →
+    mcong {P = (P ⊗ Q)} refl H.refl H.refl (
+      H.cong₂ {A = P · _}{B = λ _ → Q · _} (λ u v → u , v)
+        (H.≡-to-≅ (begin
+          MP.monotone P (⊑-trans ext _) _
+            ≡⟨ (MP.monotone-trans P _ _ _) ⟩
+          MP.monotone P _ (MP.monotone P ext (MP.monotone P c~c' _))
+            ≡⟨ cong (λ x → MP.monotone P _ x) (sym ((MP.monotone-trans P _ _ _))) ⟩
+          MP.monotone P _ (MP.monotone P (⊑-trans c~c' ext) _)
+            ≡⟨ sym ((MP.monotone-trans P _ _ _)) ⟩
+          MP.monotone P (⊑-trans (⊑-trans c~c' ext) _) _
+        ∎))
+        H.refl
+    ))
