@@ -31,7 +31,7 @@ Val : Ty → MP₀
 Val t = mp (Val' t) (record {
     monotone = λ{ c~c' unit → unit ; c~c' (ref x) → ref (∈-⊒ x c~c') };
     monotone-refl = λ{ unit → refl ; (ref x) → cong ref ∈-⊒-refl };
-    monotone-trans = {!!}
+    monotone-trans = λ p c~c' c'~c'' → {!!}
   })
   module Values where
     data Val' : Ty → List Ty → Set where
@@ -79,3 +79,4 @@ eval (e₁ ≔ e₂) =
   ∘ fmap (ts' (Val _)(Val _))
   ∘ ts (M (Val _))(Val _)
   ∘ ⟨ eval e₁ , eval e₂ ⟩
+

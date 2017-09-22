@@ -41,19 +41,15 @@ P ≗ Q = ∀ {c} → P · c PEq.≡ Q · c
 
 import Data.Unit as Unit
 
-const : ∀ {ℓ}(P : Set ℓ) → MP ℓ
-const P = mp (λ _ → P) (record {
+Const : ∀ {ℓ}(P : Set ℓ) → MP ℓ
+Const P = mp (λ _ → P) (record {
     monotone = λ x p → p ;
     monotone-refl = λ p → PEq.refl ;
     monotone-trans = λ p c~c' c'~c'' → PEq.refl
   })
 
 ⊤ : MP zero
-⊤ = mp (λ _ → Unit.⊤) (record {
-    monotone = λ {c} {c'} _ _ → Unit.tt ;
-    monotone-refl = λ _ → PEq.refl ;
-    monotone-trans = λ _ _ _ → PEq.refl
-  })
+⊤ = Const Unit.⊤
 
 -- we package the Agda function that represents morphisms
 -- in this category in a record such that P ⇒ Q doesn't get
@@ -68,9 +64,8 @@ record _⇒_ {p q}(P : MP p)(Q : MP q) : Set (p ⊔ q ⊔ ℓ₁ ⊔ ℓ₃) whe
 
 open _⇒_ public
 
--- ⊤ is a terminal object in our category
-terminal : ∀ {ℓ}{P : MP ℓ} → P ⇒ ⊤
-terminal = mk⇒ (λ x → Unit.tt) λ c~c' → λ {p} → PEq.refl
+terminal : ∀ {ℓ a}{A : Set a}{P : MP ℓ} → A → P ⇒ Const A
+terminal x = mk⇒ (λ _ → x) λ c~c' → λ {p} → PEq.refl
 
 infixl 100 _∘_
 _∘_ : ∀ {ℓ₁ ℓ₂ ℓ₃}{P : MP ℓ₁}{Q : MP ℓ₂}{R : MP ℓ₃} → Q ⇒ R → P ⇒ Q → P ⇒ R
@@ -181,7 +176,7 @@ module Monoid where
   -- left unitor
   ⊗-left-id : ∀ {p}{P : MP p} → ⊤ ⊗ P ≅ P
   ⊗-left-id = record {
-    to = π₂ ;
+    to = π₂ {P = ⊤} ;
     from = ⟨ mk⇒ (λ x → Unit.tt) (λ c~c' → PEq.refl) , id _ ⟩ ;
     left-inv = λ p → PEq.refl ;
     right-inv = λ p → PEq.refl }
@@ -189,7 +184,7 @@ module Monoid where
   -- right unitor
   ⊗-right-id : ∀ {p}{P : MP p} → P ⊗ ⊤ ≅ P
   ⊗-right-id = record {
-    to = π₁ ;
+    to = π₁ {Q = ⊤} ;
     from = ⟨ mk⇒ (λ {c} z → z) (λ c~c' → PEq.refl) , mk⇒ (λ {c} _ → Unit.tt) (λ c~c' → PEq.refl) ⟩ ;
     left-inv = λ p → PEq.refl ;
     right-inv = λ p → PEq.refl }

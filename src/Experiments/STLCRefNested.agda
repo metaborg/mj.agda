@@ -104,14 +104,14 @@ envlookup = {!!}
 {-# NON_TERMINATING #-}
 eval : ∀ {Γ a} → Expr Γ a → Env Γ ⇒ M (Val a)
 eval (var x) = η (Val _) ∘ envlookup x
-eval (ƛ e) = η (Val _) ∘ mkclos ∘ ⟨ {!!} , id (Env _) ⟩
+eval (ƛ e) = η (Val _) ∘ mkclos ∘ ⟨ terminal e , id (Env _) ⟩
 eval (app f e) =
   {!!}
   ∘ μ (Val _ ⊗ Val _)
   ∘ fmap (ts (Val _) (Val _))
   ∘ ts' (Val _) (M (Val _))
   ∘ ⟨ eval f , eval e ⟩
-eval unit = η (Val _) ∘ mkunit ∘ terminal
+eval unit = η (Val _) ∘ mkunit ∘ terminal Unit.tt
 eval (ref e) = μ (Val _) ∘ fmap alloc ∘ eval e
 eval (! e) = μ (Val _) ∘ fmap load ∘ eval e
 eval (e₁ ≔ e₂) =
