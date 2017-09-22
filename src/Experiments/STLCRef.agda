@@ -106,9 +106,9 @@ M' Γ P = mp (λ Σ → ∀ Σ₁ → Σ ⊑ Σ₁ → Env' Γ · Σ₁ → Stor
     monotone-trans = λ f w₀ w₁ → meq' (λ Σ₁ w₂ E μ → cong (λ u → f Σ₁ u E μ) (sym ⊑-trans-assoc))
   }
 
-One : MP₀
-One = mp (λ _ → Unit.⊤) ((record {
-    monotone = λ _ _ → tt ;
+Const : ∀ (T : Set) → MP₀
+Const T = mp (λ _ → T) ((record {
+    monotone = λ x x₁ → x₁ ;
     monotone-refl = λ _ → refl ;
     monotone-trans = λ _ _ _ → refl
   }))
@@ -154,25 +154,107 @@ fmap' F = mk⇒
   }))
   (λ c~c' → refl)
 
-
-
 bind' : ∀ {p q}{P : MP p}{Q : MP q}{Γ} → (P ⇒ M' Γ Q) → M' Γ P ⇒ M' Γ Q
 bind' {Q = Q} F = μ' Q ∘ fmap' F
 
-timeout  : ∀ {p : MP₀}{Γ} → M' Γ One ⇒ M' Γ p
+-- mbind : ∀ {p q}{P : MP p}{Q : MP q}{Γ Σ} →
+--         M' Γ P · Σ →
+--         (∀ {Σ'} → P · Σ' → M' Γ Q · Σ') → M' Γ Q · Σ
+-- mbind f g Σ ext E μ =
+--   case (f Σ ext E μ) of (λ{
+--     nothing → nothing
+--   ; (just (Σ₁ , ext₁ , μ₁ , v)) →
+--     bind' 
+--     case g v Σ₁ ⊑-refl (weaken-env ext₁ E) μ₁ of (λ{
+--       nothing → nothing
+--     ; (just (Σ₂ , ext₂ , μ₂ , v')) →
+--       just (Σ₂ , ⊑-trans ext₁ ext₂ , μ₂ , v')
+--     })
+--   })
+
+mbind : ∀ {p q}{P : MP p}{Q : MP q}{Γ Σ} →
+        M' Γ P · Σ → (P ⇒ M' Γ Q) → M' Γ Q · Σ
+mbind {_} {_} {P} {Q} f g =
+  apply (bind' {_} {_} {P} {Q} g) f
+
+return : ∀ {p}{P : MP p}{Γ Σ} → P · Σ → M' Γ P · Σ
+return {_} {P} p = apply (η' P) p
+
+timeout  : ∀ {P Q : MP₀}{Γ} → P ⇒ M' Γ Q
 timeout = mk⇒ (λ _ _ _ _ _ → nothing) (λ _ → refl)
 
--- -- getEnv  :  ∀ {Γ Σ} → M' Γ (Env' Γ) · Σ
--- -- getEnv {Γ} _ _ E = apply (η' (Env' Γ)) E _ ⊑-refl E
+getEnv  :  ∀ {Γ Σ} → M' Γ (Env' Γ) · Σ
+getEnv {Γ} Σ ext E μ = (return {_} {Env' Γ} E) Σ ⊑-refl E μ
 
--- getEnv  :  ∀ {Γ} → One ⇒ M' Γ (Env' Γ)
--- getEnv = mk⇒ (λ x Σ₁ ext E μ → just ( Σ₁ , ⊑-refl , μ , E )) (λ _ → refl)
+setEnv : ∀ {P : MP₀}{Γ Γ' Σ} → Env' Γ' · Σ → M' Γ' P · Σ → M' Γ P · Σ
+setEnv E f Σ ext _ = f Σ ext (weaken-env ext E)
 
--- -- setEnv   :    ∀ {Σ Γ Γ'}{p : List Ty → Set} → Env Γ Σ → M Γ p Σ → M Γ' p Σ
+open Product
 
-eval : ℕ → ∀ {Γ t} → Expr Γ t → M' Γ One ⇒ M' Γ (Val' t)
-eval zero    _       = timeout {Val' _}
-eval (suc k) unit    = {!!} -- bind' {_} {_} { (mk⇒ (λ x → apply (η' (Val' unit)) unit) (λ c~c' → refl))
--- -- eval (suc k) (var x) = -- apply {!!} {!!}
-eval _ _ = {!!}
+strength : ∀ {Γ}{Q P : MP₀} → Q ⊗ M' Γ P ⇒ M' Γ (Q ⊗ P)
+strength {_} {Q} =
+  mk⇒ (λ p Σ ext E μ →
+         case p of λ{
+           (x , y) →
+             case y Σ ext E μ of Maybe.map (λ{
+               (Σ₁ , ext₁ , μ₁ , v) →
+                 (Σ₁ , ext₁ , μ₁ , (MP.monotone Q (⊑-trans ext ext₁) x , v))
+             })})
+      (λ c~c' → {!!})
 
+
+-- eval : ℕ → ∀ {Γ t} → Const (Expr Γ t) ⇒ M' Γ (Val' t)
+-- eval zero    = timeout {_} {Val' _}
+-- eval (suc k) =
+--   mk⇒ (λ{ unit →
+--           return {_} {Val' unit} unit
+--         ; (var x) →
+--           (mbind {_} {_} {Env' _} {Val' _}
+--                  getEnv
+--                  (mk⇒
+--                    (λ E →
+--                       return {_} {Val' _} (lookup E x))
+--                    (λ c~c' → {- ugh -} {!!})))
+--         ; (app {a} {b} e1 e2) →
+--           (mbind {_} {_} {Val' (arrow a b)} {Val' b}
+--                  (apply (eval k) e1)
+--                  (mk⇒ (λ{ (⟨_,_⟩ {_} {Γ} e E) →
+--                           (mbind {_} {_} {Env' Γ ⊗ Val' a} {Val' b}
+--                                  (apply (strength {_} {Env' Γ} {Val' a}) (E , apply (eval k) e2))
+--                                  (mk⇒
+--                                    (λ{ (E' , v) →
+--                                        setEnv {Val' b} (v ∷ E')
+--                                               (apply (eval k) e) })
+--                                    (λ c~c' → {!!})))
+--                                   })
+--                       λ c~c' → {!!} ))
+                
+--         ; _ → {!!} })
+--       (λ c~c' → {!!})
+
+
+eval : ℕ → ∀ {Γ t} → Const (Expr Γ t) ⇒ M' Γ (Val' t)
+eval zero    = timeout {_} {Val' _}
+eval (suc k) =
+  mk⇒ (λ{ unit →
+          apply (η' (Val' unit)) unit
+        ; (var x) →
+          apply (bind' {_} {_} {Env' _} {Val' _}
+                       (mk⇒ (λ E →
+                               apply (η' (Val' _)) (lookup E x))
+                            (λ c~c' → {- ugh -} {!!})))
+                getEnv
+        ; (app {a} {b} e1 e2) →
+          apply (bind' {_} {_} {Val' (arrow a b)} {Val' b}
+                       (mk⇒ (λ{ (⟨_,_⟩ {_} {Γ} e E) →
+                                apply (bind' {_} {_} {Env' Γ ⊗ Val' a} {Val' b}
+                                             (mk⇒
+                                               (λ{ (E' , v) →
+                                                   setEnv {Val' b} (v ∷ E')
+                                                          (apply (eval k) e) })
+                                               (λ c~c' → {!!})))
+                                      (apply (strength {_} {Env' Γ} {Val' a}) (E , apply (eval k) e2)) })
+                            λ c~c' → {!!} ))
+                (apply (eval k) e1)
+        ; _ → {!!} })
+      (λ c~c' → {!!})
