@@ -33,7 +33,7 @@ lib/agda/std-lib: lib/agda
 ### cleaning
 .PHONY: clean clean-all
 clean:
-	find . -iname 'src/*.agdai' -exec rm {} \;
+	cd src && find . -iname '*.agdai' -exec rm {} \;
 
 clean-all: clean
 	rm -rf lib
