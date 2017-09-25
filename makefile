@@ -13,7 +13,11 @@ all: lib src/Readme.agdai
 doc: lib doc/Readme.html
 
 ### libraries
-lib: lib/agda/std-lib lib/stdlib++.agda
+lib: lib/agda/std-lib lib/stdlib++.agda lib-update
+
+.PHONY: lib-update
+lib-update:
+	cd $(STDPP) && git pull
 
 lib/stdlib++.agda:
 	git clone -b 2.6 https://github.com/ElessarWebb/stdlib-plusplus.agda.git $(STDPP)
@@ -27,6 +31,7 @@ lib/agda/std-lib: lib/agda
 	cd $(AGDALIB) && make fast-forward-std-lib
 
 ### cleaning
+.PHONY: clean clean-all
 clean:
 	find . -iname 'src/*.agdai' -exec rm {} \;
 
