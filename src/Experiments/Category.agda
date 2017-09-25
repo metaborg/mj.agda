@@ -57,6 +57,7 @@ Const P = mp (λ _ → P) (record {
 infixl 30 _⇒_
 record _⇒_ {p q}(P : MP p)(Q : MP q) : Set (p ⊔ q ⊔ ℓ₁ ⊔ ℓ₃) where
   constructor mk⇒
+
   field
     apply         : ∀ {c} → P · c → Q · c
     monotone-comm : ∀ {c c'}(c~c' : c ∼ c'){p : P · c} →
@@ -108,6 +109,7 @@ module Properties where
   ∘-right-id p = PEq.refl
 
 module Product where
+  -- within the category
 
   infixl 40 _⊗_
   _⊗_ : ∀ {ℓ₁ ℓ₂} → MP ℓ₁ → MP ℓ₂ → MP (ℓ₁ ⊔ ℓ₂)
@@ -136,6 +138,16 @@ module Product where
   swap : ∀ {ℓ₁ ℓ₂}(P : MP ℓ₁)(Q : MP ℓ₂) → P ⊗ Q ⇒ Q ⊗ P
   swap _ _ = mk⇒ Prod.swap λ c~c' → PEq.refl
 
+  fmap : ∀ {ℓ₁ ℓ₂ ℓ₃ ℓ₄}{P : MP ℓ₁}{Q : MP ℓ₂}{R : MP ℓ₃}{S : MP ℓ₄} →
+         (F : P ⇒ R)(G : Q ⇒ S) → P ⊗ Q ⇒ R ⊗ S
+  fmap F G = ⟨ F ∘ π₁ , G ∘ π₂ ⟩
+
+  curry-fun : ∀ {ℓ₁ ℓ₂ ℓ₃}{A : Set ℓ₁}{P : MP ℓ₂}{Q : MP ℓ₃} →
+              (A → P ⇒ Q) → (Const A ⊗ P ⇒ Q)
+  curry-fun {A = A}{P}{Q} f = mk⇒
+    (λ{ (a , p) → apply (f a) p })
+    (λ{ c~c' {a , p} → monotone-comm (f a) c~c' })
+
   module ⊗-Properties where
     π₁-comm : ∀ {y p q}{Y : MP y}{P : MP p}{Q : MP q}{F : Y ⇒ P}{G : Y ⇒ Q} →
             π₁ ∘ ⟨ F , G ⟩ ⇒≡ F
@@ -159,6 +171,12 @@ module Exists where
       monotone-trans = (λ {
         (i , px) p q → PEq.cong (λ u → i , u) (MP.monotone-trans (P i) px p q)})
     })
+
+  elim : ∀ {ℓ₁ ℓ₂ ℓ₃}{I : Set ℓ₁}{P : I → MP ℓ₂}{Q : MP ℓ₃} →
+         (∀ {i} → P i ⇒ Q) → Exists P ⇒ Q
+  elim {P = P}{Q} F = mk⇒
+    (λ{ (i , pi) → apply F pi})
+    (λ{ c~c' {(i , pi)} → monotone-comm F c~c' })
 
 module Monoid where
   -- identifies _⊗_ as a tensor/monoidal product
@@ -190,6 +208,18 @@ module Monoid where
     right-inv = λ p → PEq.refl }
 
   -- TODO: coherence conditions
+
+module Exponents where
+
+  open Product
+
+  record _^_ {o}(Z : MP o)(Y : MP o) : Set (suc o ⊔ ℓ₃ ⊔ ℓ₁) where
+    constructor mk^
+    field
+      Zʸ   : MP o
+
+      λg  : ∀ (X : MP o)(G : (X ⊗ Y) ⇒ Z) → X ⇒ Zʸ
+      apply : Zʸ ⊗ Y ⇒ Z
 
 {-}
 -- it's easy to lift predicates to monotone predicates using a product
