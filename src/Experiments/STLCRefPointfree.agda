@@ -126,35 +126,34 @@ envcons = mk⇒ (uncurry _∷_) λ c~c' → refl
 -- STLCRef interpreter; pointfree style
 ------------------------------------------------------------------------
 
-mutual
-  {-# NON_TERMINATING #-}
-  eval : ∀ {Γ a} → Expr Γ a → Env Γ ⇒ M (Val a)
-  eval (var x) = η (Val _) ∘ envlookup x
-  eval (ƛ e) = η (Val _) ∘ mkclos ∘ ⟨ terminal e , id (Env _) ⟩
-  eval (app f e) =
-    μ (Val _)
-    ∘ fmap (
-        elim (
-          uncurry₁ eval
-          ∘ (Product.fmap (id (Const _)) (envcons ∘ Product.swap (Env _)(Val _)))
-          ∘ Product.comm (Const _)(Env _)(Val _)
-        )
-        ∘ ∃-⊗-comm (λ Γ → Const _ ⊗ Env Γ)(Val _)
-        ∘ Product.fmap destructfun (id (Val _))
+{-# NON_TERMINATING #-}
+eval : ∀ {Γ a} → Expr Γ a → Env Γ ⇒ M (Val a)
+eval (var x) = η (Val _) ∘ envlookup x
+eval (ƛ e) = η (Val _) ∘ mkclos ∘ ⟨ terminal e , id (Env _) ⟩
+eval (app f e) =
+  μ (Val _)
+  ∘ fmap (
+      elim (
+        uncurry₁ eval
+        ∘ (Product.fmap (id (Const _)) (envcons ∘ Product.swap (Env _)(Val _)))
+        ∘ Product.comm (Const _)(Env _)(Val _)
       )
-    ∘ μ (Val _ ⊗ Val _)
-    ∘ fmap (ts (Val _) (Val _))
-    ∘ ts' (Val _) (M (Val _))
-    ∘ ⟨ eval f , eval e ⟩
-  eval unit = η (Val _) ∘ mkunit ∘ terminal Unit.tt
-  eval (ref e) = μ (Val _) ∘ fmap alloc ∘ eval e
-  eval (! e) = μ (Val _) ∘ fmap load ∘ eval e
-  eval (e₁ ≔ e₂) =
-      fmap mkunit
-    ∘ μ ⊤
-    ∘ fmap store
-    ∘ μ ((Val _) ⊗ (Val _))
-    ∘ fmap (ts' (Val _)(Val _))
-    ∘ ts (M (Val _))(Val _)
-    ∘ ⟨ eval e₁ , eval e₂ ⟩
+      ∘ ∃-⊗-comm (λ Γ → Const _ ⊗ Env Γ)(Val _)
+      ∘ Product.fmap destructfun (id (Val _))
+    )
+  ∘ μ (Val _ ⊗ Val _)
+  ∘ fmap (ts (Val _) (Val _))
+  ∘ ts' (Val _) (M (Val _))
+  ∘ ⟨ eval f , eval e ⟩
+eval unit = η (Val _) ∘ mkunit ∘ terminal Unit.tt
+eval (ref e) = μ (Val _) ∘ fmap alloc ∘ eval e
+eval (! e) = μ (Val _) ∘ fmap load ∘ eval e
+eval (e₁ ≔ e₂) =
+    fmap mkunit
+  ∘ μ ⊤
+  ∘ fmap store
+  ∘ μ ((Val _) ⊗ (Val _))
+  ∘ fmap (ts' (Val _)(Val _))
+  ∘ ts (M (Val _))(Val _)
+  ∘ ⟨ eval e₁ , eval e₂ ⟩
 
