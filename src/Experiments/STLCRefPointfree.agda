@@ -1,6 +1,6 @@
 open import Relation.Binary.PropositionalEquality
 
-module Experiments.STLCRefNested (funext : ∀ {a b} → Extensionality a b) where
+module Experiments.STLCRefPointfree (funext : ∀ {a b} → Extensionality a b) where
 
 open import Level
 open import Data.Nat
