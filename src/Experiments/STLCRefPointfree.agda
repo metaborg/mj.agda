@@ -13,6 +13,9 @@ open import Function as Fun using (case_of_)
 import Relation.Binary.PropositionalEquality as PEq
 open PEq.≡-Reasoning
 
+-- STLCRef typed syntax
+------------------------------------------------------------------------
+
 data Ty : Set where
   unit : Ty
   _⟶_ : (a b : Ty) → Ty
@@ -69,14 +72,23 @@ module Values where
 open Values
 open import Experiments.StrongMonad Ty Val funext
 
+-- Val constructors
+------------------------------------------------------------------------
+
 mkclos : ∀ {Γ a b} → Const (Expr (a ∷ Γ) b) ⊗ Env Γ ⇒ Val (a ⟶ b)
 mkclos = mk⇒ (λ{ (e , E) → clos e E}) λ c~c' → refl
 
 mkunit : ⊤ ⇒ Val unit
 mkunit = mk⇒ (λ _ → Values.unit) λ c~c' → refl
 
+-- destructors
+------------------------------------------------------------------------
+
 destructfun : ∀ {a b} → Val (a ⟶ b) ⇒ (Exists (λ Γ → Const (Expr (a ∷ Γ) b) ⊗ Env Γ))
 destructfun = mk⇒ (λ{ (clos x E) → _ , x , E}) λ c~c' → {!!}
+
+-- state manipulation
+------------------------------------------------------------------------
 
 alloc : ∀ {a} → Val a ⇒ M (Val (ref a))
 alloc {a} = mk⇒
@@ -102,11 +114,17 @@ store = mk⇒
   })
   (λ c~c' → {!!})
 
+-- environment manipulation
+------------------------------------------------------------------------
+
 envlookup : ∀ {a Γ} → a ∈ Γ → Env Γ ⇒ Val a
 envlookup x = mk⇒ (λ E → lookup E x) λ c~c' → {!!}
 
 envcons : ∀ {a Γ} → Val a ⊗ Env Γ ⇒ Env (a ∷ Γ)
 envcons = mk⇒ (uncurry _∷_) λ c~c' → refl
+
+-- STLCRef interpreter; pointfree style
+------------------------------------------------------------------------
 
 mutual
   {-# NON_TERMINATING #-}
