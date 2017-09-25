@@ -138,13 +138,18 @@ module Product where
   swap : ∀ {ℓ₁ ℓ₂}(P : MP ℓ₁)(Q : MP ℓ₂) → P ⊗ Q ⇒ Q ⊗ P
   swap _ _ = mk⇒ Prod.swap λ c~c' → PEq.refl
 
+  comm : ∀ {ℓ₁ ℓ₂ ℓ₃}(P : MP ℓ₁)(Q : MP ℓ₂)(R : MP ℓ₃) → (P ⊗ Q) ⊗ R ⇒ P ⊗ (Q ⊗ R)
+  comm _ _ _ = mk⇒
+    (λ{ ((p , q) , r) → p , (q , r) })
+    (λ c~c' → PEq.refl)
+
   fmap : ∀ {ℓ₁ ℓ₂ ℓ₃ ℓ₄}{P : MP ℓ₁}{Q : MP ℓ₂}{R : MP ℓ₃}{S : MP ℓ₄} →
          (F : P ⇒ R)(G : Q ⇒ S) → P ⊗ Q ⇒ R ⊗ S
   fmap F G = ⟨ F ∘ π₁ , G ∘ π₂ ⟩
 
-  curry-fun : ∀ {ℓ₁ ℓ₂ ℓ₃}{A : Set ℓ₁}{P : MP ℓ₂}{Q : MP ℓ₃} →
-              (A → P ⇒ Q) → (Const A ⊗ P ⇒ Q)
-  curry-fun {A = A}{P}{Q} f = mk⇒
+  uncurry₁ : ∀ {ℓ₁ ℓ₂ ℓ₃}{A : Set ℓ₁}{P : MP ℓ₂}{Q : MP ℓ₃} →
+             (A → P ⇒ Q) → (Const A ⊗ P ⇒ Q)
+  uncurry₁ {A = A}{P}{Q} f = mk⇒
     (λ{ (a , p) → apply (f a) p })
     (λ{ c~c' {a , p} → monotone-comm (f a) c~c' })
 
@@ -161,6 +166,7 @@ module Product where
     unique _ = PEq.refl
 
 module Exists where
+  open Product
 
   -- simple existential quantification for indexed monotone predicates
   Exists : ∀ {ℓ₁ ℓ₂}{I : Set ℓ₁}(P : I → MP ℓ₂) → MP _
@@ -177,6 +183,12 @@ module Exists where
   elim {P = P}{Q} F = mk⇒
     (λ{ (i , pi) → apply F pi})
     (λ{ c~c' {(i , pi)} → monotone-comm F c~c' })
+
+  ∃-⊗-comm : ∀ {ℓ₁ ℓ₂ ℓ₃}{I : Set ℓ₁}(P : I → MP ℓ₂)(Q : MP ℓ₃) →
+             Exists (λ i → P i) ⊗ Q ⇒ Exists (λ i → P i ⊗ Q)
+  ∃-⊗-comm _ _ = mk⇒
+    (λ{ ((i , pi) , q) → (i , pi , q)})
+    (λ c~c' → PEq.refl)
 
 module Monoid where
   -- identifies _⊗_ as a tensor/monoidal product

@@ -19,7 +19,7 @@ data Ty : Set where
   ref  : Ty → Ty
 
 open import Experiments.Category (⊑-preorder {A = Ty})
-open Product
+open Product hiding (fmap)
 open Exists
 
 Ctx     = List Ty
@@ -44,21 +44,25 @@ module Values where
       clos   : ∀ {Σ Γ a b} → Expr (a ∷ Γ) b → Env' Γ Σ → Val' (a ⟶ b) Σ
       ref    : ∀ {Σ t} → t ∈ Σ → Val' (ref t) Σ
 
-  weaken-all : ∀ {i}{A : Set i}{j}{B : Set j}{xs : List B}
-                {k}{C : B → List A → Set k}( wₐ : ∀ {x} {bs cs} → bs ⊑ cs → C x bs → C x cs) →
-                ∀ {bs cs} → bs ⊑ cs → All (λ x → C x bs) xs → All (λ x → C x cs) xs
-  weaken-all wₐ ext x = map-all (λ y → wₐ ext y) x
-
   mutual
+    val-mono : ∀ {a Σ Σ'} → Σ ⊑ Σ' → Val' a Σ → Val' a Σ'
+    val-mono ext unit = unit
+    val-mono ext (clos e E) = clos e (env-mono ext E)
+    val-mono ext (ref x) = ref (∈-⊒ x ext)
+
+    env-mono : ∀ {Γ Σ Σ'} → Σ ⊑ Σ' → Env' Γ Σ → Env' Γ Σ'
+    env-mono ext [] = []
+    env-mono ext (px ∷ E) = (val-mono ext px) ∷ (env-mono ext E)
+
     Env : Ctx → MP _
     Env Γ = mp (Env' Γ) (record {
-      monotone = {!!} ;
-      monotone-refl = {!!} ;
-      monotone-trans = {!!} })
+      monotone = env-mono ;
+      monotone-refl = λ p → {!!} ;
+      monotone-trans = λ p c~c' c'~c'' → {!!} })
 
     Val : Ty → MP _
     Val a = mp (Val' a) (record {
-      monotone = {!!} ;
+      monotone = val-mono ;
       monotone-refl = {!!} ;
       monotone-trans = {!!} })
 
@@ -66,10 +70,10 @@ open Values
 open import Experiments.StrongMonad Ty Val funext
 
 mkclos : ∀ {Γ a b} → Const (Expr (a ∷ Γ) b) ⊗ Env Γ ⇒ Val (a ⟶ b)
-mkclos = {!!}
+mkclos = mk⇒ (λ{ (e , E) → clos e E}) λ c~c' → refl
 
 mkunit : ⊤ ⇒ Val unit
-mkunit = mk⇒ (λ _ → Values.unit) λ c~c' → {!!}
+mkunit = mk⇒ (λ _ → Values.unit) λ c~c' → refl
 
 destructfun : ∀ {a b} → Val (a ⟶ b) ⇒ (Exists (λ Γ → Const (Expr (a ∷ Γ) b) ⊗ Env Γ))
 destructfun = mk⇒ (λ{ (clos x E) → _ , x , E}) λ c~c' → {!!}
@@ -99,27 +103,40 @@ store = mk⇒
   (λ c~c' → {!!})
 
 envlookup : ∀ {a Γ} → a ∈ Γ → Env Γ ⇒ Val a
-envlookup = {!!}
+envlookup x = mk⇒ (λ E → lookup E x) λ c~c' → {!!}
 
-{-# NON_TERMINATING #-}
-eval : ∀ {Γ a} → Expr Γ a → Env Γ ⇒ M (Val a)
-eval (var x) = η (Val _) ∘ envlookup x
-eval (ƛ e) = η (Val _) ∘ mkclos ∘ ⟨ terminal e , id (Env _) ⟩
-eval (app f e) =
-  {!!}
-  ∘ μ (Val _ ⊗ Val _)
-  ∘ fmap (ts (Val _) (Val _))
-  ∘ ts' (Val _) (M (Val _))
-  ∘ ⟨ eval f , eval e ⟩
-eval unit = η (Val _) ∘ mkunit ∘ terminal Unit.tt
-eval (ref e) = μ (Val _) ∘ fmap alloc ∘ eval e
-eval (! e) = μ (Val _) ∘ fmap load ∘ eval e
-eval (e₁ ≔ e₂) =
-    fmap mkunit
-  ∘ μ ⊤
-  ∘ fmap store
-  ∘ μ ((Val _) ⊗ (Val _))
-  ∘ fmap (ts' (Val _)(Val _))
-  ∘ ts (M (Val _))(Val _)
-  ∘ ⟨ eval e₁ , eval e₂ ⟩
+envcons : ∀ {a Γ} → Val a ⊗ Env Γ ⇒ Env (a ∷ Γ)
+envcons = mk⇒ (uncurry _∷_) λ c~c' → refl
+
+mutual
+  {-# NON_TERMINATING #-}
+  eval : ∀ {Γ a} → Expr Γ a → Env Γ ⇒ M (Val a)
+  eval (var x) = η (Val _) ∘ envlookup x
+  eval (ƛ e) = η (Val _) ∘ mkclos ∘ ⟨ terminal e , id (Env _) ⟩
+  eval (app f e) =
+    μ (Val _)
+    ∘ fmap (
+        elim (
+          uncurry₁ eval
+          ∘ (Product.fmap (id (Const _)) (envcons ∘ Product.swap (Env _)(Val _)))
+          ∘ Product.comm (Const _)(Env _)(Val _)
+        )
+        ∘ ∃-⊗-comm (λ Γ → Const _ ⊗ Env Γ)(Val _)
+        ∘ Product.fmap destructfun (id (Val _))
+      )
+    ∘ μ (Val _ ⊗ Val _)
+    ∘ fmap (ts (Val _) (Val _))
+    ∘ ts' (Val _) (M (Val _))
+    ∘ ⟨ eval f , eval e ⟩
+  eval unit = η (Val _) ∘ mkunit ∘ terminal Unit.tt
+  eval (ref e) = μ (Val _) ∘ fmap alloc ∘ eval e
+  eval (! e) = μ (Val _) ∘ fmap load ∘ eval e
+  eval (e₁ ≔ e₂) =
+      fmap mkunit
+    ∘ μ ⊤
+    ∘ fmap store
+    ∘ μ ((Val _) ⊗ (Val _))
+    ∘ fmap (ts' (Val _)(Val _))
+    ∘ ts (M (Val _))(Val _)
+    ∘ ⟨ eval e₁ , eval e₂ ⟩
 

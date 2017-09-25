@@ -16,7 +16,7 @@ module Experiments.StrongMonad
   (funext : ∀ {a b} → Extensionality a b) where
 
 open Cat (⊑-preorder {A = Type})
-open Product -- products in the category of monotone predicates
+open Product hiding (fmap)-- products in the category of monotone predicates
 
 World = List Type
 
@@ -152,4 +152,4 @@ ts P Q = mk⇒
     ))
 
 ts' : ∀ {p q}(P : MP p)(Q : MP q) → M P ⊗ Q ⇒ M (P ⊗ Q)
-ts' P Q = fmap (swap Q P) ∘ ts Q P ∘ swap (M P) Q
+ts' P Q = fmap (swap Q P) ∘ ts Q P ∘ swap _ _
