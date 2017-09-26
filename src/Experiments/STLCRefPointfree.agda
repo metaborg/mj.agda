@@ -126,7 +126,7 @@ envcons = mk⇒ (uncurry _∷_) λ c~c' → refl
 -- STLCRef interpreter; pointfree style
 ------------------------------------------------------------------------
 
-open Exponential funext (sym ⊑-trans-assoc) ⊑-trans-refl ⊑-trans-refl'
+open Exponential (sym ⊑-trans-assoc) ⊑-trans-refl ⊑-trans-refl'
 
 mutual
   interpclos : ∀ {a b} → Val (a ⟶ b) ⇒ M (Val b) ^ (Val a)
