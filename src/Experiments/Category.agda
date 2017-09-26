@@ -1,3 +1,5 @@
+{-# OPTIONS --allow-unsolved-metas #-}
+
 open import Relation.Binary hiding (_⇒_)
 
 module Experiments.Category {ℓ₁ ℓ₂ ℓ₃} (APO : Preorder ℓ₁ ℓ₂ ℓ₃) where
@@ -221,17 +223,151 @@ module Monoid where
 
   -- TODO: coherence conditions
 
-module Exponents where
+module Exponential
+  (funext : ∀ {ℓ₁ ℓ₂} → PEq.Extensionality ℓ₁ ℓ₂)
+  (trans-comm : ∀ {c c' c'' c'''}{p : c ∼ c'}{q : c' ∼ c''}{r : c'' ∼ c'''} → trans (trans p q) r PEq.≡ trans p (trans q r))
+  (trans-refl₁ : ∀ {c c'}{p : c ∼ c'} → trans refl p PEq.≡ p)
+  (trans-refl₂ : ∀ {c c'}{p : c ∼ c'} → trans p refl PEq.≡ p)
+  where
+
+  open import Relation.Binary.PropositionalEquality.Extensionality funext
+
+  private
+    MonFun' : ∀ {ℓ ℓ₂}(Q : MP ℓ)(P : MP ℓ₂)(c : Carrier) → Set _
+    MonFun' Q P c = ∀ c' → c ∼ c' → P · c' → Q · c'
+
+    MonComm : ∀ {ℓ ℓ₂}(Q : MP ℓ)(P : MP ℓ₂)(c : Carrier)(f : MonFun' Q P c) → Set _
+    MonComm Q P c f = ∀ c' → (c~c' : c ∼ c') → (pc : P · c) →
+                      f c' c~c' (MP.monotone P c~c' pc) PEq.≡ MP.monotone Q c~c' (f c refl pc)
+
+  record MonFun {ℓ ℓ₂}(Q : MP ℓ)(P : MP ℓ₂)(c : Carrier) : Set (ℓ ⊔ ℓ₂ ⊔ ℓ₁ ⊔ ℓ₃)where
+    constructor mf
+    field
+      φ     : MonFun' Q P c
+
+    field
+      comm  : MonComm Q P c φ
+
+  private
+    mf-cong : ∀ {c}{ℓ₁ ℓ₂}(Q : MP ℓ₁)(P : MP ℓ₂){f f' : ∀ c' → c ∼ c' → P · c' → Q · c'}
+              {co : MonComm Q P c f}{co' : MonComm Q P c f'} →
+              f PEq.≡ f' → mf {Q = Q}{P = P}{c = c} f co PEq.≡ mf {c = c} f' co'
+    mf-cong Q P {co = co}{co'} PEq.refl
+      with funext³ (λ c' c~c' pc → PEq.proof-irrelevance (co c' c~c' pc) (co' c' c~c' pc))
+    ... | PEq.refl = PEq.refl
+
+  infixl 80 _^_
+  _^_ : ∀ {ℓ₁ ℓ₂}(Q : MP ℓ₁)(P : MP ℓ₂) → MP _
+  Q ^ P = mp
+    (MonFun Q P)
+    (record {
+      monotone = λ{
+        c~c' (mf φ comm) → mf (λ c'' c'~c'' Pc'' → φ c'' (trans c~c' c'~c'') Pc'') {!comm!}
+      };
+      monotone-refl = λ{
+        f@(mf φ _) →
+          mf-cong Q P (funext λ c'' → funext λ c'~c'' → PEq.cong (λ u → φ c'' u) trans-refl₁)
+      };
+      monotone-trans = {!!}
+    }) -- λ p c~c' c'~c'' → funext λ x → funext λ x₁ → PEq.cong (p x) trans-comm })
 
   open Product
 
-  record _^_ {o}(Z : MP o)(Y : MP o) : Set (suc o ⊔ ℓ₃ ⊔ ℓ₁) where
+  curry : ∀ {o}{X Y Z : MP o}(F : (X ⊗ Y) ⇒ Z) → X ⇒ (Z ^ Y)
+  curry {X = X}{Y}{Z} F =
+    mk⇒
+      (λ{ Xc → mf (λ _ c~c' Yc' → apply F (MP.monotone X c~c' Xc , Yc')) (λ _ c~c' pc →
+        (begin (apply F (MP.monotone X c~c' Xc , MP.monotone Y c~c' pc))
+          ≡⟨ monotone-comm F c~c' ⟩
+        MP.monotone Z c~c' (apply F (Xc , pc))
+          ≡⟨ PEq.cong (λ u → MP.monotone Z c~c' (apply F (u , pc))) (PEq.sym (MP.monotone-refl X _)) ⟩
+        MP.monotone Z c~c' (apply F (MP.monotone X refl Xc , pc))
+        ∎)
+      ) })
+      {!!}
+      {-}
+      (λ c~c' {Xc} → funext λ c' → funext λ c~c'' → funext λ Yc' →
+        PEq.cong
+          (λ u → apply F (u , Yc'))
+          (PEq.sym (MP.monotone-trans X Xc c~c' c~c'')))
+      -}
+
+  ε : ∀ {o}{Y Z : MP o} → (Z ^ Y) ⊗ Y ⇒ Z
+  ε {Y = Y}{Z} = mk⇒
+    (λ{ ((mf φ _) , y) → φ _ refl y })
+    (λ{ c~c' {f@(mf φ comm) , y} →
+      (begin
+        (MonFun.φ (MP.monotone (Z ^ Y) c~c' f)) _ refl (MP.monotone Y c~c' y)
+          ≡⟨ PEq.refl ⟩
+        ((λ c~c' f c'' c'~c'' Pc'' → f c'' (trans c~c' c'~c'') Pc'') c~c' φ) _ refl (MP.monotone Y c~c' y)
+          ≡⟨ PEq.refl ⟩
+        (φ _ (trans c~c' refl) (MP.monotone Y c~c' y))
+          ≡⟨ PEq.cong (λ u → φ _ u (MP.monotone Y c~c' y)) trans-refl₂ ⟩
+        (φ _ c~c' (MP.monotone Y c~c' y))
+          ≡⟨ MonFun.comm f _ c~c' y ⟩
+        MP.monotone Z c~c' (φ _ refl y)
+      ∎)
+    })
+
+{-}
+module Exponents
+  (funext : ∀ {ℓ₁ ℓ₂} → PEq.Extensionality ℓ₁ ℓ₂)
+  (trans-comm : ∀ {c c' c'' c'''}{p : c ∼ c'}{q : c' ∼ c''}{r : c'' ∼ c'''} → trans (trans p q) r PEq.≡ trans p (trans q r))
+  (trans-refl : ∀ {c c'}{p : c ∼ c'} → trans refl p PEq.≡ p)
+  where
+
+  open Product
+
+  {-}
+  infixr 100 _^_
+  record _^_ {o ℓ}(Z : MP o)(Y : MP o) : Set (suc ℓ ⊔ suc o ⊔ ℓ₃ ⊔ ℓ₁) where
     constructor mk^
     field
-      Zʸ   : MP o
+      Exp   : MP ℓ
+      curry : ∀ (X : MP o)(G : (X ⊗ Y) ⇒ Z) → X ⇒ Exp
+      apply : Exp ⊗ Y ⇒ Z
 
-      λg  : ∀ (X : MP o)(G : (X ⊗ Y) ⇒ Z) → X ⇒ Zʸ
-      apply : Zʸ ⊗ Y ⇒ Z
+  -- all morphisms in the category give rise to an exponent
+  fun : ∀ {ℓ'}(P Q : MP ℓ') → P ⇒ Q → Q ^ P
+  fun P Q F = mk^
+    ⊤
+    (λ X G → terminal Unit.tt)
+    (F ∘ π₂ {P = ⊤})
+  -}
+
+  _~>_ : ∀ {o}(P Q : MP o) → MP _
+  P ~> Q = mp
+    (λ c → ∀ c' → c ∼ c' → Q · c')
+    (record {
+      monotone = λ x f c'' x₂ → f c'' (trans x x₂) ;
+      monotone-refl = λ p → funext λ c'' → funext λ x₂ → PEq.cong (λ u → p c'' u) trans-refl ;
+      monotone-trans = λ p c~c' c'~c'' → (funext λ c'' → funext λ x₂ → PEq.cong (p c'') trans-comm) })
+
+  app : ∀ {o}{P Q : MP o} → ((P ~> Q) ⊗ P) ⇒ Q
+  app {P = P}{Q} = mk⇒ (λ p → (Prod.proj₁ p) _ refl)
+      λ{ c~c' {F , x} →
+        (begin
+          (MP.monotone (P ~> Q) c~c' F) _ refl
+          ≡⟨ PEq.refl ⟩
+          ((λ x f c'' x₂ → f c'' (trans x x₂)) c~c' F) _ refl
+          ≡⟨ PEq.refl ⟩
+          (F _ (trans c~c' refl))
+          ≡⟨ {!!} ⟩
+          (F _ c~c')
+          ≡⟨ {!PEq.refl!} ⟩
+          MP.monotone Q c~c' (F _ refl) ∎)
+          ≡⟨ {!PEq.refl!} ⟩
+          MP.monotone Q c~c' (F _ refl) ∎)
+      }
+
+  {-}
+  _~>_ : ∀ {o}(P Q : MP o) → MP _
+  P ~> Q = Const (P ⇒ Q)
+
+  curry : ∀ {o}{X Y Z : MP o}(F : (X ⊗ Y) ⇒ Z) → X ⇒ (Y ~> Z)
+  curry F = mk⇒ (λ{ x → mk⇒ (λ y → apply F {!x , y!}) {!!}}) {!!}
+  -}
+-}
 
 {-}
 -- it's easy to lift predicates to monotone predicates using a product
