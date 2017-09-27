@@ -67,6 +67,7 @@ record _⇒_ {p q}(P : MP p)(Q : MP q) : Set (p ⊔ q ⊔ ℓ₁ ⊔ ℓ₃) whe
 
 open _⇒_ public
 
+-- Const identifies objects that are terminal for this category
 terminal : ∀ {ℓ a}{A : Set a}{P : MP ℓ} → A → P ⇒ Const A
 terminal x = mk⇒ (λ _ → x) λ c~c' → λ {p} → PEq.refl
 
@@ -278,8 +279,7 @@ module Exponential
       monotone-trans = λ φ w₀ w₁ → ⇒-ext λ p → PEq.cong (λ u → apply φ (u , Prod.proj₂ p)) trans-assoc
     })
 
-
-  curry : ∀ {o}{X Y Z : MP o}(F : (X ⊗ Y) ⇒ Z) → X ⇒ (Z ^ Y)
+  curry : ∀ {ℓ₁ ℓ₂ ℓ₃}{X : MP ℓ₁}{Y : MP ℓ₂}{Z : MP ℓ₃}(F : (X ⊗ Y) ⇒ Z) → X ⇒ (Z ^ Y)
   curry {X = X}{Y}{Z} F = mk⇒
     (λ xc → mk⇒
       (λ{ (w , yc) → apply F ((MP.monotone X w xc) , yc)})
@@ -290,7 +290,8 @@ module Exponential
           ≡⟨ monotone-comm F c~c' ⟩
         MP.monotone Z c~c' (apply F (MP.monotone X w xc , yc))
       ∎ )}))
-    λ c~c' {xc} → ⇒-ext λ p → {!!}
+    λ c~c' {xc} → ⇒-ext λ p →
+      PEq.cong (λ u → apply F (u , _)) (PEq.sym (MP.monotone-trans X xc c~c' (Prod.proj₁ p)))
 
   ε : ∀ {o}{Y Z : MP o} → (Z ^ Y) ⊗ Y ⇒ Z
   ε {Y = Y}{Z} = mk⇒
