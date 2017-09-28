@@ -23,11 +23,17 @@ module MJSF.Semantics (k : ℕ) where
 Scope : Set
 Scope = Fin k
 
+
+-----------
+-- TYPES --
+-----------
+
 data VTy : Set where
   void : VTy;  int : VTy;  ref : Scope → VTy
 
 data Ty : Set where
   vᵗ : VTy → Ty;  mᵗ : List VTy → VTy → Ty;  cᵗ : Scope → Scope → Ty 
+
 
 -------------
 -- HAS TAG --
@@ -49,6 +55,11 @@ module Syntax (g : Graph) where
 
   open UsesGraph g
 
+
+  -------------------------------
+  -- SUBTYPING AND INHERITANCE --
+  -------------------------------
+
   data _<:_ : VTy → VTy → Set where
     refl   :  ∀ {t} → t <: t
     super  :  ∀ {s1 s2 t} →
@@ -57,6 +68,11 @@ module Syntax (g : Graph) where
   <:-trans : ∀{t1 t2 t3} → t1 <: t2 → t2 <: t3 → t1 <: t3
   <:-trans refl           p = p
   <:-trans (super edge p) q = super edge (<:-trans p q)
+
+
+  ------------
+  -- SYNTAX --
+  ------------
 
   mutual
     data Expr (s : Scope) : VTy → Set where
@@ -112,6 +128,7 @@ module Syntax (g : Graph) where
     program :
       ∀ {sʳ cs}⦃ shape : g sʳ ≡ (cs , []) ⦄ → All (λ{ (cᵗ sʳ s) → Class sʳ s ; _ → ⊥ }) cs → Program
 
+
   ------------
   -- VALUES --
   ------------
@@ -132,6 +149,7 @@ module Syntax (g : Graph) where
     cᵗ : ∀ {sʳ s Σ} → Class sʳ s → Frame sʳ Σ → Valᵗ (cᵗ sʳ s) Σ
     mᵗ : ∀ {s ts rt Σ} → Meth s ts rt → Valᵗ (mᵗ ts rt) Σ
     vᵗ : ∀ {t Σ} → Val<: t Σ → Valᵗ (vᵗ t) Σ
+
 
   ---------------
   -- WEAKENING --
@@ -159,6 +177,7 @@ module Syntax (g : Graph) where
 
 
   open UsesVal Valᵗ valᵗ-weaken renaming (getFrame to getFrame')
+
 
   ----------------------------
   -- UPCASTING AND COERCION --
@@ -199,10 +218,6 @@ module Syntax (g : Graph) where
   ...     | nullpointer = nullpointer
   ...     | ok (Σ' , h'' , v' , ext') = ok (Σ' , h'' , v' , ext ⊚ ext')
 
-  _>>_      :  ∀ {s Σ}{p q : List Scope → Set} →
-               M s p Σ → (∀ {Σ'} → M s q Σ') → M s q Σ
-  f >> g = f >>= λ _ → g
-
   return     :  ∀ {s Σ}{p : List Scope → Set} → p Σ → M s p Σ
   return v f h = ok (_ , h , v , ⊑-refl)
 
@@ -241,14 +256,13 @@ module Syntax (g : Graph) where
   setv p v f h with (setVal f p v h)
   ...             | h' = return tt f h'
 
-  _^_  :  ∀ {Σ Γ}{p q : List Scope → Set} → ⦃ w : Weakenable q ⦄ →
+  _^_  :  ∀ {Σ Γ}{p q : List Scope → Set} ⦃ w : Weakenable q ⦄ →
           M Γ p Σ → q Σ → M Γ (p ⊗ q) Σ
   (a ^ x) f h
     with (a f h)
   ...  | timeout = timeout
   ...  | nullpointer = nullpointer
   ...  | ok (Σ , h' , v , ext) = ok (Σ , h' , (v , wk ext x) , ext)
-
 
 
   -------------------------------------------------
