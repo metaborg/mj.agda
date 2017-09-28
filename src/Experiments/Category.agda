@@ -1,3 +1,5 @@
+{-# OPTIONS --allow-unsolved-metas #-}
+
 open import Relation.Binary hiding (_⇒_)
 
 module Experiments.Category {ℓ₁ ℓ₂ ℓ₃} (APO : Preorder ℓ₁ ℓ₂ ℓ₃) where
@@ -65,6 +67,7 @@ record _⇒_ {p q}(P : MP p)(Q : MP q) : Set (p ⊔ q ⊔ ℓ₁ ⊔ ℓ₃) whe
 
 open _⇒_ public
 
+-- Const identifies objects that are terminal for this category
 terminal : ∀ {ℓ a}{A : Set a}{P : MP ℓ} → A → P ⇒ Const A
 terminal x = mk⇒ (λ _ → x) λ c~c' → λ {p} → PEq.refl
 
@@ -87,6 +90,10 @@ id P = mk⇒ Fun.id (λ _ → PEq.refl)
 infixl 20 _⇒≡_
 _⇒≡_  : ∀ {ℓ₁ ℓ₂}{P : MP ℓ₁}{Q : MP ℓ₂}(F G : P ⇒ Q) → Set _
 _⇒≡_ {P = P}{Q} F G = ∀ {c}(p : P · c) → apply F p PEq.≡ apply G p
+
+-- extensionality for morphisms
+⇒-Ext : ∀ (ℓ₁ ℓ₂ : Level) → Set _
+⇒-Ext ℓ₁ ℓ₂ = ∀ {P : MP ℓ₁}{Q : MP ℓ₂}{F G : P ⇒ Q} → F ⇒≡ G → F PEq.≡ G
 
 -- isomorphism
 record _≅_ {ℓ}(P Q : MP ℓ) : Set (ℓ₁ ⊔ ℓ ⊔ ℓ₃) where
@@ -143,9 +150,9 @@ module Product where
     (λ{ ((p , q) , r) → p , (q , r) })
     (λ c~c' → PEq.refl)
 
-  fmap : ∀ {ℓ₁ ℓ₂ ℓ₃ ℓ₄}{P : MP ℓ₁}{Q : MP ℓ₂}{R : MP ℓ₃}{S : MP ℓ₄} →
+  xmap : ∀ {ℓ₁ ℓ₂ ℓ₃ ℓ₄}{P : MP ℓ₁}{Q : MP ℓ₂}{R : MP ℓ₃}{S : MP ℓ₄} →
          (F : P ⇒ R)(G : Q ⇒ S) → P ⊗ Q ⇒ R ⊗ S
-  fmap F G = ⟨ F ∘ π₁ , G ∘ π₂ ⟩
+  xmap F G = ⟨ F ∘ π₁ , G ∘ π₂ ⟩
 
   uncurry₁ : ∀ {ℓ₁ ℓ₂ ℓ₃}{A : Set ℓ₁}{P : MP ℓ₂}{Q : MP ℓ₃} →
              (A → P ⇒ Q) → (Const A ⊗ P ⇒ Q)
@@ -221,33 +228,82 @@ module Monoid where
 
   -- TODO: coherence conditions
 
-module Exponents where
+module Exponential
+  (trans-assoc : ∀ {c c' c'' c'''}{p : c ∼ c'}{q : c' ∼ c''}{r : c'' ∼ c'''} →
+                 trans (trans p q) r PEq.≡ trans p (trans q r))
+  (trans-refl₁ : ∀ {c c'}{p : c ∼ c'} → trans refl p PEq.≡ p)
+  (trans-refl₂ : ∀ {c c'}{p : c ∼ c'} → trans p refl PEq.≡ p)
+  where
+
+  -- for convencience we assume extensionality for morphisms here for now
+  postulate ⇒-ext : ∀ {ℓ₁ ℓ₂} → ⇒-Ext ℓ₁ ℓ₂
 
   open Product
 
-  record _^_ {o}(Z : MP o)(Y : MP o) : Set (suc o ⊔ ℓ₃ ⊔ ℓ₁) where
-    constructor mk^
-    field
-      Zʸ   : MP o
+  -- the preorder that we have defined monotonicity by is itself
+  -- a monotone predicate
+  ∼mono : Carrier → MP _
+  ∼mono c = mp (λ c' → c ∼ c' ) (record {
+    monotone = flip trans  ;
+    monotone-refl = λ _ → trans-refl₂ ;
+    monotone-trans = λ _ _ _ → PEq.sym trans-assoc })
 
-      λg  : ∀ (X : MP o)(G : (X ⊗ Y) ⇒ Z) → X ⇒ Zʸ
-      apply : Zʸ ⊗ Y ⇒ Z
+  -- ... such that we can define the notion of a monotone function as follows:
+  Mono⇒ : ∀ {ℓ ℓ₂}(P : MP ℓ)(Q : MP ℓ₂)(c : Carrier) → Set _
+  Mono⇒ P Q c = ∼mono c ⊗ P ⇒ Q
+  -- the intuition here comes from the naive interpretation
+  -- of the type of curry: (X ⊗ P ⇒ Q) → X ⇒ (Const (P ⇒ Q)).
+  -- unfolding the return type you would get something like the following Agda type:
+  --   ∀ c → X · c → (∀ c' → P · c' → Q · c')
+  -- this is too weak, because c' and c are unrelated and thus we can't combine
+  -- X · c and P · c' into a product (X ⊗ P) · c'.
+  -- The above Mono⇒ fixes this by simply requiring the relation c ∼ c' as
+  -- an additional argument.
 
-{-}
--- it's easy to lift predicates to monotone predicates using a product
-pack : ∀ {ℓ} → Pred Carrier ℓ → MP _
-pack P = mp
-  (λ c → ∃ λ c' → c' ∼ c × P c') (record {
-    monotone = λ{ c~c' (c'' , c~c'' , pc') → c'' , trans c~c'' c~c' , pc' } ;
-    monotone-refl = ? ;
-    monotone-trans = ?
-  })
+  infixl 80 _^_
+  _^_ : ∀ {ℓ₁ ℓ₂}(Q : MP ℓ₁)(P : MP ℓ₂) → MP _
+  Q ^ P = mp
+    (Mono⇒ P Q)
+    (record {
+      monotone = λ c~c' φ →
+        mk⇒
+          (λ p → apply φ (trans c~c' (Prod.proj₁ p) , Prod.proj₂ p))
+          (λ{ c~c'' {w , p} → (begin
+            apply φ (trans c~c' (MP.monotone (∼mono _) c~c'' w) , (MP.monotone P c~c'' p))
+              ≡⟨ PEq.cong (λ u → apply φ (u , MP.monotone P c~c'' p)) (PEq.sym trans-assoc) ⟩
+            apply φ (MP.monotone (∼mono _ ⊗ P) c~c'' (trans c~c' w , p))
+              ≡⟨ monotone-comm φ c~c'' ⟩
+            MP.monotone Q c~c'' (apply φ (trans c~c' w , p))
+          ∎)});
+      monotone-refl  = λ φ → ⇒-ext (λ p → PEq.cong (λ u → apply φ (u , (Prod.proj₂ p))) trans-refl₁);
+      monotone-trans = λ φ w₀ w₁ → ⇒-ext λ p → PEq.cong (λ u → apply φ (u , Prod.proj₂ p)) trans-assoc
+    })
 
--- the underlying ~ relations is itself a monotone predicate
-~mp : ∀ c → IsMP (_∼_ c)
-~mp c = record {
-  monotone = flip trans
-  monotone-refl = ? ;
-  monotone-trans = ?
-  }
--}
+  curry : ∀ {ℓ₁ ℓ₂ ℓ₃}{X : MP ℓ₁}{Y : MP ℓ₂}{Z : MP ℓ₃}(F : (X ⊗ Y) ⇒ Z) → X ⇒ (Z ^ Y)
+  curry {X = X}{Y}{Z} F = mk⇒
+    (λ xc → mk⇒
+      (λ{ (w , yc) → apply F ((MP.monotone X w xc) , yc)})
+      (λ{ c~c' {w , yc} → (begin
+        apply F (MP.monotone X (trans w c~c') xc , MP.monotone Y c~c' yc)
+          ≡⟨ PEq.cong (λ u → apply F (u , _)) (MP.monotone-trans X xc w c~c') ⟩
+        apply F (MP.monotone X c~c' (MP.monotone X w xc) , MP.monotone Y c~c' yc)
+          ≡⟨ monotone-comm F c~c' ⟩
+        MP.monotone Z c~c' (apply F (MP.monotone X w xc , yc))
+      ∎ )}))
+    λ c~c' {xc} → ⇒-ext λ p →
+      PEq.cong (λ u → apply F (u , _)) (PEq.sym (MP.monotone-trans X xc c~c' (Prod.proj₁ p)))
+
+  ε : ∀ {ℓ₁ ℓ₂}{Y : MP ℓ₁}{Z : MP ℓ₂} → (Z ^ Y) ⊗ Y ⇒ Z
+  ε {Y = Y}{Z} = mk⇒
+    (λ zʸ×y → apply (Prod.proj₁ zʸ×y) (refl , Prod.proj₂ zʸ×y) )
+    λ{ c~c' {φ@(F , p)} → (begin
+      (apply F (trans c~c' refl , MP.monotone Y c~c' p))
+        ≡⟨ PEq.cong (λ u → apply F (u , _)) trans-refl₂ ⟩
+      (apply F (c~c' , MP.monotone Y c~c' p))
+        ≡⟨ PEq.sym (PEq.cong (λ u → apply F (u , _)) trans-refl₁) ⟩
+      (apply F (trans refl c~c' , MP.monotone Y c~c' p))
+        ≡⟨ PEq.refl ⟩
+      (apply F (MP.monotone (∼mono _ ⊗ Y) c~c' (refl , p)))
+        ≡⟨ monotone-comm F c~c' ⟩
+      MP.monotone Z c~c' (apply F (refl , p))
+    ∎ )}
