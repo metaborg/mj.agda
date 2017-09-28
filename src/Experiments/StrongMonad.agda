@@ -83,7 +83,7 @@ bind Q F = μ Q ∘ fmap F
 open Exponential (sym ⊑-trans-assoc) ⊑-trans-refl ⊑-trans-refl'
 
 module Coherence where
--- We prove that η is the component of a natural transformation between the functors
+  -- We prove that η is the component of a natural transformation between the functors
   -- 𝕀 and M where 𝕀 is the identity functor.
   η-natural : ∀ {p q}(P : MP p)(Q : MP q)(F : P ⇒ Q) → η Q ∘ F ⇒≡ (fmap F) ∘ η P
   η-natural P Q F p =
@@ -176,14 +176,12 @@ module Strong where
   fmap' : ∀ {p q}{P : MP p}{Q : MP q} → (Q ^ P) ⇒ (M Q) ^ (M P)
   fmap' {P = P}{Q} = Cat.mk⇒
     (λ {c} F → fmap F ∘ ts (∼mono c) P)
-    λ c~c' {F} → ⇒-ext (λ p → begin
-      apply (fmap (MP.monotone (Q ^ P) c~c' F)) (apply (ts (∼mono _) P) p)
-        ≡⟨ {!!} ⟩
-      apply (fmap (MP.monotone (Q ^ P) c~c' F)) (apply (ts (∼mono _) P) p)
-        ≡⟨ {!!} ⟩
-      apply (MP.monotone (M Q ^ M P) c~c' (fmap F ∘ ts (∼mono _) P)) p
-    ∎)
-
+    (λ c~c' {F} →
+      ⇒-ext λ p →
+      funext³ λ Σ ext μ₀ →
+        mcong {P = Q} refl H.refl H.refl
+          (H.≡-to-≅ (cong (λ u → apply F (u , _)) ⊑-trans-assoc ))
+    )
 
   -- internal bind
   bind' : ∀ {p q}{P : MP p}(Q : MP q) → (M P ⊗ (M Q ^ P)) ⇒ M Q

@@ -307,3 +307,6 @@ module Exponential
         ≡⟨ monotone-comm F c~c' ⟩
       MP.monotone Z c~c' (apply F (refl , p))
     ∎ )}
+
+  uncurry : ∀ {ℓ₁ ℓ₂ ℓ₃}{X : MP ℓ₁}{Y : MP ℓ₂}{Z : MP ℓ₃}(F : X ⇒ (Z ^ Y)) → (X ⊗ Y) ⇒ Z
+  uncurry {X = x}{Y}{Z} F = ε ∘ xmap F (id Y)
