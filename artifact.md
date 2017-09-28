@@ -5,7 +5,8 @@ src/ScopeGraph
 src/STLC
 src/STLCRef
 src/STLCSF
-src/MJSF
+src/MJSF -- contains two semantics: one that consumes fuel during
+         -- object initialization, and one that does not
 src/MJ?
 src/Experiments/Infer.agda
 
