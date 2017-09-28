@@ -84,7 +84,7 @@ module Syntax (g : Graph) where
   ...  | (f' , h') = just (_ , h' , f' , ∷ʳ-⊒ s Σ)
 
   getv        :  ∀ {s t Σ} → (s ↦ t) → M s (Val t) Σ
-  getv p f h = return (getVal f p h) f h
+  getv p f h = return (getVal p f h) f h
 
   _^_         :  ∀ {Σ Γ}{p q : List Scope → Set} → ⦃ w : Weakenable q ⦄ →
                  M Γ p Σ → q Σ → M Γ (p ⊗ q) Σ

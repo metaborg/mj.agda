@@ -238,6 +238,18 @@ module Syntax (g : Graph) where
                M s p Σ → (∀ {Σ'} → p Σ' → M s q Σ') → M s q Σ
   (a >>= b) = join ((fmap b) a)
 
+  -- Monadic strength
+  _^_  :  ∀ {Σ Γ}{p q : List Scope → Set} ⦃ w : Weakenable q ⦄ →
+          M Γ p Σ → q Σ → M Γ (p ⊗ q) Σ
+  (a ^ x) f h
+    with (a f h)
+  ...  | timeout = timeout
+  ...  | nullpointer = nullpointer
+  ...  | ok (Σ , h' , v , ext) = ok (Σ , h' , (v , wk ext x) , ext)
+
+  coerceᴹ :  ∀ {t s Σ} → Val<: t Σ → M s (Val t) Σ
+  coerceᴹ (upcast σ v) f h = return (coerce<: σ v h) f h
+
   getFrame   :  ∀ {s Σ} → M s (Frame s) Σ
   getFrame f = return f f
 
@@ -273,17 +285,6 @@ module Syntax (g : Graph) where
   setv p v f h with (setVal p v f h)
   ...             | h' = return tt f h'
 
-  _^_  :  ∀ {Σ Γ}{p q : List Scope → Set} ⦃ w : Weakenable q ⦄ →
-          M Γ p Σ → q Σ → M Γ (p ⊗ q) Σ
-  (a ^ x) f h
-    with (a f h)
-  ...  | timeout = timeout
-  ...  | nullpointer = nullpointer
-  ...  | ok (Σ , h' , v , ext) = ok (Σ , h' , (v , wk ext x) , ext)
-
-  coerceᴹ :  ∀ {t s Σ} → Val<: t Σ → M s (Val t) Σ
-  coerceᴹ (upcast σ v) f h = return (coerce<: σ v h) f h
-
 
   --------------
   -- DEFAULTS --
@@ -301,16 +302,50 @@ module Syntax (g : Graph) where
   defaults {[]}          []           = []
   defaults {vᵗ t ∷ fs} (#v' _ ∷ ts) = vᵗ (reflv (default t)) ∷ defaults {fs} ts
 
-  mutual
-    eval<:  :  ℕ → ∀ {t s Σ} → Expr<: s t → M s (Val<: t) Σ
-    eval    :  ℕ → ∀ {t s Σ} → Expr s t → M s (Val<: t) Σ
 
+  -----------------
+  -- AUXILIARIES --
+  -----------------
+
+  slotify : ∀ {ms s Σ} → All (#m (Meth s)) ms → Slots ms Σ
+  slotify {[]}            []           = []
+  slotify {mᵗ ts rt ∷ mts} (#m' m ∷ ms) = mᵗ m ∷ slotify {mts} ms
+
+  override : ∀ {s Σ}{oms : List (List VTy × VTy)} → 
+             All (λ x → (s ↦ (mᵗ (proj₁ x) (proj₂ x))) × Meth s (proj₁ x) (proj₂ x)) oms →
+             M s (λ _ → ⊤) Σ
+  override [] = return tt
+  override ((p , m) ∷ oms) = setv p (mᵗ m) >>= λ _ →
+                             override oms
+
+  init-obj : ∀ {sʳ s s' Σ} → Class sʳ s → Inherits s s' → M sʳ (Frame s) Σ
+  init-obj (class0 ⦃ shape ⦄ ms fs oms) obj
+    = getFrame >>= λ f →
+      init _ ⦃ shape ⦄ (slotify ms ++-all defaults fs) (f ∷ []) >>= λ f' →
+      (usingFrame f' (override oms) ^ f') >>= λ{ (_ , f') → return f' }
+  init-obj (class0 ⦃ shape ⦄ _ _ _) (super ⦃ shape' ⦄ _) with (trans (sym shape) shape')
+  ... | ()
+  init-obj (class1 p ⦃ shape ⦄ ms fs oms) (super ⦃ shape' ⦄ x) with (trans (sym shape) shape')
+  ... | refl =
+    getv p >>= λ{ (cᵗ class' ic f') →
+    (usingFrame f' (init-obj class' x) ^ f') >>= λ{ (f , f') →
+    init _ ⦃ shape ⦄ (slotify ms ++-all defaults fs) (f' ∷ f ∷ []) >>= λ f'' →
+    (usingFrame f'' (override oms) ^ f'') >>= λ{ (_ , f'') →
+    return f'' }}}
+  init-obj (class1 _ ⦃ shape ⦄ _ _ _) (obj ⦃ shape' ⦄) with (trans (sym shape) shape')
+  ... | ()
+
+
+  mutual
+    -- upcasts
+    eval<:  :  ℕ → ∀ {t s Σ} → Expr<: s t → M s (Val<: t) Σ
     eval<: k (upcast σ e) = fmap (up<: σ) (eval k e)
 
     -- coerces to val
     evalᶜ : ℕ → ∀ {t s Σ} → Expr<: s t → M s (Val t) Σ
     evalᶜ k e = join (fmap coerceᴹ (eval<: k e))
 
+    eval    :  ℕ → ∀ {t s Σ} → Expr s t → M s (Val<: t) Σ
     eval zero _ = timeoutᴹ
     eval (suc k) (num x) = return (reflv (num x))
     eval (suc k) (iop x l r) = evalᶜ k l >>= λ{ (num il) →
@@ -362,32 +397,4 @@ module Syntax (g : Graph) where
                                        usingFrame f (eval<: k e)
     eval-body (suc k) (body-void stmts) = eval-stmts k stmts >>= λ f →
                                           return (reflv void)
-
-    init-obj : ∀ {sʳ s s' Σ} → Class sʳ s → Inherits s s' → M sʳ (Frame s) Σ
-    init-obj (class0 ⦃ shape ⦄ ms fs oms) obj
-      = getFrame >>= λ f →
-        init _ ⦃ shape ⦄ (slotify ms ++-all defaults fs) (f ∷ []) >>= λ f' →
-        (usingFrame f' (override oms) ^ f') >>= λ{ (_ , f') → return f' }
-    init-obj (class0 ⦃ shape ⦄ _ _ _) (super ⦃ shape' ⦄ _) with (trans (sym shape) shape')
-    ... | ()
-    init-obj (class1 p ⦃ shape ⦄ ms fs oms) (super ⦃ shape' ⦄ x) with (trans (sym shape) shape')
-    ... | refl =
-      getv p >>= λ{ (cᵗ class' ic f') →
-      (usingFrame f' (init-obj class' x) ^ f') >>= λ{ (f , f') →
-      init _ ⦃ shape ⦄ (slotify ms ++-all defaults fs) (f' ∷ f ∷ []) >>= λ f'' →
-      (usingFrame f'' (override oms) ^ f'') >>= λ{ (_ , f'') →
-      return f'' }}}
-    init-obj (class1 _ ⦃ shape ⦄ _ _ _) (obj ⦃ shape' ⦄) with (trans (sym shape) shape')
-    ... | ()
-
-    slotify : ∀ {ms s Σ} → All (#m (Meth s)) ms → Slots ms Σ
-    slotify {[]}            []           = []
-    slotify {mᵗ ts rt ∷ mts} (#m' m ∷ ms) = mᵗ m ∷ slotify {mts} ms
-    
-    override : ∀ {s Σ}{oms : List (List VTy × VTy)} → 
-               All (λ x → (s ↦ (mᵗ (proj₁ x) (proj₂ x))) × Meth s (proj₁ x) (proj₂ x)) oms →
-               M s (λ _ → ⊤) Σ
-    override [] = return tt
-    override ((p , m) ∷ oms) = setv p (mᵗ m) >>= λ _ →
-                               override oms
 

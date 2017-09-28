@@ -98,24 +98,24 @@ module UsesGraph (g : Graph) where
                 ((wk ⦃ weaken-slots ⦄ ext slots , wk ext links))
           in (f' , h')
 
-    setSlot     :  ∀ {s t Σ} → Frame s Σ → t ∈ declsOf s → Val t Σ → Heap Σ → Heap Σ
-    setSlot f d v h
+    setSlot     :  ∀ {s t Σ} → t ∈ declsOf s → Val t Σ → Frame s Σ → Heap Σ → Heap Σ
+    setSlot d v f h
       with (List∀.lookup h f)
     ...  | (slots , links) = h All[ f ]≔' (slots All[ d ]≔' v , links)
 
 
-    getFrame    :  ∀ {s s' Σ} → Frame s Σ → (s ⟶ s') → Heap Σ → Frame s' Σ
-    getFrame f []      h = f
-    getFrame f (e ∷ p) h  with (List∀.lookup h f)
-    ...                     | (slots , links) = getFrame (List∀.lookup links e) p h
+    getFrame    :  ∀ {s s' Σ} → (s ⟶ s') → Frame s Σ → Heap Σ → Frame s' Σ
+    getFrame []      f h = f
+    getFrame (e ∷ p) f h  with (List∀.lookup h f)
+    ...                     | (slots , links) = getFrame p (List∀.lookup links e) h
 
-    getSlot     :  ∀ {s t Σ} → Frame s Σ → t ∈ declsOf s → Heap Σ → Val t Σ
-    getSlot f d h
+    getSlot     :  ∀ {s t Σ} → t ∈ declsOf s → Frame s Σ → Heap Σ → Val t Σ
+    getSlot d f h
       with (List∀.lookup h f)
     ...  | (slots , links) = List∀.lookup slots d
 
-    getVal  :  ∀ {s t Σ} → Frame s Σ → (s ↦ t) → Heap Σ → Val t Σ
-    getVal f (path p d) h = getSlot (getFrame f p h) d h
+    getVal  :  ∀ {s t} → (s ↦ t) → ∀ {Σ} → Frame s Σ → Heap Σ → Val t Σ
+    getVal (path p d) f h = getSlot d (getFrame p f h) h
 
-    setVal  :  ∀ {s t Σ} → Frame s Σ → (s ↦ t) → Val t Σ → Heap Σ → Heap Σ
-    setVal f (path p d) v h = setSlot (getFrame f p h) d v h
+    setVal  :  ∀ {s t Σ} → (s ↦ t) → Val t Σ → Frame s Σ → Heap Σ → Heap Σ
+    setVal (path p d) v f h = setSlot d v (getFrame p f h) h
