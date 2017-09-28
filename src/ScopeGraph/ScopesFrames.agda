@@ -49,7 +49,7 @@ module UsesGraph (g : Graph) where
 
     instance
       weaken-val' : ∀ {t} → Weakenable (λ Σ → Val t Σ)
-      weaken-val' = record { weaken = weaken-val }
+      weaken-val' = record { wk = weaken-val }
 
     Slots : (ds : List Ty) → (Σ : HeapTy) → Set
     Slots ds Σ = All (λ t → Val t Σ) ds
@@ -69,22 +69,19 @@ module UsesGraph (g : Graph) where
     open Weakenable ⦃...⦄
     instance
       weaken-slots : ∀ {ts} → Weakenable (Slots ts)
-      weaken-slots = record { weaken = weaken ⦃ all-weakenable (λ t → weaken-val' {t}) ⦄ }
+      weaken-slots = record { wk = wk ⦃ all-weakenable (λ t → weaken-val' {t}) ⦄ }
 
       weaken-links : ∀ {es} → Weakenable (Links es)
-      weaken-links = record { weaken = weaken ⦃ all-weakenable (λ a → any-weakenable {x = a}) ⦄ }
+      weaken-links = record { wk = wk ⦃ all-weakenable (λ a → any-weakenable {x = a}) ⦄ }
 
       weaken-heapframe : ∀ {s} → Weakenable (HeapFrame s)
-      weaken-heapframe = record { weaken = λ{ ext (slots , links) → (weaken ext slots , weaken ext links) } }
+      weaken-heapframe = record { wk = λ{ ext (slots , links) → (wk ext slots , wk ext links) } }
 
       weaken-heap : ∀ {Σ'} → Weakenable (λ Σ → FrameHeap Σ Σ')
-      weaken-heap = record { weaken = weaken ⦃ all-weakenable (λ s → weaken-heapframe {s = s}) ⦄ }
+      weaken-heap = record { wk = wk ⦃ all-weakenable (λ s → weaken-heapframe {s = s}) ⦄ }
 
       weaken-frame : ∀ {s} → Weakenable (Frame s)
-      weaken-frame = record { weaken = Weakenable.weaken any-weakenable }
-
-    -- alias
-    _⊚_ = ⊑-trans
+      weaken-frame = record { wk = Weakenable.wk any-weakenable }
 
     -- helper
     pair-eq : ∀ {A B : Set}{x : A × B}{a : A}{b : B} → x ≡ (a , b) → proj₁ x ≡ a × proj₂ x ≡ b
@@ -96,9 +93,9 @@ module UsesGraph (g : Graph) where
         = let ext = ∷ʳ-⊒ s Σ
               f'  = ∈-∷ʳ Σ s
               h'  =
-                (weaken ⦃ weaken-heap ⦄ ext h)
+                (wk ⦃ weaken-heap ⦄ ext h)
                 all-∷ʳ
-                ((weaken ⦃ weaken-slots ⦄ ext slots , weaken ext links))
+                ((wk ⦃ weaken-slots ⦄ ext slots , wk ext links))
           in (f' , h')
 
     setSlot     :  ∀ {s t Σ} → Frame s Σ → t ∈ declsOf s → Val t Σ → Heap Σ → Heap Σ

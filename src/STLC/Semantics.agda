@@ -33,7 +33,6 @@ mutual
 M : Ctx → Set → Set
 M Γ a  =  Env Γ → Maybe a
 
-
 _>>=_    : ∀ {Γ a b} → M Γ a → (a → M Γ b) → M Γ b
 (f >>= c) E with (f E)
 ... | just x = c x E
