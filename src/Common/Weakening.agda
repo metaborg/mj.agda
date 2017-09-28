@@ -19,3 +19,7 @@ instance
   all-weakenable wₐ = record {
     weaken = λ ext v → List∀.map (λ {a} y → Weakenable.weaken (wₐ a) ext y) v }
 
+-- nicer syntax for transitivity
+infixl 30 _⊚_
+_⊚_ : ∀ {W W' W'' : List A} → W' ⊒ W → W'' ⊒ W' → W'' ⊒ W
+_⊚_ co₁ co₂ = ⊑-trans co₁ co₂
