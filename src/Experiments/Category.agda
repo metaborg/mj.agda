@@ -150,9 +150,9 @@ module Product where
     (λ{ ((p , q) , r) → p , (q , r) })
     (λ c~c' → PEq.refl)
 
-  fmap : ∀ {ℓ₁ ℓ₂ ℓ₃ ℓ₄}{P : MP ℓ₁}{Q : MP ℓ₂}{R : MP ℓ₃}{S : MP ℓ₄} →
+  xmap : ∀ {ℓ₁ ℓ₂ ℓ₃ ℓ₄}{P : MP ℓ₁}{Q : MP ℓ₂}{R : MP ℓ₃}{S : MP ℓ₄} →
          (F : P ⇒ R)(G : Q ⇒ S) → P ⊗ Q ⇒ R ⊗ S
-  fmap F G = ⟨ F ∘ π₁ , G ∘ π₂ ⟩
+  xmap F G = ⟨ F ∘ π₁ , G ∘ π₂ ⟩
 
   uncurry₁ : ∀ {ℓ₁ ℓ₂ ℓ₃}{A : Set ℓ₁}{P : MP ℓ₂}{Q : MP ℓ₃} →
              (A → P ⇒ Q) → (Const A ⊗ P ⇒ Q)
@@ -293,7 +293,7 @@ module Exponential
     λ c~c' {xc} → ⇒-ext λ p →
       PEq.cong (λ u → apply F (u , _)) (PEq.sym (MP.monotone-trans X xc c~c' (Prod.proj₁ p)))
 
-  ε : ∀ {o}{Y Z : MP o} → (Z ^ Y) ⊗ Y ⇒ Z
+  ε : ∀ {ℓ₁ ℓ₂}{Y : MP ℓ₁}{Z : MP ℓ₂} → (Z ^ Y) ⊗ Y ⇒ Z
   ε {Y = Y}{Z} = mk⇒
     (λ zʸ×y → apply (Prod.proj₁ zʸ×y) (refl , Prod.proj₂ zʸ×y) )
     λ{ c~c' {φ@(F , p)} → (begin

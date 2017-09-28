@@ -2,7 +2,7 @@
 
 open import Level
 open import Relation.Unary using (Pred)
-open import Data.Product hiding (swap)
+open import Data.Product hiding (swap; curry)
 open import Data.List.Most
 open import Data.List.All as List∀
 open import Data.List.Prefix
@@ -20,7 +20,7 @@ module Experiments.StrongMonad
 open import Relation.Binary.PropositionalEquality.Extensionality funext
 
 open Cat (⊑-preorder {A = Type})
-open Product hiding (fmap)-- products in the category of monotone predicates
+open Product
 
 World = List Type
 
@@ -77,8 +77,10 @@ fmap F = mk⇒
   })
   (λ c~c' → refl)
 
-bind : ∀ {p q}{P : MP p}{Q : MP q} → (P ⇒ M Q) → M P ⇒ M Q
-bind {Q = Q} F = μ Q ∘ fmap F
+bind : ∀ {p q}{P : MP p}(Q : MP q) → (P ⇒ M Q) → M P ⇒ M Q
+bind Q F = μ Q ∘ fmap F
+
+open Exponential (sym ⊑-trans-assoc) ⊑-trans-refl ⊑-trans-refl'
 
 module Coherence where
 -- We prove that η is the component of a natural transformation between the functors
@@ -126,29 +128,66 @@ module Coherence where
   assoc : ∀ {p}{P : MP p} → μ P ∘ (fmap (μ P)) ⇒≡ μ P ∘ μ (M P)
   assoc {P = P} p = funext³ λ Σ₁ ext μ → mcong {P = P} refl (H.≡-to-≅ ⊑-trans-assoc) H.refl H.refl
 
--- tensorial strength
-ts : ∀ {p q}(P : MP p)(Q : MP q) → P ⊗ M Q ⇒ M (P ⊗ Q)
-ts P Q = mk⇒
-  (λ x Σ₁ ext μ →
-    case (proj₂ x) Σ₁ ext μ of λ{
-      (_ , ext₁ , μ₁ , v ) → _ , ext₁ , μ₁ , (MP.monotone P (⊑-trans ext ext₁) (proj₁ x)) , v
-    }
-  )
-  (λ c~c' →
-    funext³ λ Σ₁ ext μ₁ →
-    mcong {P = (P ⊗ Q)} refl H.refl H.refl (
-      H.cong₂ {A = P · _}{B = λ _ → Q · _} (λ u v → u , v)
-        (H.≡-to-≅ (begin
-          MP.monotone P (⊑-trans ext _) _
-            ≡⟨ (MP.monotone-trans P _ _ _) ⟩
-          MP.monotone P _ (MP.monotone P ext (MP.monotone P c~c' _))
-            ≡⟨ cong (λ x → MP.monotone P _ x) (sym ((MP.monotone-trans P _ _ _))) ⟩
-          MP.monotone P _ (MP.monotone P (⊑-trans c~c' ext) _)
-            ≡⟨ sym ((MP.monotone-trans P _ _ _)) ⟩
-          MP.monotone P (⊑-trans (⊑-trans c~c' ext) _) _
-        ∎))
-        H.refl
-    ))
+module Strong where
+  -- tensorial strength
+  ts : ∀ {p q}(P : MP p)(Q : MP q) → P ⊗ M Q ⇒ M (P ⊗ Q)
+  ts P Q = mk⇒
+    (λ x Σ₁ ext μ →
+      case (proj₂ x) Σ₁ ext μ of λ{
+        (_ , ext₁ , μ₁ , v ) → _ , ext₁ , μ₁ , (MP.monotone P (⊑-trans ext ext₁) (proj₁ x)) , v
+      }
+    )
+    (λ c~c' →
+      funext³ λ Σ₁ ext μ₁ →
+      mcong {P = (P ⊗ Q)} refl H.refl H.refl (
+        H.cong₂ {A = P · _}{B = λ _ → Q · _} (λ u v → u , v)
+          (H.≡-to-≅ (begin
+            MP.monotone P (⊑-trans ext _) _
+              ≡⟨ (MP.monotone-trans P _ _ _) ⟩
+            MP.monotone P _ (MP.monotone P ext (MP.monotone P c~c' _))
+              ≡⟨ cong (λ x → MP.monotone P _ x) (sym ((MP.monotone-trans P _ _ _))) ⟩
+            MP.monotone P _ (MP.monotone P (⊑-trans c~c' ext) _)
+              ≡⟨ sym ((MP.monotone-trans P _ _ _)) ⟩
+            MP.monotone P (⊑-trans (⊑-trans c~c' ext) _) _
+          ∎))
+          H.refl
+      ))
 
-ts' : ∀ {p q}(P : MP p)(Q : MP q) → M P ⊗ Q ⇒ M (P ⊗ Q)
-ts' P Q = fmap (swap Q P) ∘ ts Q P ∘ swap _ _
+  ts' : ∀ {p q}(P : MP p)(Q : MP q) → M P ⊗ Q ⇒ M (P ⊗ Q)
+  ts' P Q = fmap (swap Q P) ∘ ts Q P ∘ swap _ _
+
+  diagram₁ : ∀ {ℓ}{P : MP ℓ} → fmap {P = ⊤ ⊗ P} (π₂ {P = ⊤}) ∘ ts ⊤ P ⇒≡ π₂ {P = ⊤}
+  diagram₁ = {!!}
+
+  diagram₂ : ∀ {ℓ₁ ℓ₂ ℓ₃}{A : MP ℓ₁}{B : MP ℓ₂}{C : MP ℓ₃} →
+             fmap (comm A B C) ∘ ts (A ⊗ B) C ⇒≡ ts A (B ⊗ C) ∘ xmap (id A) (ts B C) ∘ comm A B (M C)
+  diagram₂ = {!!}
+
+  diagram₃ : ∀ {ℓ₁ ℓ₂}{A : MP ℓ₁}{B : MP ℓ₂} →
+             η (A ⊗ B) ⇒≡ ts A B ∘ xmap (id A) (η B)
+  diagram₃ = {!!}
+
+  diagram₄ : ∀ {ℓ₁ ℓ₂}{A : MP ℓ₁}{B : MP ℓ₂} →
+             ts A B ∘ xmap (id A) (μ B) ⇒≡ μ (A ⊗ B) ∘ fmap (ts A B) ∘ ts A (M B)
+  diagram₄ = {!!}
+
+  -- internal fmap
+  fmap' : ∀ {p q}{P : MP p}{Q : MP q} → (Q ^ P) ⇒ (M Q) ^ (M P)
+  fmap' {P = P}{Q} = Cat.mk⇒
+    (λ {c} F → fmap F ∘ ts (∼mono c) P)
+    λ c~c' {F} → ⇒-ext (λ p → begin
+      apply (fmap (MP.monotone (Q ^ P) c~c' F)) (apply (ts (∼mono _) P) p)
+        ≡⟨ {!!} ⟩
+      apply (fmap (MP.monotone (Q ^ P) c~c' F)) (apply (ts (∼mono _) P) p)
+        ≡⟨ {!!} ⟩
+      apply (MP.monotone (M Q ^ M P) c~c' (fmap F ∘ ts (∼mono _) P)) p
+    ∎)
+
+
+  -- internal bind
+  bind' : ∀ {p q}{P : MP p}(Q : MP q) → (M P ⊗ (M Q ^ P)) ⇒ M Q
+  bind' {P = P} Q =
+    μ Q
+    ∘ ε
+    ∘ xmap fmap' (id (M P))
+    ∘ swap (M P) (M Q ^ P)

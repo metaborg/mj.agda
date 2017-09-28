@@ -7,7 +7,7 @@ open import Data.Nat hiding (_^_)
 import Data.Unit as Unit
 open import Data.List
 open import Data.List.Most
-open import Data.Product hiding (curry)
+open import Data.Product hiding (curry; swap)
 open import Data.Maybe as Maybe hiding (All)
 open import Function as Fun using (case_of_)
 import Relation.Binary.PropositionalEquality as PEq
@@ -22,7 +22,7 @@ data Ty : Set where
   ref  : Ty → Ty
 
 open import Experiments.Category (⊑-preorder {A = Ty})
-open Product hiding (fmap)
+open Product
 open Exists
 
 Ctx     = List Ty
@@ -127,17 +127,18 @@ envcons = mk⇒ (uncurry _∷_) λ c~c' → refl
 ------------------------------------------------------------------------
 
 open Exponential (sym ⊑-trans-assoc) ⊑-trans-refl ⊑-trans-refl'
+open Strong
 
 mutual
   interpclos : ∀ {a b} → Val (a ⟶ b) ⇒ M (Val b) ^ (Val a)
   interpclos = curry (
       elim (
         uncurry₁ eval
-        ∘ (Product.fmap (id (Const _)) (envcons ∘ Product.swap (Env _)(Val _)))
+        ∘ (xmap (id (Const _)) (envcons ∘ Product.swap (Env _)(Val _)))
         ∘ Product.comm (Const _)(Env _)(Val _)
       )
       ∘ ∃-⊗-comm (λ Γ → Const _ ⊗ Env Γ)(Val _)
-      ∘ Product.fmap destructfun (id (Val _)))
+      ∘ xmap destructfun (id (Val _)))
 
   {-# NON_TERMINATING #-}
   eval : ∀ {Γ a} → Expr Γ a → Env Γ ⇒ M (Val a)
@@ -145,15 +146,24 @@ mutual
   eval (ƛ e) = η (Val _) ∘ mkclos ∘ ⟨ terminal e , id (Env _) ⟩
   eval (app f e) =
     μ (Val _)
-    ∘ fmap (ε ∘ Product.fmap interpclos (id (Val _)))
+    ∘ fmap (ε ∘ xmap interpclos (id (Val _)))
     ∘ μ (Val _ ⊗ Val _)
     ∘ fmap (ts (Val _) (Val _))
     ∘ ts' (Val _) (M (Val _))
     ∘ ⟨ eval f , eval e ⟩
   eval unit = η (Val _) ∘ mkunit ∘ terminal Unit.tt
-  eval (ref e) = μ (Val _) ∘ fmap alloc ∘ eval e
-  eval (! e) = μ (Val _) ∘ fmap load ∘ eval e
+  eval (ref e) = bind (Val _) alloc ∘ eval e
+  eval (! e) = bind (Val _) load ∘ eval e
   eval (e₁ ≔ e₂) =
+      fmap mkunit
+      ∘ bind ⊤ (
+          bind ⊤ (store ∘ swap (Val _) (Val _))
+          ∘ ts' (Val _) (Val _)
+          ∘ xmap (eval e₂) (id (Val _))
+      )
+      ∘ ts (Env _) (Val _)
+      ∘ ⟨ id (Env _) , eval e₁ ⟩
+    {-}
       fmap mkunit
     ∘ μ ⊤
     ∘ fmap store
@@ -161,4 +171,4 @@ mutual
     ∘ fmap (ts' (Val _)(Val _))
     ∘ ts (M (Val _))(Val _)
     ∘ ⟨ eval e₁ , eval e₂ ⟩
-
+    -}
