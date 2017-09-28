@@ -156,20 +156,21 @@ module Strong where
   ts' : ∀ {p q}(P : MP p)(Q : MP q) → M P ⊗ Q ⇒ M (P ⊗ Q)
   ts' P Q = fmap (swap Q P) ∘ ts Q P ∘ swap _ _
 
-  diagram₁ : ∀ {ℓ}{P : MP ℓ} → fmap {P = ⊤ ⊗ P} (π₂ {P = ⊤}) ∘ ts ⊤ P ⇒≡ π₂ {P = ⊤}
-  diagram₁ = {!!}
+  postulate
+    diagram₁ : ∀ {ℓ}{P : MP ℓ} → fmap {P = ⊤ ⊗ P} (π₂ {P = ⊤}) ∘ ts ⊤ P ⇒≡ π₂ {P = ⊤}
+    -- diagram₁ = {!!}
 
-  diagram₂ : ∀ {ℓ₁ ℓ₂ ℓ₃}{A : MP ℓ₁}{B : MP ℓ₂}{C : MP ℓ₃} →
-             fmap (comm A B C) ∘ ts (A ⊗ B) C ⇒≡ ts A (B ⊗ C) ∘ xmap (id A) (ts B C) ∘ comm A B (M C)
-  diagram₂ = {!!}
+    diagram₂ : ∀ {ℓ₁ ℓ₂ ℓ₃}{A : MP ℓ₁}{B : MP ℓ₂}{C : MP ℓ₃} →
+              fmap (comm A B C) ∘ ts (A ⊗ B) C ⇒≡ ts A (B ⊗ C) ∘ xmap (id A) (ts B C) ∘ comm A B (M C)
+    -- diagram₂ = {!!}
 
-  diagram₃ : ∀ {ℓ₁ ℓ₂}{A : MP ℓ₁}{B : MP ℓ₂} →
-             η (A ⊗ B) ⇒≡ ts A B ∘ xmap (id A) (η B)
-  diagram₃ = {!!}
+    diagram₃ : ∀ {ℓ₁ ℓ₂}{A : MP ℓ₁}{B : MP ℓ₂} →
+              η (A ⊗ B) ⇒≡ ts A B ∘ xmap (id A) (η B)
+    -- diagram₃ = {!!}
 
-  diagram₄ : ∀ {ℓ₁ ℓ₂}{A : MP ℓ₁}{B : MP ℓ₂} →
-             ts A B ∘ xmap (id A) (μ B) ⇒≡ μ (A ⊗ B) ∘ fmap (ts A B) ∘ ts A (M B)
-  diagram₄ = {!!}
+    diagram₄ : ∀ {ℓ₁ ℓ₂}{A : MP ℓ₁}{B : MP ℓ₂} →
+              ts A B ∘ xmap (id A) (μ B) ⇒≡ μ (A ⊗ B) ∘ fmap (ts A B) ∘ ts A (M B)
+    -- diagram₄ = {!!}
 
   -- internal fmap
   fmap' : ∀ {p q}{P : MP p}{Q : MP q} → (Q ^ P) ⇒ (M Q) ^ (M P)
