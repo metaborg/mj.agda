@@ -13,7 +13,7 @@ module Common.Strength where
     weaken-pair : ∀ {i j}{A : Set}{p : List A → Set i}{q : List A → Set j}
                     ⦃ wp : Weakenable p ⦄ ⦃ wq : Weakenable q ⦄ →
                     Weakenable (p ⊗ q)
-    weaken-pair = record { weaken = λ{ ext (x , y) → (weaken ext x , weaken ext y) } }
+    weaken-pair = record { wk = λ{ ext (x , y) → (wk ext x , wk ext y) } }
 
   -- an alias
   _′_ : ∀ {i j}{W : Set}{p : W → Set i}{q : W → Set j}{w : W} → p w → q w → (p ⊗ q) w
