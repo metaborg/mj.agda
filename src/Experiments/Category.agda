@@ -14,13 +14,15 @@ open PEq.≡-Reasoning
 open import Function.Inverse using (Inverse)
 open import Algebra.FunctionProperties
 
-record IsMP {ℓ}(P : Carrier → Set ℓ) : Set (ℓ ⊔ ℓ₁ ⊔ ℓ₃) where
+record IsMP {ℓ}(P : Pred Carrier ℓ) : Set (ℓ ⊔ ℓ₁ ⊔ ℓ₃) where
   field
     monotone : ∀ {c c'} → c ∼ c' → P c → P c'
 
     monotone-refl  : ∀ {c} p → monotone (refl {c}) p PEq.≡ p
     monotone-trans : ∀ {c c' c''} p (c~c' : c ∼ c')(c'~c'' : c' ∼ c'') →
-                     monotone (trans c~c' c'~c'') p PEq.≡ monotone c'~c'' (monotone c~c' p)
+                     monotone (trans c~c' c'~c'') p
+                     PEq.≡
+                     monotone c'~c'' (monotone c~c' p)
 
 -- monotone predicates over a fixed carrier
 record MP ℓ : Set (suc ℓ ⊔ ℓ₁ ⊔ ℓ₃) where
@@ -92,6 +94,7 @@ _⇒≡_  : ∀ {ℓ₁ ℓ₂}{P : MP ℓ₁}{Q : MP ℓ₂}(F G : P ⇒ Q) →
 _⇒≡_ {P = P}{Q} F G = ∀ {c}(p : P · c) → apply F p PEq.≡ apply G p
 
 -- extensionality for morphisms
+-- This should be provable from proof-irrelevance + extensionality.
 ⇒-Ext : ∀ (ℓ₁ ℓ₂ : Level) → Set _
 ⇒-Ext ℓ₁ ℓ₂ = ∀ {P : MP ℓ₁}{Q : MP ℓ₂}{F G : P ⇒ Q} → F ⇒≡ G → F PEq.≡ G
 
