@@ -205,25 +205,38 @@ module Syntax (g : Graph) where
   -- MONAD --
   -----------
 
-  data Res (a : Set) : Set where timeout : Res a  ;  nullpointer : Res a  ;  ok : (x : a) → Res a
+  data Res (a : Set) : Set where
+    timeout : Res a
+    nullpointer : Res a
+    ok : (x : a) → Res a
 
   M : (s : Scope) → (List Scope → Set) → List Scope → Set
   M s p Σ = Frame s Σ → Heap Σ → Res (∃ λ Σ' → (Heap Σ' × p Σ' × Σ ⊑ Σ'))
 
-  _>>=_     :  ∀ {s Σ}{p q : List Scope → Set} →
-               M s p Σ → (∀ {Σ'} → p Σ' → M s q Σ') → M s q Σ
-  (a >>= b) f h
-    with (a f h)
-  ...  | timeout = timeout
-  ...  | nullpointer = nullpointer
-  ...  | ok (Σ , h' , v , ext)
-       with (b v (wk ext f) h')
-  ...     | timeout = timeout
-  ...     | nullpointer = nullpointer
-  ...     | ok (Σ' , h'' , v' , ext') = ok (Σ' , h'' , v' , ext ⊚ ext')
-
   return     :  ∀ {s Σ}{p : List Scope → Set} → p Σ → M s p Σ
   return v f h = ok (_ , h , v , ⊑-refl)
+
+  fmap : ∀ {A B : List Scope → Set}{Γ Σ} → (∀ {Σ} → A Σ → B Σ) → M Γ A Σ → M Γ B Σ
+  fmap g m f h
+    with (m f h)
+  ...  | timeout = timeout
+  ...  | nullpointer = nullpointer
+  ...  | ok (Σ' , h' , v' , ext') = ok (Σ' , h' , g v' , ext')
+
+  join : ∀ {A : List Scope → Set}{Γ Σ} → M Γ (M Γ A) Σ → M Γ A Σ
+  join m f h
+    with (m f h)
+  ...  | timeout = timeout
+  ...  | nullpointer = nullpointer
+  ...  | ok (Σ' , h' , m' , ext')
+       with (m' (wk ext' f) h')
+  ...     | timeout = timeout
+  ...     | nullpointer = nullpointer
+  ...     | ok (Σ'' , h'' , v'' , ext'') = ok ((Σ'' , h'' , v'' , ext' ⊚ ext''))
+
+  _>>=_     :  ∀ {s Σ}{p q : List Scope → Set} →
+               M s p Σ → (∀ {Σ'} → p Σ' → M s q Σ') → M s q Σ
+  (a >>= b) = join ((fmap b) a)
 
   getFrame   :  ∀ {s Σ} → M s (Frame s) Σ
   getFrame f = return f f
@@ -244,20 +257,20 @@ module Syntax (g : Graph) where
   ...  | (f' , h') = ok (_ , h' , f' , ∷ʳ-⊒ s Σ)
 
   getv       :  ∀ {s t Σ} → (s ↦ t) → M s (Valᵗ t) Σ
-  getv p f h = return (getVal f p h) f h
+  getv p f h = return (getVal p f h) f h
 
   getf  :  ∀ {s s' Σ} → (s ⟶ s')  → M s (Frame s') Σ
-  getf p f h = return (getFrame' f p h) f h
+  getf p f h = return (getFrame' p f h) f h
 
   getd  :  ∀ {s t Σ} → t ∈ declsOf s → M s (Valᵗ t) Σ
-  getd d f h = return (getSlot f d h) f h
+  getd d f h = return (getSlot d f h) f h
 
   setd  :  ∀ {s t Σ} → t ∈ declsOf s → Valᵗ t Σ → M s (λ _ → ⊤) Σ
-  setd d v f h with (setSlot f d v h)
+  setd d v f h with (setSlot d v f h)
   ...             | h' = return tt f h'
 
   setv  :  ∀ {s t Σ} → (s ↦ t) → Valᵗ t Σ → M s (λ _ → ⊤) Σ
-  setv p v f h with (setVal f p v h)
+  setv p v f h with (setVal p v f h)
   ...             | h' = return tt f h'
 
   _^_  :  ∀ {Σ Γ}{p q : List Scope → Set} ⦃ w : Weakenable q ⦄ →
@@ -268,34 +281,8 @@ module Syntax (g : Graph) where
   ...  | nullpointer = nullpointer
   ...  | ok (Σ , h' , v , ext) = ok (Σ , h' , (v , wk ext x) , ext)
 
-
-  -------------------------------------------------
-  -- MONADIC LIFTINGS FOR UPCASTING AND COERCION --
-  -------------------------------------------------
-  
-  upᴹⱽ : ∀ {t t' s Σ} → t <: t' → M s (Val t) Σ → M s (Val<: t') Σ
-  upᴹⱽ σ m f h
-    with (m f h)
-  ...  | timeout = timeout
-  ...  | nullpointer = nullpointer
-  ...  | ok (Σ , h' , v , ext) = ok (Σ , h' , upcast σ v , ext)
-
-  upᴹ : ∀ {t t' s Σ} → t <: t' → M s (Val<: t) Σ → M s (Val<: t') Σ
-  upᴹ σ m f h
-    with (m f h)
-  ...  | timeout = timeout
-  ...  | nullpointer = nullpointer
-  ...  | ok (Σ , h' , upcast σ' v , ext) = ok (Σ , h' , upcast (<:-trans σ' σ) v , ext)
-
-  coerceᴹ :  ∀ {t s Σ} → M s (Val<: t) Σ → M s (Val t) Σ
-  coerceᴹ m f h
-    with (m f h)
-  ...  | timeout = timeout
-  ...  | nullpointer = nullpointer
-  ...  | ok (Σ , h' , upcast σ v , ext) = ok (Σ , h' , coerce<: σ v h' , ext)
-
-  coerceⱽ :  ∀ {t s Σ} → Val<: t Σ → M s (Val t) Σ
-  coerceⱽ (upcast σ v) f h = return (coerce<: σ v h) f h
+  coerceᴹ :  ∀ {t s Σ} → Val<: t Σ → M s (Val t) Σ
+  coerceᴹ (upcast σ v) f h = return (coerce<: σ v h) f h
 
 
   --------------
@@ -318,11 +305,11 @@ module Syntax (g : Graph) where
     eval<:  :  ℕ → ∀ {t s Σ} → Expr<: s t → M s (Val<: t) Σ
     eval    :  ℕ → ∀ {t s Σ} → Expr s t → M s (Val<: t) Σ
 
-    eval<: k (upcast σ e) = upᴹ σ (eval k e)
+    eval<: k (upcast σ e) = fmap (up<: σ) (eval k e)
 
     -- coerces to val
     evalᶜ : ℕ → ∀ {t s Σ} → Expr<: s t → M s (Val t) Σ
-    evalᶜ k e = coerceᴹ (eval<: k e)
+    evalᶜ k e = join (fmap coerceᴹ (eval<: k e))
 
     eval zero _ = timeoutᴹ
     eval (suc k) (num x) = return (reflv (num x))
@@ -338,7 +325,7 @@ module Syntax (g : Graph) where
                                      usingFrame f (getv p) >>= λ{ (vᵗ v) →
                                      return v }}
     eval (suc k) (call e p args)  =  eval<: k e >>= λ v →
-                                     (coerceⱽ v ^ v) >>= λ{ (null , _) → raise ; (ref f , v) →
+                                     (coerceᴹ v ^ v) >>= λ{ (null , _) → raise ; (ref f , v) →
                                      (usingFrame f (getv p) ^ (v ′ f))
                                       >>= λ{ (mᵗ (meth s ⦃ shape ⦄ b) , v , f) →
                                      (eval-args k args ^ (v ′ f)) >>= λ{ (slots , v , f) →
