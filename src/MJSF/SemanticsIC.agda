@@ -384,9 +384,9 @@ module Syntax (g : Graph) where
     init-obj (class0 ⦃ shape ⦄ _ _ _) (super ⦃ shape' ⦄ _)
       with (trans (sym shape) shape')
     ...  | ()
-    init-obj (class1 p ⦃ shape ⦄ ms fs oms) (super ⦃ shape1 ⦄ x)
+    init-obj (class1 p ⦃ shape ⦄ ms fs oms) (super ⦃ shape' ⦄ x)
       = getv p >>= λ{ (cᵗ class' ic f') →
-        case (trans (sym shape) shape1) of λ{ refl →
+        case (trans (sym shape) shape') of λ{ refl → -- case analysis to show that  scope shape facts are identical
           (usingFrame f' (init-obj class' x) ^ f') >>= λ{ (f , f') →
         init _ ⦃ shape ⦄ (slotify ms ++-all defaults fs) (f' ∷ f ∷ []) >>= λ f'' →
         (usingFrame f'' (override oms) ^ f'') >>= λ{ (_ , f'') → return f'' }}}}
