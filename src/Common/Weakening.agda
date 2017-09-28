@@ -20,8 +20,8 @@ instance
   all-weakenable wₐ = record {
     wk = λ ext v → List∀.map (λ {a} y → Weakenable.wk (wₐ a) ext y) v }
 
-  const-weakenable : ∀ {i}{A : Set i} → Weakenable (λ _ → A)
-  const-weakenable = record { wk = λ ext c → c }
+const-weakenable : ∀ {A : Set} → Weakenable (λ _ → A)
+const-weakenable = record { wk = λ ext c → c }
 
 -- nicer syntax for transitivity
 infixl 30 _⊚_
