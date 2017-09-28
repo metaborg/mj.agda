@@ -30,28 +30,28 @@ mutual
   Env : Ctx → Set
   Env Γ = All Val Γ
 
-EvalM : Ctx → Set → Set
-EvalM Γ a  =  Env Γ → Maybe a
+M : Ctx → Set → Set
+M Γ a  =  Env Γ → Maybe a
 
 
-_>>=_    : ∀ {Γ a b} → EvalM Γ a → (a → EvalM Γ b) → EvalM Γ b
+_>>=_    : ∀ {Γ a b} → M Γ a → (a → M Γ b) → M Γ b
 (f >>= c) E with (f E)
 ... | just x = c x E
 ... | nothing = nothing
 
-return   : ∀ {Γ a} → a → EvalM Γ a
+return   : ∀ {Γ a} → a → M Γ a
 return x E = just x
 
-getEnv   : ∀ {Γ} → EvalM Γ (Env Γ)
+getEnv   : ∀ {Γ} → M Γ (Env Γ)
 getEnv E = return E E
 
-usingEnv : ∀ {Γ Γ' a} → Env Γ → EvalM Γ a → EvalM Γ' a
+usingEnv : ∀ {Γ Γ' a} → Env Γ → M Γ a → M Γ' a
 usingEnv E f _ = f E
 
-timeout  : ∀ {Γ a} → EvalM Γ a
+timeout  : ∀ {Γ a} → M Γ a
 timeout = λ _ → nothing
 
-eval : ℕ → ∀ {Γ t} → Expr Γ t → EvalM Γ (Val t)
+eval : ℕ → ∀ {Γ t} → Expr Γ t → M Γ (Val t)
 eval zero     _        =   timeout
 eval (suc k)  unit     =  return unit
 eval (suc k)  (num x)  =  return (num x)

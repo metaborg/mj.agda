@@ -63,11 +63,7 @@ mutual
 
 instance
   weaken-val' : ∀ {t} → Weakenable (Val t)
-  weaken-val' = record { weaken = weaken-val }
-
-  weaken-unit : Weakenable (λ Σ → ⊤)
-  weaken-unit = record { weaken = λ _ _ → tt }
-
+  weaken-val' = record { wk = weaken-val }
 
 return   :    ∀ {Σ Γ}{p : List Ty → Set} → p Σ → M Γ p Σ
 return x E μ = just (_ , μ , x , ⊑-refl)
@@ -110,7 +106,7 @@ update   :    ∀ {Σ Γ t} → t ∈ Σ → Val t Σ → M Γ (λ _ → ⊤) Σ
 update x v E μ = return tt E (update-store x v μ)
 
 weaken : ∀ {i}{p : List Ty → Set i}⦃ w : Weakenable p ⦄ → ∀ {Σ Σ'} → Σ ⊑ Σ' → p Σ → p Σ'
-weaken ⦃ w ⦄ ext v = Weakenable.weaken w ext v
+weaken ⦃ w ⦄ ext v = Weakenable.wk w ext v
 
 _^_  : ∀ {Σ Γ}{p q : StoreTy → Set} → ⦃ w : Weakenable q ⦄ → M Γ p Σ → q Σ → M Γ (p ⊗ q) Σ
 (f ^ x) E μ = case (f E μ) of λ {
