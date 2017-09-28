@@ -383,7 +383,7 @@ module Syntax (g : Graph) where
         (usingFrame f' (override oms) ^ f') >>= λ{ (_ , f') → return f' }
     init-obj (class0 ⦃ shape ⦄ _ _ _) (super ⦃ shape' ⦄ _)
       with (trans (sym shape) shape')
-    ...  | ()
+    ... | ()
     init-obj (class1 p ⦃ shape ⦄ ms fs oms) (super ⦃ shape' ⦄ x) with (trans (sym shape) shape')
     ... | refl =
       getv p >>= λ{ (cᵗ class' ic f') →
@@ -393,7 +393,7 @@ module Syntax (g : Graph) where
       return f'' }}}
     init-obj (class1 _ ⦃ shape ⦄ _ _ _) (obj ⦃ shape' ⦄)
       with (trans (sym shape) shape')
-    ...  | ()
+    ... | ()
 
     slotify : ∀ {ms s Σ} → All (#m (Meth s)) ms → Slots ms Σ
     slotify {[]}            []           = []
