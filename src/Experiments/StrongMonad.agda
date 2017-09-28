@@ -174,19 +174,11 @@ module Strong where
 
   -- internal fmap
   fmap' : ∀ {p q}{P : MP p}{Q : MP q} → (Q ^ P) ⇒ (M Q) ^ (M P)
-  fmap' {P = P}{Q} = Cat.mk⇒
-    (λ {c} F → fmap F ∘ ts (∼mono c) P)
-    (λ c~c' {F} →
-      ⇒-ext λ p →
-      funext³ λ Σ ext μ₀ →
-        mcong {P = Q} refl H.refl H.refl
-          (H.≡-to-≅ (cong (λ u → apply F (u , _)) ⊑-trans-assoc ))
-    )
+  fmap' {P = P}{Q} = curry (fmap ε ∘ ts (Q ^ P) P)
 
   -- internal bind
   bind' : ∀ {p q}{P : MP p}(Q : MP q) → (M P ⊗ (M Q ^ P)) ⇒ M Q
   bind' {P = P} Q =
     μ Q
-    ∘ ε
-    ∘ xmap fmap' (id (M P))
-    ∘ swap (M P) (M Q ^ P)
+    ∘ fmap (ε ∘ swap P (M Q ^ P))
+    ∘ ts' P (M Q ^ P)
