@@ -71,8 +71,8 @@ uncaught = Lib , let
     )
     (var v)
 
-test : caught ⇓ (λ v → v ≡ num 18)
+test : caught ⇓⟨ 100 ⟩ (λ v → v ≡ num 18)
 test = refl
 
-test₂ : uncaught ⇓! (λ μ e → e ≡ other)
+test₂ : uncaught ⇓⟨ 100 ⟩! (λ μ e → e ≡ other)
 test₂ = refl
