@@ -117,5 +117,5 @@ p₀ = Lib ,
     )
     (get (var x) "x")
 
-test0 : p₀ ⇓ (λ {W} (v : Val W int) → v ≡ num 18)
+test0 : p₀ ⇓⟨ 100 ⟩ (λ {W} (v : Val W int) → v ≡ num 18)
 test0 = refl

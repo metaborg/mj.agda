@@ -33,7 +33,6 @@ data Expr (Γ : Ctx) : Ty c → Set where
   var      : ∀ {a} → Var Γ a → Expr Γ a
   iop      : NativeBinOp → (l r : Expr Γ int) → Expr Γ int
   upcast   : ∀ {c c'} → Σ ⊢ c <: c' → Expr Γ (ref c) → Expr Γ (ref c')
-  -- downcast : ∀ {c c'} → Σ ⊢ c' <: c → Expr Γ (ref c) → Expr Γ (ref c')
 
   -- storefull
   new      : ∀ C → All (Expr Γ) (Class.constr (Σ C)) → Expr Γ (ref C)
@@ -53,9 +52,7 @@ mutual
     try_catch_ : ∀ {O O'} → Stmt I r O → Stmt I r O' → Stmt I r I
     while_do_  : ∀ {O} → Expr I int → Stmt I r O → Stmt I r I
     block      : ∀ {O} → Stmts I r O → Stmt I r I
+    if_then_else_ : ∀ {a} → Expr I int → Stmt I r a → Stmt I r a → Stmt I r a
 
   Stmts : Ctx → Ty c → Ctx → Set
   Stmts I r O = Star (λ I' O' → Stmt I' r O') I O
-
-postulate wkₑ : ∀ {Γ δ a} → Expr Γ a → Expr (Γ List.++ δ) a
-postulate wkₛ : ∀ {I O δ a} → Stmt I a O → Stmt (I List.++ δ) a (O List.++ δ)
