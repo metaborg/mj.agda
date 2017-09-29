@@ -81,10 +81,13 @@ module SyntaxG (g : Graph) where
                 t' <: t → Expr s t' → Expr<: s t
 
   data Stmt (s : Scope) : Scope → Set where
-    loc  : ∀ (s' : Scope)(t' : VTy)⦃ shape : g s' ≡ ([ vᵗ t' ] , [ s ]) ⦄ → Stmt s s'
-    asgn : ∀ {t'} → (s ↦ vᵗ t') → Expr<: s t' → Stmt s s
-    set  : ∀ {s' t'} → Expr<: s (ref s') → (s' ↦ vᵗ t') → Expr<: s t' → Stmt s s
-    do   : ∀ {t'} → Expr<: s t' → Stmt s s
+    do    : ∀ {t'} → Expr<: s t' → Stmt s s
+    if    : ∀ {s' s'' : Scope} → Expr<: s int → Stmt s s → Stmt s s → Stmt s s -- branches are blocks
+    set   : ∀ {s' t'} → Expr<: s (ref s') → (s' ↦ vᵗ t') → Expr<: s t' → Stmt s s
+    loc   : ∀ (s' : Scope)(t' : VTy)⦃ shape : g s' ≡ ([ vᵗ t' ] , [ s ]) ⦄ → Stmt s s'
+    asgn  : ∀ {t'} → (s ↦ vᵗ t') → Expr<: s t' → Stmt s s
+    -- early returns
+    block : ∀ {s'} → Star Stmt s s' → Stmt s s
 
   Stmts : Scope → Scope → Set
   Stmts = Star Stmt

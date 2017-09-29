@@ -82,14 +82,23 @@ module Syntax (g : Graph) where
 
     eval-stmt : ℕ → ∀ {s s' Σ} → Stmt s s' → M s (Frame s') Σ
     eval-stmt zero _ = timeoutᴹ
-    eval-stmt (suc k) (loc s t) = getFrame >>= λ f → init s (vᵗ (default<: t) ∷ []) (f ∷ [])
-    eval-stmt (suc k) (asgn x e) = eval<: k e >>= λ{ v →
-                                   setv x (vᵗ v) >>= λ _ → getFrame }
-    eval-stmt (suc k) (set e x e') = evalᶜ k e >>= λ{ (ref f) →
-                                     (eval<: k e' ^ f) >>= λ{ (v , f) →
-                                     usingFrame f (setv x (vᵗ v)) >>= λ _ → getFrame }
-                                   ; null → raise }
     eval-stmt (suc k) (do e) = eval<: k e >>= λ _ → getFrame
+    eval-stmt (suc k) (if c t e) =
+      evalᶜ k c >>= λ{ (num (+ zero)) → eval-stmt k t
+      ; (num i) → eval-stmt k e }
+    eval-stmt (suc k) (set e x e') =
+      evalᶜ k e >>= λ{ null → raise ; (ref f) →
+      (eval<: k e' ^ f) >>= λ{ (v , f) →
+      usingFrame f (setv x (vᵗ v)) >>= λ _ → getFrame }}
+    eval-stmt (suc k) (loc s t) =
+      getFrame >>= λ f → init s (vᵗ (default<: t) ∷ []) (f ∷ [])
+    eval-stmt (suc k) (asgn x e) =
+      eval<: k e >>= λ{ v →
+      setv x (vᵗ v) >>= λ _ → getFrame }
+    eval-stmt (suc k) (block stmts) =
+      getFrame >>= λ f →
+      (eval-stmts k stmts ^ f) >>= λ{ (_ , f) →
+      return f }
 
     eval-stmts : ℕ → ∀ {s s' Σ} → Stmts s s' → M s (Frame s') Σ
     eval-stmts zero _ = timeoutᴹ
