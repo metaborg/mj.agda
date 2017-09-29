@@ -6,6 +6,7 @@ open import Data.Product hiding (map)
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open ≡-Reasoning
 open import Function
+open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Star hiding (return ; _>>=_ ; map)
 
 open import Common.Strength
@@ -17,7 +18,7 @@ open import MJSF.Values k
 open import MJSF.Monad k
 open import ScopeGraph.ScopesFrames k Ty hiding (Scope)
 
-module Syntax (g : Graph) where
+module Semantics (g : Graph) where
 
   open ValuesG g
   open MonadG g
@@ -38,12 +39,12 @@ module Syntax (g : Graph) where
   defaults : ∀ {fs : List Ty}{Σ} → All (#v (λ _ → ⊤)) fs → Slots fs Σ
   defaults {[]}          []           = []
   defaults {vᵗ t ∷ fs} (#v' _ ∷ ts) = vᵗ (reflv (default t)) ∷ defaults {fs} ts
-  
+
   slotify : ∀ {ms s Σ} → All (#m (Meth s)) ms → Slots ms Σ
   slotify {[]}            []           = []
   slotify {mᵗ ts rt ∷ mts} (#m' m ∷ ms) = mᵗ m ∷ slotify {mts} ms
 
-  override : ∀ {s Σ}{oms : List (List VTy × VTy)} → 
+  override : ∀ {s Σ}{oms : List (List VTy × VTy)} →
              All (λ x → (s ↦ (mᵗ (proj₁ x) (proj₂ x))) × Meth s (proj₁ x) (proj₂ x)) oms →
              M s (λ _ → ⊤) Σ
   override [] = return tt
@@ -67,6 +68,17 @@ module Syntax (g : Graph) where
   init-obj (class1 _ ⦃ shape ⦄ _ _ _) (obj ⦃ shape' ⦄) with (trans (sym shape) shape')
   ... | ()
 
+  _>>=ᶜ_     :  ∀ {s s' s'' r Σ} →
+               M s (λ Σ → Val<: r Σ ⊎ Frame s' Σ) Σ →
+               (∀ {Σ'} → Frame s' Σ' → M s (λ Σ → Val<: r Σ ⊎ Frame s'' Σ) Σ') →
+               M s (λ Σ → Val<: r Σ ⊎ Frame s'' Σ) Σ
+  (m >>=ᶜ f) = m >>= λ{
+      (inj₁ v) → return (inj₁ v) ;
+      (inj₂ fr) → f fr
+    }
+
+  continue : ∀ {s r Σ} → M s (λ Σ → Val<: r Σ ⊎ Frame s Σ) Σ
+  continue = fmap inj₂ getFrame
 
   mutual
     -- upcasts
@@ -98,7 +110,7 @@ module Syntax (g : Graph) where
                                      (eval-args k args ^ (v ′ f)) >>= λ{ (slots , v , f) →
                                      init s ⦃ shape ⦄ (vᵗ v ∷ slots) (f ∷ []) >>= λ f' →
                                      usingFrame f' (eval-body k b) }}}
-  
+
     eval-args : ℕ → ∀ {s ts Σ} → All (Expr<: s) ts → M s (Slots (Data.List.Most.map vᵗ ts)) Σ
     eval-args zero _ = timeoutᴹ
     eval-args (suc k) [] = return []
@@ -106,36 +118,38 @@ module Syntax (g : Graph) where
                                  (eval-args k es ^ v) >>= λ{ (slots , v) →
                                  return (vᵗ v ∷ slots) }
 
-    eval-stmt : ℕ → ∀ {s s' Σ} → Stmt s s' → M s (Frame s') Σ
+    eval-stmt : ℕ → ∀ {s s' r Σ} → Stmt s r s' → M s (λ Σ → Val<: r Σ ⊎ Frame s' Σ) Σ
     eval-stmt zero _ = timeoutᴹ
-    eval-stmt (suc k) (do e) = eval<: k e >>= λ _ → getFrame
+    eval-stmt (suc k) (do e) = eval<: k e >>= λ _ → continue
     eval-stmt (suc k) (ifz c t e) =
       evalᶜ k c >>= λ{ (num (+ zero)) → eval-stmt k t
       ; (num i) → eval-stmt k e }
     eval-stmt (suc k) (set e x e') =
       evalᶜ k e >>= λ{ null → raise ; (ref f) →
       (eval<: k e' ^ f) >>= λ{ (v , f) →
-      usingFrame f (setv x (vᵗ v)) >>= λ _ → getFrame }}
+      usingFrame f (setv x (vᵗ v)) >>= λ _ → continue }}
     eval-stmt (suc k) (loc s t) =
-      getFrame >>= λ f → init s (vᵗ (default<: t) ∷ []) (f ∷ [])
+      getFrame >>= λ f → fmap inj₂ (init s (vᵗ (default<: t) ∷ []) (f ∷ []))
     eval-stmt (suc k) (asgn x e) =
       eval<: k e >>= λ{ v →
-      setv x (vᵗ v) >>= λ _ → getFrame }
+      setv x (vᵗ v) >>= λ _ → continue }
     eval-stmt (suc k) (block stmts) =
-      getFrame >>= λ f →
-      (eval-stmts k stmts ^ f) >>= λ{ (_ , f) →
-      return f }
+      (eval-stmts k stmts) >>= λ{ _ →
+      continue }
+    eval-stmt (suc k) (ret e) =
+      (eval<: k e) >>= λ{ v →
+      return (inj₁ v) }
 
-    eval-stmts : ℕ → ∀ {s s' Σ} → Stmts s s' → M s (Frame s') Σ
+    eval-stmts : ℕ → ∀ {s r s' Σ} → Stmts s r s' → M s (λ Σ → Val<: r Σ ⊎ Frame s' Σ) Σ
     eval-stmts zero _ = timeoutᴹ
-    eval-stmts (suc k) ε = getFrame
-    eval-stmts (suc k) (stmt ◅ stmts) = eval-stmt k stmt >>= λ f' →
+    eval-stmts (suc k) ε = continue
+    eval-stmts (suc k) (stmt ◅ stmts) = eval-stmt k stmt >>=ᶜ λ f' →
                                         usingFrame f' (eval-stmts k stmts)
 
     eval-body : ℕ → ∀ {s t Σ} → Body s t → M s (Val<: t) Σ
     eval-body zero _ = timeoutᴹ
-    eval-body (suc k) (body stmts e) = eval-stmts k stmts >>= λ f →
-                                       usingFrame f (eval<: k e)
+    eval-body (suc k) (body stmts e) = eval-stmts k stmts >>= λ{
+      (inj₁ v)  → return v;
+      (inj₂ fr) → usingFrame fr (eval<: k e) }
     eval-body (suc k) (body-void stmts) = eval-stmts k stmts >>= λ f →
                                           return (reflv void)
-
