@@ -17,6 +17,7 @@ open import Data.Vec.All.Properties.Extra as Vec∀++
 open import Data.List.Most
 open import Relation.Nullary.Decidable
 open import Data.Star hiding (return; _>>=_)
+open import Data.Sum using (_⊎_; inj₁; inj₂)
 
 import Data.Vec.All as Vec∀
 
@@ -39,8 +40,8 @@ open ObjEncoding encoding
 WSet = World c → Set
 
 data Exception : Set where
-  earlyRet : Exception
-  other    : Exception
+  nullderef : Exception
+  other     : Exception
 
 data Result (W : World c)(A : WSet) : Set where
   exception : ∀ {W'} → W' ⊒ W → Store W' → Exception → Result W A
@@ -76,12 +77,12 @@ instance
     weaken = sval-weaken }
 
 infixl 10 _>>=_
-_>>=_   : ∀ {Γ W}{A B : WSet} → EvalM Γ W A → (∀ {W'} ⦃ p : IsIncludedOnce W W' ⦄ → A W' → W' ⊒ W → EvalM Γ W' B) →
+_>>=_   : ∀ {Γ W}{A B : WSet} → EvalM Γ W A → (∀ {W'} → A W' → W' ⊒ W → EvalM Γ W' B) →
           EvalM Γ W B
 (k >>= f) E μ with k E μ
 ... | exception ext μ' e = exception ext μ' e
 ... | timeout = timeout
-... | returns ext μ' v = result-strengthen ext $ f ⦃ record { is-included-once = ext } ⦄ v ext (map-all (weaken ext) E) μ'
+... | returns ext μ' v = result-strengthen ext $ f v ext (map-all (weaken ext) E) μ'
 
 _recoverWith_ : ∀ {Γ W}{A : WSet} → EvalM Γ W A →
                 (∀ {W'} → Exception → W' ⊒ W → EvalM Γ W' A) →
@@ -120,13 +121,13 @@ store* (v ∷ vs) =
 
 read-field : ∀ {Γ : Ctx}{C W f a} → IsMember C FIELD f a → Val W (ref C) →
             EvalM Γ W (λ W → Val W a)
-read-field m null = raiseM other
+read-field m null = raiseM nullderef
 read-field m (ref o C<:C') E μ with ∈-all o μ
 read-field m (ref o C<:C') E μ | obj cid O = returns ⊑-refl μ (getter _ O (inherit' C<:C' m))
 
 write-field : ∀ {Γ C W f a} → IsMember C FIELD f a → Val W (ref C) → Val W a →
             EvalM Γ W (flip Val (ref C))
-write-field m null v = raiseM other
+write-field m null v = raiseM nullderef
 write-field m (ref o s) v E μ with ∈-all o μ
 write-field m (ref o s) v E μ | obj cid O =
   let
@@ -241,20 +242,19 @@ mutual
   -- method calls
   evalₑ (suc k) (call e _ {acc = mtd} args) =
     evalₑ k e >>= λ{
-      null _ → raiseM other ;
+      null _ → raiseM nullderef ;
       r@(ref {dyn-cid} o s₁) w₁ →
         -- evaluate the arguments
         eval-args k args >>= λ rvs w₂ →
         store (val (ref (weaken w₂ o) ε)) >>= λ mutself w₃ →
         -- dynamic lookup of the method on the runtime class of the reference
         -- and execution of the call
-        eval-method k ε (weaken (w₂ ⊚ w₃) o) (weaken w₃ rvs) (mbody dyn-cid (inherit _ s₁ mtd))
-    }
+        (eval-method k ε (weaken (w₂ ⊚ w₃) o) (weaken w₃ rvs) (mbody dyn-cid (inherit _ s₁ mtd))) }
 
   -- field lookup in the heap
   evalₑ (suc k) (get e _ {_}{fld}) =
     evalₑ k e >>= λ{
-      null _ → raiseM other ;
+      null _ → raiseM nullderef ;
       (ref o s) w₁ →
       deref o >>= λ{ (obj c O) _ →
       return (getter _ O $ inherit' s (sound fld)) }}
@@ -268,46 +268,59 @@ mutual
   -- command evaluation
   --
 
+  _>>=c_ : ∀ {I O O' : Ctx}{W : World c}{a} →
+           EvalM I W (λ W → Val W a ⊎ Env O W) →
+           (∀ {W'} → Env O W' → W' ⊒ W → EvalM I W' (λ W → Val W a ⊎ Env O' W)) →
+           EvalM I W (λ W → Val W a ⊎ Env O' W)
+  m >>=c f = m >>= λ{
+    (inj₁ v) w → return (inj₁ v) ;
+    (inj₂ E) w → f E w }
+
   evalc : ∀ {I : Ctx}{O : Ctx}{W : World c}{a} → ℕ →
-          Stmt I a O → EvalM I W (λ W → Env O W)
+          Stmt I a O → EvalM I W (λ W → Val W a ⊎ Env O W)
+
+  continue : ∀ {Γ : Ctx}{W : World c}{a} → EvalM Γ W (λ W → Val W a ⊎ Env Γ W)
+  continue = getEnv λ E → return (inj₂ E)
 
   evalc zero _ = doTimeout
 
   evalc (suc k) raise = raiseM other
 
   evalc (suc k) (block stmts) =
-    eval-stmts k stmts >>= λ _ _ → getEnv return
+    eval-stmts k stmts >>=c λ _ _ → continue
 
   evalc (suc k) (try cs catch cs') =
-    (evalc k cs >>= λ _ _ → getEnv return)
-    recoverWith (λ e ext → evalc k cs' >>= λ _ _ → getEnv return)
+    (evalc k cs >>=c λ _ _ → continue)
+    recoverWith (λ e ext → evalc k cs' >>= λ _ _ → continue)
 
   -- new local variable
   evalc (suc k) (loc a) =
     store (val $ default a) >>= λ r w →
-    getEnv λ E → return (E ⊕ r)
+    getEnv λ E → return (inj₂ (E ⊕ r))
 
   -- assigning to a local
   evalc (suc k) (asgn x e) =
     evalₑ k e >>= λ v w₁ →
     getEnv (λ E → return $ getvar x E) >>= λ addr w₂ →
     update addr (val (weaken w₂ v )) >>= λ _ _ →
-    getEnv return
+    continue
 
   -- setting a field
   evalc (suc k) (set r _ {_}{fld} e) =
-    evalₑ k r >>= λ{ null _ → raiseM other ; r@(ref _ _) w₁ →
+    evalₑ k r >>= λ{ null _ → raiseM nullderef ; r@(ref _ _) w₁ →
     evalₑ k e >>= λ v w₂ →
     write-field (sound fld) (weaken w₂ r) v >>= λ _ _ →
-    getEnv return }
+    continue }
 
   -- side-effectful expressions
   evalc (suc k) (do e) =
     evalₑ k e >>= λ _ _ →
-    getEnv return
+    continue
 
   -- early returns
-  evalc (suc k) (ret x) = raiseM earlyRet
+  evalc (suc k) (ret e) =
+    evalₑ k e >>= λ v _ →
+    return (inj₁ v)
 
   -- if-then-else blocks
   evalc (suc k) (if e then cs else ds) =
@@ -320,15 +333,16 @@ mutual
   evalc (suc k) (while e do b) =
     evalₑ (suc k) e >>= λ{
       (num zero)    w → evalc k b >>= λ _ _ → evalc k (while e do b) ;
-      (num (suc _)) w → getEnv return
+      (num (suc _)) w → continue
     }
 
   -- evaluating a method body
   eval-body : ∀ {I : Ctx}{W : World c}{a} → ℕ → Body I a → EvalM I W (λ W → Val W a)
   eval-body k (body ε re) = evalₑ k re
   eval-body k (body stmts@(_ ◅ _) e) =
-    eval-stmts k stmts >>= λ E' _ →
-    usingEnv E' (evalₑ k e)
+    (eval-stmts k stmts) >>= λ{
+      (inj₁ v) w → return v ;
+      (inj₂ E) w → usingEnv E (evalₑ k e) }
 
   evalₑ* : ∀ {Γ W as} → ℕ → All (Expr Γ) as → EvalM Γ W (λ W → All (Val W) as)
   evalₑ* k [] = return []
@@ -337,10 +351,10 @@ mutual
     evalₑ* k es >>= λ vs w →
     return (weaken w v ∷ vs)
 
-  eval-stmts : ∀ {Γ Γ' W a} → ℕ → Stmts Γ a Γ' → EvalM Γ W (λ W → Env Γ' W)
-  eval-stmts k ε = getEnv return
+  eval-stmts : ∀ {Γ Γ' W a} → ℕ → Stmts Γ a Γ' → EvalM Γ W (λ W → Val W a ⊎ Env Γ' W)
+  eval-stmts k ε = continue
   eval-stmts k (x ◅ st) =
-    evalc k x >>= λ E' _ →
+    evalc k x >>=c λ E' _ →
     usingEnv E' (eval-stmts k st)
 
   -- evaluating a program
