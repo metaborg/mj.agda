@@ -5,7 +5,8 @@ open import Relation.Binary hiding (_⇒_)
 module Experiments.Category {ℓ₁ ℓ₂ ℓ₃} (APO : Preorder ℓ₁ ℓ₂ ℓ₃) where
 
 open import Level
-open Preorder APO
+open Preorder APO renaming (_∼_ to _≤_)
+
 open import Function as Fun using (flip)
 open import Relation.Unary using (Pred)
 open import Data.Product as Prod using (_,_; _×_)
@@ -16,10 +17,10 @@ open import Algebra.FunctionProperties
 
 record IsMP {ℓ}(P : Pred Carrier ℓ) : Set (ℓ ⊔ ℓ₁ ⊔ ℓ₃) where
   field
-    monotone : ∀ {c c'} → c ∼ c' → P c → P c'
+    monotone : ∀ {c c'} → c ≤ c' → P c → P c'
 
     monotone-refl  : ∀ {c} p → monotone (refl {c}) p PEq.≡ p
-    monotone-trans : ∀ {c c' c''} p (c~c' : c ∼ c')(c'~c'' : c' ∼ c'') →
+    monotone-trans : ∀ {c c' c''} p (c~c' : c ≤ c')(c'~c'' : c' ≤ c'') →
                      monotone (trans c~c' c'~c'') p
                      PEq.≡
                      monotone c'~c'' (monotone c~c' p)
@@ -64,7 +65,8 @@ record _⇒_ {p q}(P : MP p)(Q : MP q) : Set (p ⊔ q ⊔ ℓ₁ ⊔ ℓ₃) whe
 
   field
     apply         : ∀ {c} → P · c → Q · c
-    monotone-comm : ∀ {c c'}(c~c' : c ∼ c'){p : P · c} →
+
+    monotone-comm : ∀ {c c'}(c~c' : c ≤ c'){p : P · c} →
                     apply {c'} (MP.monotone P c~c' p) PEq.≡ MP.monotone Q c~c' (apply p)
 
 open _⇒_ public
@@ -175,10 +177,44 @@ module Product where
     unique : ∀ {y p q}{Y : MP y}{P : MP p}{Q : MP q}{g : Y ⇒ (P ⊗ Q)} → ⟨ π₁ ∘ g , π₂ ∘ g ⟩ ⇒≡ g
     unique _ = PEq.refl
 
-module Exists where
-  open Product
+module Forall (funext : ∀ {a b} → PEq.Extensionality a b) where
+  -- ∀-quantification over Set
 
-  -- simple existential quantification for indexed monotone predicates
+  Forall : ∀ {ℓ₁ ℓ₂}{I : Set ℓ₁}(P : I → MP ℓ₂) → MP _
+  Forall {I = I} P = mp
+    (λ c → ∀ (i : I) → P i · c)
+    (record {
+      monotone = λ x x₁ i → MP.monotone (P i) x (x₁ i) ;
+      monotone-refl = λ p → funext λ i → MP.monotone-refl (P i) (p i) ;
+      monotone-trans = λ p c~c' c'~c'' → funext λ i → MP.monotone-trans (P i) (p i) c~c' c'~c'' })
+
+module ListAll where
+  -- quantification over the elements in a list
+
+  open import Data.List
+  import Data.List.All as All'
+  open import Data.List.All.Properties.Extra
+
+  All : ∀ {ℓ₁}{I : Set ℓ₁}(P : I → MP ℓ₂) → List I → MP _
+  All P xs = mp
+    (λ c → All'.All (λ x → P x · c) xs)
+    (record {
+      monotone = λ c~c' ps → All'.map (λ {i} x → MP.monotone (P i) c~c' x ) ps ;
+      monotone-refl = λ p → (begin
+        All'.map (λ {i} x → MP.monotone (P i) refl x) p
+          ≡⟨ map-id p (λ i → MP.monotone-refl (P i)) ⟩
+        p ∎) ;
+      monotone-trans = λ p c~c' c'~c'' → (begin
+       All'.map (λ {i} x → MP.monotone (P i) (trans c~c' c'~c'') x) p
+         ≡⟨ map-cong p (λ i p → MP.monotone-trans (P i) p c~c' c'~c'') ⟩
+       All'.map (λ {i} x → MP.monotone (P i) c'~c'' (MP.monotone (P i) c~c' x)) p
+         ≡⟨ PEq.sym (map-map p) ⟩
+       All'.map (λ {i} x → MP.monotone (P i) c'~c'' x) (All'.map (λ {i} x → MP.monotone (P i) c~c' x) p)
+       ∎) })
+
+module Exists where
+  -- ∃-quantification over Set
+
   Exists : ∀ {ℓ₁ ℓ₂}{I : Set ℓ₁}(P : I → MP ℓ₂) → MP _
   Exists {I = I} P = mp (λ x → Prod.∃ λ (i : I) → P i · x) (record {
       monotone = λ{ c~c' (i , px) → i , MP.monotone (P i) c~c' px } ;
@@ -194,6 +230,7 @@ module Exists where
     (λ{ (i , pi) → apply F pi})
     (λ{ c~c' {(i , pi)} → monotone-comm F c~c' })
 
+  open Product
   ∃-⊗-comm : ∀ {ℓ₁ ℓ₂ ℓ₃}{I : Set ℓ₁}(P : I → MP ℓ₂)(Q : MP ℓ₃) →
              Exists (λ i → P i) ⊗ Q ⇒ Exists (λ i → P i ⊗ Q)
   ∃-⊗-comm _ _ = mk⇒
@@ -205,8 +242,7 @@ module Monoid where
   open Product
 
   -- associator
-  assoc : ∀ {p q r}{P : MP p}{Q : MP q}{R : MP r} →
-                  (P ⊗ Q) ⊗ R ≅ P ⊗ (Q ⊗ R)
+  assoc : ∀ {p q r}{P : MP p}{Q : MP q}{R : MP r} → (P ⊗ Q) ⊗ R ≅ P ⊗ (Q ⊗ R)
   assoc = record {
     to = mk⇒ (λ{ ((p , q) , r) → p , (q , r) }) (λ c~c' → PEq.refl) ;
     from = mk⇒ (λ{ (p , (q , r)) → (p , q) , r }) (λ c~c' → PEq.refl) ;
@@ -232,10 +268,10 @@ module Monoid where
   -- TODO: coherence conditions
 
 module Exponential
-  (trans-assoc : ∀ {c c' c'' c'''}{p : c ∼ c'}{q : c' ∼ c''}{r : c'' ∼ c'''} →
+  (trans-assoc : ∀ {c c' c'' c'''}{p : c ≤ c'}{q : c' ≤ c''}{r : c'' ≤ c'''} →
                  trans (trans p q) r PEq.≡ trans p (trans q r))
-  (trans-refl₁ : ∀ {c c'}{p : c ∼ c'} → trans refl p PEq.≡ p)
-  (trans-refl₂ : ∀ {c c'}{p : c ∼ c'} → trans p refl PEq.≡ p)
+  (trans-refl₁ : ∀ {c c'}{p : c ≤ c'} → trans refl p PEq.≡ p)
+  (trans-refl₂ : ∀ {c c'}{p : c ≤ c'} → trans p refl PEq.≡ p)
   where
 
   -- for convencience we assume extensionality for morphisms here for now
@@ -245,22 +281,22 @@ module Exponential
 
   -- the preorder that we have defined monotonicity by is itself
   -- a monotone predicate
-  ∼mono : Carrier → MP _
-  ∼mono c = mp (λ c' → c ∼ c' ) (record {
+  ≤mono : Carrier → MP _
+  ≤mono c = mp (λ c' → c ≤ c' ) (record {
     monotone = flip trans  ;
     monotone-refl = λ _ → trans-refl₂ ;
     monotone-trans = λ _ _ _ → PEq.sym trans-assoc })
 
   -- ... such that we can define the notion of a monotone function as follows:
   Mono⇒ : ∀ {ℓ ℓ₂}(P : MP ℓ)(Q : MP ℓ₂)(c : Carrier) → Set _
-  Mono⇒ P Q c = ∼mono c ⊗ P ⇒ Q
+  Mono⇒ P Q c = ≤mono c ⊗ P ⇒ Q
   -- the intuition here comes from the naive interpretation
   -- of the type of curry: (X ⊗ P ⇒ Q) → X ⇒ (Const (P ⇒ Q)).
   -- unfolding the return type you would get something like the following Agda type:
   --   ∀ c → X · c → (∀ c' → P · c' → Q · c')
   -- this is too weak, because c' and c are unrelated and thus we can't combine
   -- X · c and P · c' into a product (X ⊗ P) · c'.
-  -- The above Mono⇒ fixes this by simply requiring the relation c ∼ c' as
+  -- The above Mono⇒ fixes this by simply requiring the relation c ≤ c' as
   -- an additional argument.
 
   infixl 80 _^_
@@ -272,9 +308,9 @@ module Exponential
         mk⇒
           (λ p → apply φ (trans c~c' (Prod.proj₁ p) , Prod.proj₂ p))
           (λ{ c~c'' {w , p} → (begin
-            apply φ (trans c~c' (MP.monotone (∼mono _) c~c'' w) , (MP.monotone P c~c'' p))
+            apply φ (trans c~c' (MP.monotone (≤mono _) c~c'' w) , (MP.monotone P c~c'' p))
               ≡⟨ PEq.cong (λ u → apply φ (u , MP.monotone P c~c'' p)) (PEq.sym trans-assoc) ⟩
-            apply φ (MP.monotone (∼mono _ ⊗ P) c~c'' (trans c~c' w , p))
+            apply φ (MP.monotone (≤mono _ ⊗ P) c~c'' (trans c~c' w , p))
               ≡⟨ monotone-comm φ c~c'' ⟩
             MP.monotone Q c~c'' (apply φ (trans c~c' w , p))
           ∎)});
@@ -306,7 +342,7 @@ module Exponential
         ≡⟨ PEq.sym (PEq.cong (λ u → apply F (u , _)) trans-refl₁) ⟩
       (apply F (trans refl c~c' , MP.monotone Y c~c' p))
         ≡⟨ PEq.refl ⟩
-      (apply F (MP.monotone (∼mono _ ⊗ Y) c~c' (refl , p)))
+      (apply F (MP.monotone (≤mono _ ⊗ Y) c~c' (refl , p)))
         ≡⟨ monotone-comm F c~c' ⟩
       MP.monotone Z c~c' (apply F (refl , p))
     ∎ )}

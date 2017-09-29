@@ -37,7 +37,6 @@ mcong refl H.refl H.refl H.refl = refl
 
 -- The monad takes monotone predicates over worlds
 -- to monotone functions over stores in these worlds.
--- (this is a monotone-predicate transfomer)
 M : ∀ {ℓ} → MP ℓ → MP ℓ
 M P = mp (λ Σ → ∀ Σ₁ → (ext : Σ ⊑ Σ₁) → (μ : Store Σ₁) → ∃ λ Σ₂ → Σ₂ ⊒ Σ₁ × Store Σ₂ × P · Σ₂)
   record {
