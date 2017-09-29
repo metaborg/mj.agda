@@ -181,6 +181,9 @@ mutual
                 Σ ⊢ cid <: pid → (obj cid) ∈ W →
                 All (λ ty → vty ty ∈ W) as →
                 InheritedMethod pid m (as , b) → EvalM Γ W (flip Val b)
+  eval-method s o args (pid' , pid<:pid' , body b) =
+    store (val (ref o (s ◅◅ pid<:pid'))) >>= λ mutself w →
+    usingEnv (mutself ∷ weaken w args) (eval-body b)
   eval-method {_}{m}{as}{b} s o args (Object , _ , super x ⟨ _ ⟩then _) rewrite Σ-Object =
     -- calling a method on Object is improbable...
     ⊥-elim (∉Object {METHOD}{m}{(as , b)}(sound x))
@@ -197,9 +200,6 @@ mutual
       store (val (ref (weaken (w₀ ⊚ w₁ ⊚ w₂ ⊚ w₃) o) (s ◅◅ pid<:pid'))) >>= λ mutself' w₄ →
       -- call body
       usingEnv ((weaken w₄ mutret ∷ mutself' ∷ weaken (w₀ ⊚ w₁ ⊚ w₂ ⊚ w₃ ⊚ w₄) args)) (eval-body b)
-  eval-method s o args (pid' , pid<:pid' , body b) =
-    store (val (ref o (s ◅◅ pid<:pid'))) >>= λ mutself w →
-    usingEnv (mutself ∷ weaken w args) (eval-body b)
 
   --
   -- evaluation of expressions
@@ -304,6 +304,13 @@ mutual
 
   -- early returns
   evalc (ret x) = raiseM earlyRet
+
+  -- if-then-else blocks
+  evalc (if e then cs else ds) =
+    evalₑ e >>= λ{
+      (num zero) w → evalc cs ;
+      (num (suc _)) w → evalc ds
+    }
 
   -- while loops
   evalc (while e do b) =
