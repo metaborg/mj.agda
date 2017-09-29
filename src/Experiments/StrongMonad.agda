@@ -165,22 +165,15 @@ module Strong where
 
   diagram₃ : ∀ {ℓ₁ ℓ₂}(A : MP ℓ₁)(B : MP ℓ₂) →
              η (A ⊗ B) ⇒≡ ts A B ∘ xmap (id A) (η B)
-  diagram₃ A B =
-    λ{ (a , b)  →
-       funext³ λ Σ ext r →
-         mcong {P = A ⊗ B}
-               refl
-               H.refl
-               H.refl
-               (H.≡-to-≅
-                 (cong₂ (λ x₁ x₂ → x₁ , x₂)
-                   (cong₂ (λ ext a → MP.monotone A ext a)
-                     (trans (sym ⊑-trans-refl')
-                       (cong (λ r → ⊑-trans ext r)
-                         refl))
-                     refl)
-                   (cong (λ x → x) refl))
-                 )}
+  diagram₃ A B (a , b) = funext³ λ Σ ext r → mcong {P = A ⊗ B} refl H.refl H.refl
+    (H.≡-to-≅
+      (cong₂ _,_
+        (cong₂
+          (λ ext a → MP.monotone A ext a)
+          (trans (sym ⊑-trans-refl') (cong (λ r → ⊑-trans ext r) refl))
+          refl
+        )
+        (cong (λ x → x) refl)))
 
   postulate
     diagram₄ : ∀ {ℓ₁ ℓ₂}{A : MP ℓ₁}{B : MP ℓ₂} →
