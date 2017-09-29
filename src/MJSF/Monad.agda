@@ -54,7 +54,7 @@ module MonadG (g : Graph) where
 
   _>>=_     :  ∀ {s Σ}{p q : List Scope → Set} →
                M s p Σ → (∀ {Σ'} → p Σ' → M s q Σ') → M s q Σ
-  (a >>= b) = join ((fmap b) a)
+  (a >>= b) = join (fmap b a)
 
   -- Monadic strength
   _^_  :  ∀ {Σ Γ}{p q : List Scope → Set} ⦃ w : Weakenable q ⦄ →
