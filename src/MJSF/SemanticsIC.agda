@@ -109,7 +109,7 @@ module Syntax (g : Graph) where
     eval-stmt : ℕ → ∀ {s s' Σ} → Stmt s s' → M s (Frame s') Σ
     eval-stmt zero _ = timeoutᴹ
     eval-stmt (suc k) (do e) = eval<: k e >>= λ _ → getFrame
-    eval-stmt (suc k) (if c t e) =
+    eval-stmt (suc k) (ifz c t e) =
       evalᶜ k c >>= λ{ (num (+ zero)) → eval-stmt k t
       ; (num i) → eval-stmt k e }
     eval-stmt (suc k) (set e x e') =

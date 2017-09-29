@@ -82,7 +82,7 @@ module SyntaxG (g : Graph) where
 
   data Stmt (s : Scope) : Scope → Set where
     do    : ∀ {t'} → Expr<: s t' → Stmt s s
-    if    : ∀ {s' s'' : Scope} → Expr<: s int → Stmt s s → Stmt s s → Stmt s s -- branches are blocks
+    ifz   : ∀ {s' s'' : Scope} → Expr<: s int → Stmt s s → Stmt s s → Stmt s s -- branches are blocks
     set   : ∀ {s' t'} → Expr<: s (ref s') → (s' ↦ vᵗ t') → Expr<: s t' → Stmt s s
     loc   : ∀ (s' : Scope)(t' : VTy)⦃ shape : g s' ≡ ([ vᵗ t' ] , [ s ]) ⦄ → Stmt s s'
     asgn  : ∀ {t'} → (s ↦ vᵗ t') → Expr<: s t' → Stmt s s
