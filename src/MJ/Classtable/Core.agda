@@ -1,4 +1,4 @@
-open import Prelude
+open import Prelude hiding (begin_; _∎; _≡⟨_⟩_)
 
 module MJ.Classtable.Core (c : ℕ) where
 
@@ -70,21 +70,47 @@ record Classtable : Set where
     len ε = 0
     len (x ◅ px) = suc $ len px
 
+    len-◅◅ : ∀ {c p p'}(s : Σ ⊢ c <: p)(s' : Σ ⊢ p <: p') → len (s ◅◅ s') ≡ len s + len s'
+    len-◅◅ ε _ = refl
+    len-◅◅ (x ◅ s) s' rewrite len-◅◅ s s' = refl
+
     lem-len : ∀ {c p}(px : Σ ⊢ c <: p)(qx : Σ ⊢ c <: Object) → len px ≤ len qx
     lem-len ε ε = z≤n
     lem-len ε (x ◅ qx) = z≤n
     lem-len (() ◅ px) ε
     lem-len (super ◅ px) (super ◅ qx) = s≤s (lem-len px qx)
 
+    open ≤-Reasoning
+
     -- modulo termination checking trickery this lemma is provable;
     -- we can do this using wellfounded induction on the gap between the lengths.
     -- which is strictly decreasing in size
-    postulate lem-inf : ∀ c → Σ ⊢ Class.parent (Σ (cls c)) <: (cls c) → ∀ n → ∃ λ (px : Σ ⊢ (cls c) <: (cls c)) → len px > n
-    {-}
-    lem-inf _ px n with n ≤? len (px ◅◅ (super ◅ px))
-    lem-inf c₁ px n | yes p = super ◅ px ◅◅ (super ◅ px) , s≤s p
-    lem-inf c₁ px n | no ¬p = {!!}
-    -}
+    lem-inf : ∀ c → Σ ⊢ Class.parent (Σ (cls c)) <: (cls c) → ∀ n → ∃ λ (px : Σ ⊢ (cls c) <: (cls c)) → len px > n
+    lem-inf c px n with helper px n
+      where
+        helper : (p : Σ ⊢ Class.parent (Σ (cls c)) <: (cls c)) → ∀ gap → ∃ λ (px : Σ ⊢ (cls c) <: (cls c)) → len px ≥ gap + len p
+        helper p zero = (super ◅ p) , ≤-step ≤-refl
+        helper p (suc gap) with gap ≤? len p
+        ... | yes q = (super ◅ p ◅◅ (super ◅ p)) , s≤s (begin
+            (gap + len p)
+              ≤⟨ +-mono-≤ q (≤-step ≤-refl) ⟩
+            len p + (suc (len p))
+              ≡⟨ sym (len-◅◅ p (super ◅ p)) ⟩
+            len (p ◅◅ super ◅ p)
+          ∎)
+        ... | no ¬q with helper (p ◅◅ (super ◅ p)) gap
+        ... | z , q = z , (begin
+            suc (gap + len p)
+              ≡⟨ sym $ m+1+n≡1+m+n gap (len p) ⟩
+            gap + (len (super ◅ p))
+              ≤⟨ +-mono-≤ { gap } ≤-refl (≤-steps (len p) ≤-refl) ⟩
+            gap + (len p + len (super ◅ p))
+              ≡⟨ cong (_+_ gap) (sym $ len-◅◅ p (super ◅ p)) ⟩
+            gap + (len (p ◅◅ (super ◅ p)))
+              ≤⟨ q ⟩
+            len z ∎)
+          where open import Data.Nat.Properties.Extra
+    ... | py , z = super ◅ px ◅◅ py , s≤s (subst (_≤_ n) (sym $ len-◅◅ px py) (≤-steps (len px) (m+n≤o⇒m≤o n z)))
 
   Σ-acyclic : ∀ c → ¬ Σ ⊢ Class.parent (Σ (cls c)) <: (cls c)
   Σ-acyclic c px with lem-inf c px (len $ rooted (cls c))
