@@ -276,11 +276,11 @@ mutual
     (inj₁ v) w → return (inj₁ v) ;
     (inj₂ E) w → f E w }
 
-  evalc : ∀ {I : Ctx}{O : Ctx}{W : World c}{a} → ℕ →
-          Stmt I a O → EvalM I W (λ W → Val W a ⊎ Env O W)
-
   continue : ∀ {Γ : Ctx}{W : World c}{a} → EvalM Γ W (λ W → Val W a ⊎ Env Γ W)
   continue = getEnv λ E → return (inj₂ E)
+
+  evalc : ∀ {I : Ctx}{O : Ctx}{W : World c}{a} → ℕ →
+          Stmt I a O → EvalM I W (λ W → Val W a ⊎ Env O W)
 
   evalc zero _ = doTimeout
 
