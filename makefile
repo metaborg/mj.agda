@@ -30,6 +30,9 @@ lib/agda:
 lib/agda/std-lib: lib/agda
 	cd $(AGDALIB) && make fast-forward-std-lib
 
+assumptions:
+	find src -iname "*.agda" -exec grep --color -Hi "postulate" {} \;
+
 ### cleaning
 .PHONY: clean clean-all
 clean:
