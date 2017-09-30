@@ -39,6 +39,7 @@ Val t = mp (Val' t) (record {
       ref    : ∀ {Σ t} → t ∈ Σ → Val' (ref t) Σ
 
 open import Experiments.StrongMonad Ty Val funext
+open Strong
 
 mkunit : ⊤ ⇒ Val unit
 mkunit = mk⇒ (λ _ → Values.unit) λ c~c' → refl

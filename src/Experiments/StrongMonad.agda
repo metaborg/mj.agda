@@ -155,7 +155,6 @@ module Strong where
   ts' : ∀ {p q}(P : MP p)(Q : MP q) → M P ⊗ Q ⇒ M (P ⊗ Q)
   ts' P Q = fmap (swap Q P) ∘ ts Q P ∘ swap _ _
 
-  -- postulate
   diagram₁ : ∀ {ℓ}{P : MP ℓ} → fmap {P = ⊤ ⊗ P} (π₂ {P = ⊤}) ∘ ts ⊤ P ⇒≡ π₂ {P = ⊤}
   diagram₁ = λ p → refl
 

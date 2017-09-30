@@ -108,7 +108,6 @@ record _≅_ {ℓ}(P Q : MP ℓ) : Set (ℓ₁ ⊔ ℓ ⊔ ℓ₃) where
     left-inv  : to ∘ from ⇒≡ id Q
     right-inv : from ∘ to ⇒≡ id P
 
-module Properties where
   ∘-assoc : ∀ {p q r s}{P : MP p}{Q : MP q}{R : MP r}{S : MP s}
               {F : R ⇒ S}{G : Q ⇒ R}{H : P ⇒ Q} →
               F ∘ (G ∘ H) ⇒≡ (F ∘ G) ∘ H
@@ -349,3 +348,46 @@ module Exponential
 
   uncurry : ∀ {ℓ₁ ℓ₂ ℓ₃}{X : MP ℓ₁}{Y : MP ℓ₂}{Z : MP ℓ₃}(F : X ⇒ (Z ^ Y)) → (X ⊗ Y) ⇒ Z
   uncurry {X = x}{Y}{Z} F = ε ∘ xmap F (id Y)
+
+module Sum where
+  open import Data.Sum as Sum using (_⊎_)
+
+  infixl 30 _⊕_
+  _⊕_ : ∀ {ℓ₁ ℓ₂} → MP ℓ₁ → MP ℓ₂ → MP (ℓ₁ ⊔ ℓ₂)
+  P ⊕ Q = mp
+      (λ c → (P · c) ⊎ (Q · c))
+      (record {
+        monotone = λ{
+          c≤c' (Sum.inj₁ p) → Sum.inj₁ (MP.monotone P c≤c' p) ;
+          c≤c' (Sum.inj₂ q) → Sum.inj₂ (MP.monotone Q c≤c' q)
+        } ;
+        monotone-refl = λ{
+          (Sum.inj₁ p) → PEq.cong Sum.inj₁ (MP.monotone-refl P p) ;
+          (Sum.inj₂ q) → PEq.cong Sum.inj₂ (MP.monotone-refl Q q) };
+        monotone-trans = λ{
+          (Sum.inj₁ p) c≤c' c'≤c'' → PEq.cong Sum.inj₁ (MP.monotone-trans P p c≤c' c'≤c'') ;
+          (Sum.inj₂ q) c≤c' c'≤c'' → PEq.cong Sum.inj₂ (MP.monotone-trans Q q c≤c' c'≤c'') }
+      })
+
+  -- canonical injections
+  inj₁ : ∀ {ℓ₁ ℓ₂}{P : MP ℓ₁}(Q : MP ℓ₂) → P ⇒ (P ⊕ Q)
+  inj₁ Q = mk⇒ Sum.inj₁ λ c~c' → PEq.refl
+
+  inj₂ : ∀ {ℓ₁ ℓ₂}(P : MP ℓ₁){Q : MP ℓ₂} → Q ⇒ (P ⊕ Q)
+  inj₂ Q = mk⇒ Sum.inj₂ λ c~c' → PEq.refl
+
+  [_,_] : ∀ {ℓ₁ ℓ₂ ℓ₃}{P : MP ℓ₁}{Q : MP ℓ₂}{R : MP ℓ₃} → P ⇒ R → Q ⇒ R → (P ⊕ Q) ⇒ R
+  [_,_] F G = mk⇒
+    (λ{ (Sum.inj₁ x) → apply F x ; (Sum.inj₂ y) → apply G y})
+    (λ{
+      c~c' {Sum.inj₁ x} → monotone-comm F c~c' ;
+      c~c' {Sum.inj₂ y} → monotone-comm G c~c'
+    })
+
+  -- TODO [_,_] is unique
+
+  [g,*]∘inj₁ : ∀ {ℓ₁ ℓ₂ ℓ₃}{P : MP ℓ₁}{Q : MP ℓ₂}{R : MP ℓ₃} → (F : P ⇒ R)(G : Q ⇒ R) → [ F , G ] ∘ inj₁ _ ⇒≡ F
+  [g,*]∘inj₁ F G p = PEq.refl
+
+  [*,g]∘inj₂ : ∀ {ℓ₁ ℓ₂ ℓ₃}{P : MP ℓ₁}{Q : MP ℓ₂}{R : MP ℓ₃} → (F : P ⇒ R)(G : Q ⇒ R) → [ F , G ] ∘ inj₂ _ ⇒≡ G
+  [*,g]∘inj₂ F G p = PEq.refl
