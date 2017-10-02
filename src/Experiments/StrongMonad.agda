@@ -174,10 +174,20 @@ module Strong where
         )
         (cong (λ x → x) refl)))
 
-  postulate
-    diagram₄ : ∀ {ℓ₁ ℓ₂}{A : MP ℓ₁}{B : MP ℓ₂} →
-              ts A B ∘ xmap (id A) (μ B) ⇒≡ μ (A ⊗ B) ∘ fmap (ts A B) ∘ ts A (M B)
-    -- diagram₄ = {!!}
+  diagram₄ : ∀ {ℓ₁ ℓ₂}{A : MP ℓ₁}{B : MP ℓ₂} →
+            ts A B ∘ xmap (id A) (μ B) ⇒≡ μ (A ⊗ B) ∘ fmap (ts A B) ∘ ts A (M B)
+  diagram₄ {A = A}{B} p@(l , r) =
+    funext³ λ Σ₁ ext μ' →
+      mcong {P = A ⊗ B} refl H.refl H.refl (
+        H.cong (Fun.flip _,_ _)
+          (H.≡-to-≅ (
+            trans
+              (cong (λ u → MP.monotone A u l) ⊑-trans-assoc)
+              (trans
+                (MP.monotone-trans A l (⊑-trans ext _) _)
+                (cong
+                  (λ u → MP.monotone A u (MP.monotone A (⊑-trans _ _) l))
+                  (sym ⊑-trans-refl))))))
 
   -- internal fmap
   fmap' : ∀ {p q}{P : MP p}{Q : MP q} → (Q ^ P) ⇒ (M Q) ^ (M P)
