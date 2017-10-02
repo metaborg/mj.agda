@@ -18,7 +18,7 @@ data VTy : Set where
   void : VTy;  int : VTy;  ref : Scope → VTy
 
 data Ty : Set where
-  vᵗ : VTy → Ty;  mᵗ : List VTy → VTy → Ty;  cᵗ : Scope → Scope → Ty 
+  vᵗ : VTy → Ty;  mᵗ : List VTy → VTy → Ty;  cᵗ : Scope → Scope → Ty
 
 -------------
 -- HAS TAG --
@@ -80,23 +80,24 @@ module SyntaxG (g : Graph) where
       upcast  : ∀ {t'} →
                 t' <: t → Expr s t' → Expr<: s t
 
-  data Stmt (s : Scope) : Scope → Set where
-    do    : ∀ {t'} → Expr<: s t' → Stmt s s
-    ifz   : ∀ {s' s'' : Scope} → Expr<: s int → Stmt s s → Stmt s s → Stmt s s -- branches are blocks
-    set   : ∀ {s' t'} → Expr<: s (ref s') → (s' ↦ vᵗ t') → Expr<: s t' → Stmt s s
-    loc   : ∀ (s' : Scope)(t' : VTy)⦃ shape : g s' ≡ ([ vᵗ t' ] , [ s ]) ⦄ → Stmt s s'
-    asgn  : ∀ {t'} → (s ↦ vᵗ t') → Expr<: s t' → Stmt s s
-    -- early returns
-    block : ∀ {s'} → Star Stmt s s' → Stmt s s
+  mutual
+    data Stmt (s : Scope)(r : VTy) : Scope → Set where
+      do    : ∀ {t'} → Expr<: s t' → Stmt s r s
+      ifz   : ∀ {s' s'' : Scope} → Expr<: s int → Stmt s r s → Stmt s r s → Stmt s r s -- branches are blocks
+      set   : ∀ {s' t'} → Expr<: s (ref s') → (s' ↦ vᵗ t') → Expr<: s t' → Stmt s r s
+      loc   : ∀ (s' : Scope)(t' : VTy)⦃ shape : g s' ≡ ([ vᵗ t' ] , [ s ]) ⦄ → Stmt s r s'
+      asgn  : ∀ {t'} → (s ↦ vᵗ t') → Expr<: s t' → Stmt s r s
+      ret   : Expr<: s r → Stmt s r s
+      block : ∀ {s'} → Stmts s r s' → Stmt s r s
 
-  Stmts : Scope → Scope → Set
-  Stmts = Star Stmt
+    Stmts : Scope → VTy → Scope → Set
+    Stmts s r s' = Star (λ s s' → Stmt s r s') s s'
 
   data Body (s : Scope) : VTy → Set where
-    body      : ∀ {s' t} → Stmts s s' → Expr<: s' t → Body s t
-    body-void : ∀ {s'} → Stmts s s' → Body s void
+    body      : ∀ {s' t} → Stmts s t s' → Expr<: s' t → Body s t
+    body-void : ∀ {s'} → Stmts s void s' → Body s void
 
-  data Meth (s : Scope) : List VTy →  VTy → Set where
+  data Meth (s : Scope) : List VTy → VTy → Set where
     meth  :  ∀ {ts rt}(s' : Scope)
              ⦃ shape : g s' ≡ (vᵗ (ref s) ∷ (map vᵗ ts) , [ s ]) ⦄ →
              Body s' rt →
@@ -120,4 +121,3 @@ module SyntaxG (g : Graph) where
   data Program : Set where
     program :
       ∀ {sʳ cs}⦃ shape : g sʳ ≡ (cs , []) ⦄ → All (λ{ (cᵗ sʳ s) → Class sʳ s ; _ → ⊥ }) cs → Program
-

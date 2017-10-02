@@ -31,8 +31,8 @@ lib/agda/std-lib: lib/agda
 	cd $(AGDALIB) && make fast-forward-std-lib
 
 assumptions:
-	find src -iname "*.agda" -exec grep --color -Hi "postulate" {} \;
-	find src -iname "*.agda" -exec grep --color -Hi "TERMINATING" {} \;
+	git grep --color -Hi "postulate" -- "src/**/*.agda"
+	git grep --color -Hi "TERMINATING" -- "src/**/*.agda"
 
 ### cleaning
 .PHONY: clean clean-all
