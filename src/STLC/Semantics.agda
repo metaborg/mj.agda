@@ -94,15 +94,23 @@ timeout = λ _ → nothing
 -- These definitions correspond to Section 2.4.
 
 eval : ℕ → ∀ {Γ t} → Expr Γ t → M Γ (Val t)
-eval zero     _        =  timeout
-eval (suc k)  unit     =  return unit
-eval (suc k)  (num x)  =  return (num x)
-eval (suc k)  (var x)  =  getEnv >>= λ E → return (lookup E x)
-eval (suc k)  (ƛ b)    =  getEnv >>= λ E → return ⟨ b , E ⟩
-eval (suc k)  (l · r)  =  eval k l >>= λ{ ⟨ e , E ⟩ →
-                          eval k r >>= λ v →
-                          usingEnv (v ∷ E) (eval k e) }
-eval (suc k) (iop f l r) =
+eval zero     _           =
+  timeout
+eval (suc k)  unit        =
+  return unit
+eval (suc k)  (var x)     =
+  getEnv >>= λ E →
+  return (lookup E x)
+eval (suc k)  (ƛ b)       =
+  getEnv >>= λ E →
+  return ⟨ b , E ⟩
+eval (suc k)  (l · r)     =
+  eval k l >>= λ{ ⟨ e , E ⟩ →
+  eval k r >>= λ v →
+  usingEnv (v ∷ E) (eval k e) }
+eval (suc k)  (num x)     =
+  return (num x)
+eval (suc k)  (iop f l r) =
   eval k l >>= λ{ (num vₗ) →
   eval k r >>= λ{ (num vᵣ) →
   return (num (f vₗ vᵣ)) }}

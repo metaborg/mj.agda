@@ -1,5 +1,8 @@
 module STLC.Examples where
 
+-- This file contains a few example programs for the definitional
+-- interpreter for STLC in Section 2.
+
 open import STLC.Semantics
 open import Data.List.Most
 open import Relation.Binary.PropositionalEquality -- for de Bruijn numerals
