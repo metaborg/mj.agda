@@ -128,6 +128,14 @@ module Coherence where
   assoc : ∀ {p}{P : MP p} → μ P ∘ (fmap (μ P)) ⇒≡ μ P ∘ μ (M P)
   assoc {P = P} p = funext³ λ Σ₁ ext μ → mcong {P = P} refl (H.≡-to-≅ ⊑-trans-assoc) H.refl H.refl
 
+  -- fmap makes M a functor
+  fmap-id : ∀ {ℓ}{P : MP ℓ} → fmap (id P) ⇒≡ id (M P)
+  fmap-id = λ p → refl
+
+  fmap-∘ : ∀ {ℓ₁ ℓ₂ ℓ₃}{P : MP ℓ₁}{Q : MP ℓ₂}{R : MP ℓ₃}(F : P ⇒ Q)(G : Q ⇒ R) →
+           fmap (G ∘ F) ⇒≡ fmap G ∘ fmap F
+  fmap-∘ F G = λ p → refl
+
 module Strong where
   -- tensorial strength
   ts : ∀ {p q}(P : MP p)(Q : MP q) → P ⊗ M Q ⇒ M (P ⊗ Q)
