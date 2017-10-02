@@ -116,16 +116,25 @@ module Coherence where
       lem {xs = xs}{ys} refl with ⊑-unique xs ys
       ... | refl = H.≡-to-≅ ⊑-trans-refl'
 
-  {-}
-  TODO
   right-id : ∀ {p}{P : MP p} → μ P ∘ (η (M P)) ⇒≡ id (M P)
-  right-id {P = P} p = meq λ Σ₁ ext μ₁ → mcong {!!} {!!} {!!} {!!}
-  -}
+  right-id {P = P} p = funext³ λ Σ₁ ext μ₁ →
+    let f = (λ{(Σ₃ , ext₂ , μ₂ , v) → Σ₃ , ⊑-trans ⊑-refl ext₂ , μ₂ , v}) in
+      trans
+        (cong f (cong (λ u → p Σ₁ u μ₁) ⊑-trans-refl'))
+        (mcong {P = P} refl (H.≡-to-≅ ⊑-trans-refl) H.refl H.refl )
 
   -- if we have a (M³ P) then it doesn't matter if we join
   -- the outer or inner ones first.
   assoc : ∀ {p}{P : MP p} → μ P ∘ (fmap (μ P)) ⇒≡ μ P ∘ μ (M P)
   assoc {P = P} p = funext³ λ Σ₁ ext μ → mcong {P = P} refl (H.≡-to-≅ ⊑-trans-assoc) H.refl H.refl
+
+  -- fmap makes M a functor
+  fmap-id : ∀ {ℓ}{P : MP ℓ} → fmap (id P) ⇒≡ id (M P)
+  fmap-id = λ p → refl
+
+  fmap-∘ : ∀ {ℓ₁ ℓ₂ ℓ₃}{P : MP ℓ₁}{Q : MP ℓ₂}{R : MP ℓ₃}(F : P ⇒ Q)(G : Q ⇒ R) →
+           fmap (G ∘ F) ⇒≡ fmap G ∘ fmap F
+  fmap-∘ F G = λ p → refl
 
 module Strong where
   -- tensorial strength
@@ -174,10 +183,20 @@ module Strong where
         )
         (cong (λ x → x) refl)))
 
-  postulate
-    diagram₄ : ∀ {ℓ₁ ℓ₂}{A : MP ℓ₁}{B : MP ℓ₂} →
-              ts A B ∘ xmap (id A) (μ B) ⇒≡ μ (A ⊗ B) ∘ fmap (ts A B) ∘ ts A (M B)
-    -- diagram₄ = {!!}
+  diagram₄ : ∀ {ℓ₁ ℓ₂}{A : MP ℓ₁}{B : MP ℓ₂} →
+            ts A B ∘ xmap (id A) (μ B) ⇒≡ μ (A ⊗ B) ∘ fmap (ts A B) ∘ ts A (M B)
+  diagram₄ {A = A}{B} p@(l , r) =
+    funext³ λ Σ₁ ext μ' →
+      mcong {P = A ⊗ B} refl H.refl H.refl (
+        H.cong (Fun.flip _,_ _)
+          (H.≡-to-≅ (
+            trans
+              (cong (λ u → MP.monotone A u l) ⊑-trans-assoc)
+              (trans
+                (MP.monotone-trans A l (⊑-trans ext _) _)
+                (cong
+                  (λ u → MP.monotone A u (MP.monotone A (⊑-trans _ _) l))
+                  (sym ⊑-trans-refl))))))
 
   -- internal fmap
   fmap' : ∀ {p q}{P : MP p}{Q : MP q} → (Q ^ P) ⇒ (M Q) ^ (M P)
