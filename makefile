@@ -32,6 +32,7 @@ lib/agda/std-lib: lib/agda
 
 assumptions:
 	find src -iname "*.agda" -exec grep --color -Hi "postulate" {} \;
+	find src -iname "*.agda" -exec grep --color -Hi "TERMINATING" {} \;
 
 ### cleaning
 .PHONY: clean clean-all
