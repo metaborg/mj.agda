@@ -140,7 +140,7 @@ mutual
       ∘ ∃-⊗-comm (λ Γ → Const _ ⊗ Env Γ)(Val _)
       ∘ xmap destructfun (id (Val _)))
 
-  {-# NON_TERMINATING #-}
+  {-# TERMINATING #-}
   eval : ∀ {Γ a} → Expr Γ a → Env Γ ⇒ M (Val a)
   eval (var x) = η (Val _) ∘ envlookup x
   eval (ƛ e) = η (Val _) ∘ mkclos ∘ ⟨ terminal e , id (Env _) ⟩
@@ -156,6 +156,15 @@ mutual
   eval (! e) = bind (Val _) load ∘ eval e
   eval (e₁ ≔ e₂) =
       fmap mkunit
+    ∘ μ ⊤
+    ∘ fmap store
+    ∘ μ ((Val _) ⊗ (Val _))
+    ∘ fmap (ts' (Val _)(Val _))
+    ∘ ts (M (Val _))(Val _)
+    ∘ ⟨ eval e₁ , eval e₂ ⟩
+
+    {-}
+      fmap mkunit
       ∘ bind ⊤ (
           bind ⊤ (store ∘ swap (Val _) (Val _))
           ∘ ts' (Val _) (Val _)
@@ -163,12 +172,12 @@ mutual
       )
       ∘ ts (Env _) (Val _)
       ∘ ⟨ id (Env _) , eval e₁ ⟩
-    {-}
-      fmap mkunit
-    ∘ μ ⊤
-    ∘ fmap store
-    ∘ μ ((Val _) ⊗ (Val _))
-    ∘ fmap (ts' (Val _)(Val _))
-    ∘ ts (M (Val _))(Val _)
-    ∘ ⟨ eval e₁ , eval e₂ ⟩
     -}
+
+module Examples where
+
+  test : Expr [] unit
+  test = let id = ƛ (var (here refl)) in app (ƛ (app id (var (here refl)))) unit
+
+  test! : apply (eval test) [] [] ⊑-refl [] ≡ ([] , [] , [] , unit)
+  test! = refl
