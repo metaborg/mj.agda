@@ -1,10 +1,19 @@
 module STLC.Semantics where
 
+-- This file contains the definitional interpreter for STLC described
+-- in Section 2 of the paper.
+
 open import Data.Nat
 open import Data.Integer
 open import Data.List.Most
 open import Data.Maybe hiding (All)
 
+
+------------
+-- SYNTAX --
+------------
+
+-- These definitions correspond to Section 2.1.
 
 data Ty : Set where
   unit : Ty
@@ -21,6 +30,18 @@ data Expr (Γ : Ctx) : Ty → Set where
   num   : ℤ → Expr Γ int
   iop   : (ℤ → ℤ → ℤ) → (l r : Expr Γ int) → Expr Γ int
 
+
+-----------------------------
+-- VALUES AND ENVIRONMENTS --
+-----------------------------
+
+-- These definitions correspond to Section 2.2.
+--
+-- Note that the `All` type described in Section 2.2 of the paper (for
+-- simplicity) does not mention universe levels, whereas the `All`
+-- definition below refers to `Data.List.All` in the Agda Standard
+-- Library which is defined in a universe polymorphic manner.
+
 mutual
   data Val : Ty → Set where
     unit  : Val unit
@@ -29,6 +50,16 @@ mutual
 
   Env : Ctx → Set
   Env Γ = All Val Γ
+
+-- The `lookup` function described in Section 2.2 of the paper is also
+-- defined in `Data.List.All` Agda Standard Library.
+
+
+-----------
+-- MONAD --
+-----------
+
+-- These definitions correspond to Section 2.3.
 
 M : Ctx → Set → Set
 M Γ a  =  Env Γ → Maybe a
@@ -50,8 +81,15 @@ usingEnv E f _ = f E
 timeout  : ∀ {Γ a} → M Γ a
 timeout = λ _ → nothing
 
+
+-----------------
+-- INTERPRETER --
+-----------------
+
+-- These definitions correspond to Section 2.4.
+
 eval : ℕ → ∀ {Γ t} → Expr Γ t → M Γ (Val t)
-eval zero     _        =   timeout
+eval zero     _        =  timeout
 eval (suc k)  unit     =  return unit
 eval (suc k)  (num x)  =  return (num x)
 eval (suc k)  (var x)  =  getEnv >>= λ E → return (lookup E x)
