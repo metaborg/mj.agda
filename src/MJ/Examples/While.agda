@@ -26,9 +26,12 @@ p₁ = Lib ,
       ◅ asgn x (num 1)
       ◅ while iop (λ x y → Bools.if ⌊ suc x ≤? y ⌋ then 0 else 1) (var x) (num 10) do (
         asgn x (iop (λ x y → x + y) (var x) (num 1))
-      ) ◅ ε
+      )
+      -- test simplest if-then-else and early return from statement
+      ◅ if (num 0) then (ret (var x)) else (ret (num 0))
+      ◅ ε
     )
-    (var x)
+    (num 0)
 
 test1 : p₁ ⇓⟨ 100 ⟩ (λ {W} (v : Val W int) → v ≡ num 10)
 test1 = refl

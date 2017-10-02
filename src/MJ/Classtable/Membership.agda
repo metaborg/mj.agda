@@ -36,19 +36,20 @@ IsMember cid ns m ty = let C = Σ cid in ∃ λ P → Σ ⊢ cid <: P × Declare
 find-declaration : ∀ cid ns n ty → Dec (Declares cid ns n ty)
 find-declaration cid ns m ty = find (Str._≟_ ×-≟ _typing-≟_) (m , ty) (Class.decls (Σ cid) ns)
 
--- TODO rewrite using termination trick (by induction on path to Object, obtained from rooted)
-{-# TERMINATING #-}
 find-member : ∀ cid ns n ty → Dec (IsMember cid ns n ty)
-find-member Object ns m ty = no ∉Object
-find-member (cls cid) ns m ty with find-declaration (cls cid) ns m ty
-... | yes p = yes (cls cid , ε , p)
-... | no ¬p with find-member (Class.parent (Σ (cls cid))) ns m ty
-... | yes (pid , s , d) = yes (pid , super ◅ s , d)
-... | no ¬q = no impossible
+find-member cid ns n ty = helper cid ns n ty (rooted cid)
   where
-    impossible : ¬ (IsMember (cls cid) ns m ty)
-    impossible (.(cls _) , ε , d) = ¬p d
-    impossible (pid , Core.super ◅ s , d) = ¬q (pid , s , d)
+    helper : ∀ cid ns n ty → Σ ⊢ cid <: Object → Dec (IsMember cid ns n ty)
+    helper cid ns n ty ε = no (⊥-elim ∘ ∉Object)
+    helper cid ns n ty (super ◅ p) with find-declaration cid ns n ty
+    ... | yes q = yes (cid , ε , q)
+    ... | no ¬q with helper _ ns n ty p
+    ... | yes (pid , s , d) = yes (pid , super ◅ s , d)
+    ... | no ¬r = no impossible
+      where
+        impossible : ¬ (IsMember cid ns n ty)
+        impossible (_ , ε , d) = ¬q d
+        impossible (pid , Core.super ◅ s , d) = ¬r (pid , s , d)
 
 -- algorithmic membership: this formalizes a notion of accessible members
 -- because in Java one cannot dot-access an overridden member

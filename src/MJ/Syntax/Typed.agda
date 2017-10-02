@@ -34,7 +34,7 @@ data Expr (Γ : Ctx) : Ty c → Set where
   iop      : NativeBinOp → (l r : Expr Γ int) → Expr Γ int
   upcast   : ∀ {c c'} → Σ ⊢ c <: c' → Expr Γ (ref c) → Expr Γ (ref c')
 
-  -- storefull
+  -- storeful
   new      : ∀ C → All (Expr Γ) (Class.constr (Σ C)) → Expr Γ (ref C)
   call     : ∀ {cid} →
              Expr Γ (ref cid) → ∀ m {as}{b}{acc : AccMember cid METHOD m (as , b)} → All (Expr Γ) as →
@@ -42,6 +42,7 @@ data Expr (Γ : Ctx) : Ty c → Set where
   get      : ∀ {cid} → Expr Γ (ref cid) → ∀ f {ty}{acc : AccMember cid FIELD f ty} → Expr Γ ty
 
 mutual
+  infixl 20 if_then_else_
   data Stmt (I : Ctx)(r : Ty c) : (O : Ctx) → Set where
     loc        : ∀ a → Stmt I r (I +local a)
     asgn       : ∀ {a} → Var I a → Expr I a → Stmt I r I
