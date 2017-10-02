@@ -13,7 +13,8 @@ open import Data.Maybe hiding (All)
 -- SYNTAX --
 ------------
 
--- These definitions correspond to Section 2.1.
+-- These definitions correspond to Section 2.1, except we have
+-- included numbers (integers) and integer operations in the language.
 
 data Ty : Set where
   unit : Ty
@@ -21,6 +22,10 @@ data Ty : Set where
   int  : Ty
 
 Ctx = List Ty
+
+-- Below, `Expr` uses `_∈_` from `Relation.Binary` in the Agda
+-- Standard Library to represent typed de Bruijn indices which witness
+-- the existence of an entry in the type context.
 
 data Expr (Γ : Ctx) : Ty → Set where
   unit  : Expr Γ unit
