@@ -11,8 +11,9 @@ open import Data.Empty
 
 module MJSF.Syntax (k : ℕ) where
 
-Scope : Set
-Scope = Fin k
+private
+  Scope : Set
+  Scope = Fin k
 
 data VTy : Set where
   void : VTy;  int : VTy;  ref : Scope → VTy
@@ -33,6 +34,9 @@ data #v : (VTy → Set) → Ty → Set where
 
 data #m : (List VTy → VTy → Set) → Ty → Set where
   #m' : ∀ {ts rt p} → p ts rt → #m p (mᵗ ts rt)
+
+data #c (p : Scope → Scope → Set) : Ty → Set where
+  #c' : ∀ {sʳ s} → p sʳ s → #c p (cᵗ sʳ s)
 
 open import ScopeGraph.ScopesFrames k Ty hiding (Scope)
 
@@ -118,6 +122,11 @@ module SyntaxG (g : Graph) where
              All (λ{ (ts , rt) → (s ↦ (mᵗ ts rt)) × Meth s ts rt }) oms → -- overrides
              Class sʳ s
 
-  data Program : Set where
+  data Program (a : VTy) : Set where
     program :
-      ∀ {sʳ cs}⦃ shape : g sʳ ≡ (cs , []) ⦄ → All (λ{ (cᵗ sʳ s) → Class sʳ s ; _ → ⊥ }) cs → Program
+      ∀ sʳ {cs}⦃ shape : g sʳ ≡ (cs , []) ⦄ →
+        -- implementation of all the classes
+        All (#c Class) cs →
+        -- main function
+        Body sʳ a →
+        Program a

@@ -6,7 +6,7 @@ open import Data.Product
 module MJSF.Values (k : ℕ) where
 
 open import MJSF.Syntax k
-open import ScopeGraph.ScopesFrames k Ty hiding (Scope)
+open import ScopeGraph.ScopesFrames k Ty
 
 module ValuesG (g : Graph) where
 

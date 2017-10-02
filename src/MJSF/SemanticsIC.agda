@@ -2,6 +2,7 @@ open import Data.Nat hiding (_^_ ; _+_)
 open import Data.List.Most
 open import Data.Integer
 open import Data.Unit
+open import Data.Empty
 open import Data.Product hiding (map)
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open ≡-Reasoning
@@ -16,7 +17,7 @@ module MJSF.SemanticsIC (k : ℕ) where
 open import MJSF.Syntax k
 open import MJSF.Values k
 open import MJSF.Monad k
-open import ScopeGraph.ScopesFrames k Ty hiding (Scope)
+open import ScopeGraph.ScopesFrames k Ty
 
 module Semantics (g : Graph) where
 
@@ -153,3 +154,26 @@ module Semantics (g : Graph) where
       (inj₂ fr) → usingFrame fr (eval<: k e) }
     eval-body (suc k) (body-void stmts) = eval-stmts k stmts >>= λ f →
                                           return (reflv void)
+
+  postulate root-frame : ∀ sʳ cs ⦃ eq : g sʳ ≡ (cs , []) ⦄ → All (#c Class) cs → HeapFrame sʳ (sʳ ∷ [])
+  -- root-frame sr cs ⦃ eq ⦄ ℂ =
+    -- subst (flip Slots _) (sym $ cong proj₁ eq) (map-all (λ{ (#c' p) → cᵗ p {!!} {!here refl!}}) ℂ) , subst (flip Links _) (sym $ cong proj₂ eq) []
+
+  open import Common.Weakening
+  open Weakenable ⦃...⦄
+  -- a few predicates on programs:
+  -- ... saying it will terminate succesfully in a state where P holds
+  _⇓⟨_⟩_ : ∀ {a} → Program a → ℕ → (P : ∀ {W} → Val<: a W → Set) → Set
+  (program rs ℂ p) ⇓⟨ k ⟩ P with root-frame rs _ ℂ
+  ... | rf with eval-body k p (here refl) (rf ∷ [])
+  ... | nullpointer = ⊥
+  ... | timeout = ⊥
+  ... | ok (_ , _ , v , _) = P v
+
+  -- ...saying it will raise an exception in a state where P holds
+  _⇓⟨_⟩!_ : ∀ {a} → Program a → ℕ → (P : ∀ {W} → Val<: a W → Set) → Set
+  (program rs ℂ p) ⇓⟨ k ⟩! P with root-frame rs _ ℂ
+  ... | rf with eval-body k p (here refl) (rf ∷ [])
+  ... | nullpointer = ⊤
+  ... | timeout = ⊥
+  ... | ok (_ , _ , v , _) = ⊥
