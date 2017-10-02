@@ -82,9 +82,8 @@ record Classtable : Set where
 
     open ≤-Reasoning
 
-    -- modulo termination checking trickery this lemma is provable;
-    -- we can do this using wellfounded induction on the gap between the lengths.
-    -- which is strictly decreasing in size
+    -- generate an inheritance proof of arbitrary length,
+    -- given an inheritance proof from a parent to a child
     lem-inf : ∀ c → Σ ⊢ Class.parent (Σ (cls c)) <: (cls c) → ∀ n → ∃ λ (px : Σ ⊢ (cls c) <: (cls c)) → len px > n
     lem-inf c px n with helper px n
       where
@@ -112,14 +111,17 @@ record Classtable : Set where
           where open import Data.Nat.Properties.Extra
     ... | py , z = super ◅ px ◅◅ py , s≤s (subst (_≤_ n) (sym $ len-◅◅ px py) (≤-steps (len px) (m+n≤o⇒m≤o n z)))
 
+  -- Proves that a parent can't inherit from it's children,
   Σ-acyclic : ∀ c → ¬ Σ ⊢ Class.parent (Σ (cls c)) <: (cls c)
   Σ-acyclic c px with lem-inf c px (len $ rooted (cls c))
   ... | qx , impossible with lem-len qx (rooted (cls c))
   ... | z = ⊥-elim (<⇒≱ impossible z)
 
+  -- Trivially we have that Object cannot inherit from any class
   ¬Object<:x : ∀ {cid} → ¬ Σ ⊢ Object <: cls cid
   ¬Object<:x (() ◅ p)
 
+  -- Using acyclicity we can show that inheritance proofs are unique
   <:-unique : ∀ {c p} → (l r : Σ ⊢ c <: p) → l ≡ r
   <:-unique ε ε = refl
   <:-unique ε ch@(super ◅ r) = ⊥-elim (Σ-acyclic _ r)
