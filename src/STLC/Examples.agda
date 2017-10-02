@@ -7,7 +7,7 @@ open import STLC.Semantics
 open import Data.List.Most
 open import Relation.Binary.PropositionalEquality -- for de Bruijn numerals
 open import Data.Integer hiding (suc)
-open import Data.Nat hiding (_+_)
+open import Agda.Builtin.Nat hiding (_+_)
 open import Data.Maybe
 
 -- The identity function: λ x . x
@@ -19,7 +19,7 @@ idexpr : Expr [] (unit ⇒ unit)
 idexpr = ƛ (var (here refl))
 
 -- id () = ()
-test-idexpr : eval (suc (suc zero)) (idexpr · unit) [] ≡ just unit
+test-idexpr : eval 2 (idexpr · unit) [] ≡ just unit
 test-idexpr = refl
 
 
@@ -28,6 +28,5 @@ curry+ : Expr [] (int ⇒ (int ⇒ int))
 curry+ = ƛ (ƛ (iop _+_ (var (here refl)) (var (there (here refl)))))
 
 -- 1 + 1 = 2
-test-curry+ : eval (suc (suc (suc zero))) ((curry+ · (num (+ (suc zero)))) · (num (+ (suc zero)))) [] ≡ just (num (+ (suc (suc zero))))
+test-curry+ : eval 3 ((curry+ · (num (+ 1))) · (num (+ 1))) [] ≡ just (num (+ 2))
 test-curry+ = refl
-
