@@ -12,7 +12,7 @@
 
   This development has been tested against Agda 2.5.3. If you have this
   installed you should be able simply run `make` in the project root, which will
-  checkout some libraries in `./lib/` first and then build `./src/Readme.agda`
+  checkout some libraries in `./lib/` first and then build `./Readme.agda`
   which serves as the main entrypoint to the development.
 
   Alternatively you can run `make docs` to build the html version of the
