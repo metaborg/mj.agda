@@ -23,21 +23,36 @@ open import Common.Weakening
 
 open Weakenable ⦃...⦄
 
+{-
+MJ inherits the values of STLC+Ref. In contrast to STCL+Ref, MJ also has
+null-pointers; which we add as a constructor to our value type Val. The value
+constructed by null is typed with an arbitrary reference type as it can be used
+in place of any proper reference.
+-}
 data Val (W : World c) : Ty c → Set where
   num  : ℕ → Val W int
   unit : Val W void
   null : ∀ {C} → Val W (ref C)
   ref  : ∀ {C P} → (obj C) ∈ W → Σ ⊢ C <: P → Val W (ref P)
 
+{-
+We can construct default values out of thin air for every type
+-}
 default : ∀ {W} → (a : Ty c) → Val W a
 default void = unit
 default int = num 0
 default (ref x) = null
 
---
--- environments as indirections into a heap
---
+{-
+We equip MJ with mutable lexical environments.
+We could choose to model this directly, moving the environment from
+the Reader part of the evaluation monad to the State part.
 
+Instead we choose to keep our environments immutable and model
+mutability of the values in it by an indirection via the mutable store.
+This greatly simplifies the treatment of environments in the interpreter
+and keeps the representation lightweight, even though we support block scopes.
+-}
 Env : ∀ (Γ : Ctx)(W : World c) → Set
 Env Γ W = All (λ a → vty a ∈ W) Γ
 
@@ -48,10 +63,9 @@ open import Data.List.Any
 getvar : ∀ {Γ W a} → Var Γ a → Env Γ W → vty a ∈ W
 getvar px E = ∈-all px E
 
---
--- Abstract object encoding
---
-
+{-
+Abstract interface for object encodings.
+-}
 record ObjEncoding : Set (lsuc lzero) where
   field
     Obj : World c → Cid c → Set
@@ -67,10 +81,9 @@ record ObjEncoding : Set (lsuc lzero) where
   Store : World c → Set
   Store W = All (StoreVal W) W
 
---
--- weakening
---
-
+{-
+Value weakening
+-}
 weaken-val : ∀ {a}{W W' : World c} → W ⊒ W' → Val W' a → Val W a
 weaken-val ext (num n) = num n
 weaken-val ext unit = unit

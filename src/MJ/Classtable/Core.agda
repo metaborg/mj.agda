@@ -9,8 +9,16 @@ open import Data.Vec hiding (_∈_)
 open import Data.Maybe
 open import Data.String
 
+open import Relation.Binary using (Decidable)
+open import Relation.Binary.Product.Pointwise using (_×-≟_)
+open import Relation.Binary.List.Pointwise using (decidable-≡)
+
 open import MJ.Types as Types
 
+{-
+To model that a class may define both field and methods in a uniform manner, we
+choose to introduce two namespaces.
+-}
 data NS : Set where
   METHOD : NS
   FIELD  : NS
@@ -19,15 +27,21 @@ typing : NS → Set
 typing METHOD = Sig c
 typing FIELD = Ty c
 
-open import Relation.Binary using (Decidable)
-open import Relation.Binary.Product.Pointwise using (_×-≟_)
-open import Relation.Binary.List.Pointwise using (decidable-≡)
-
 -- decidable equality on typings
 _typing-≟_ : ∀ {ns} → Decidable (_≡_ {A = typing ns})
 _typing-≟_ {METHOD} = (decidable-≡ Types._≟_) ×-≟ Types._≟_
 _typing-≟_ {FIELD}  = Types._≟_
 
+{-
+We choose to make parent declarations obligatory and have a distinguished class
+identifier Object in which inheritance chains find their foundation.
+
+The field constr of this record provides access to the constructor parameter types.
+
+The field decls returns a list of named members for each namespace, where the
+type of the member is namespace-dependent. The uniformity of member definitions
+permits a notion of membership that works for both fields and methods:
+-}
 record Class : Set where
   constructor class
   field
@@ -37,8 +51,17 @@ record Class : Set where
 
 ObjectClass = class Object [] (λ _ → [])
 
+{-
+Conceptually a class table stores the types of all members of all classes.
+It is modeled by a total function from class identifiers to instances of
+a record Class.
+-}
 PreClasstable = Cid c → Class
 
+{-
+We can define inheritance as the transitive closure of a step relation
+between class identifiers under a given classtable Σ:
+-}
 data _⊢_<:ₛ_ (Σ : PreClasstable) : Cid c → Cid c → Set where
   super : ∀ {cid} → Σ ⊢ cls cid <:ₛ (Class.parent (Σ (cls cid)))
 
@@ -46,6 +69,13 @@ open import Data.Star
 _⊢_<:_ : (Σ : PreClasstable)(cid : Cid c) → (pid : Cid c) → Set
 _⊢_<:_ Σ = Star (_⊢_<:ₛ_ Σ)
 
+{-
+We'll restrict classtables to those that satisfy three properties:
+
+- founded: says that Object is at the base of sub-typing
+- rooted: says that every class inherits from Object
+- Σ-object: gives meaning to the distinguished Object class identifier
+-}
 record Classtable : Set where
   field
     Σ        : PreClasstable
@@ -59,12 +89,23 @@ record Classtable : Set where
   open import Relation.Binary
   open import Data.Nat.Properties
 
+  {-
+  We can show that the subtyping relation is indeed reflexive and transitive
+  -}
   <:-reflexive  : Reflexive (_⊢_<:_ Σ)
   <:-reflexive  = ε
 
   <:-transitive : Transitive (_⊢_<:_ Σ)
   <:-transitive = _◅◅_
 
+  {-
+  From the axioms of the classtable we can derive the important properties
+  that cyclic inheritance is impossible and that consequently inheritance
+  proofs are unique.
+
+  The proof is slightly involved because we have to make sure that Agda
+  believes that it is total.
+  -}
   private
     len : ∀ {c p} → Σ ⊢ c <: p → ℕ
     len ε = 0

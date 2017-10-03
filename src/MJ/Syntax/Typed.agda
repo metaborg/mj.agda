@@ -23,6 +23,17 @@ open import MJ.LexicalScope Ct
 
 NativeBinOp = ℕ → ℕ → ℕ
 
+{-
+Expressions are indexed by a lexical context and a type.
+
+MJ has n-ary calls for which we use All to express that an expression (of the
+right type) is expected for every formal argument of the method signature.
+
+In this nameless representation AccMember type is used to identify accessible
+fields and methods on a particular class.
+Here we exploit that AccMember is defined via a decision procedure: Agda
+will be able to infer the membership proofs if they exist.
+-}
 data Expr (Γ : Ctx) : Ty c → Set where
   -- irreducible expressions
   unit     : Expr Γ void
@@ -42,6 +53,17 @@ data Expr (Γ : Ctx) : Ty c → Set where
   get      : ∀ {cid} → Expr Γ (ref cid) → ∀ f {ty}{acc : AccMember cid FIELD f ty} → Expr Γ ty
 
 mutual
+  {-
+  Like Java, MJ distinguishes expressions from statements.
+  We index the well-typed statement type Stmt
+  with both an input and output context to capture that the constructor
+  for declaration of locals loc adds to the lexical environment.
+  We can interpret the type Stmt as a binary relation on contexts of which we
+  can take the reflexive, transitive closure (Star)
+  to obtain a datatype for sequenced statements:
+
+  The type r represent the (possibly early) return type of a block of statements.
+  -}
   infixl 20 if_then_else_
   data Stmt (I : Ctx)(r : Ty c) : (O : Ctx) → Set where
     loc        : ∀ a → Stmt I r (I +local a)

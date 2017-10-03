@@ -19,8 +19,6 @@ open import Relation.Nullary.Decidable
 open import Data.Star hiding (return; _>>=_)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 
-import Data.Vec.All as Vec∀
-
 open Values Ct
 open Syntax Ct
 open Code Ct
@@ -35,8 +33,15 @@ open import MJ.Semantics.Objects.Flat Ct ℂ using (encoding)
 open import Common.Weakening
 open Weakenable ⦃...⦄
 
+{-
+Make the object encoding API available;
+-}
 open ObjEncoding encoding
 
+{-
+The monad in which we define evaluation.
+This encapsulates state, lexical environments, timeouts and exceptions.
+-}
 WSet = World c → Set
 
 data Exception : Set where
@@ -126,6 +131,9 @@ store* (v ∷ vs) =
   store* vs ^ r >>= λ{ (rs , r) →
   return (r ∷ rs) }}
 
+{-
+Lifting of object getter/setter into the monad
+-}
 read-field : ∀ {Γ : Ctx}{C W f a} → IsMember C FIELD f a → Val W (ref C) →
             M Γ W (λ W → Val W a)
 read-field m null = raiseM nullderef
@@ -147,15 +155,39 @@ mbody : ∀ {m ty} cid → AccMember cid METHOD m ty → InheritedMethod cid m t
 mbody cid mb with toWitness mb
 ... | (pid , s , d∈decls) = pid , s , ∈-all (proj₁ (first⟶∈ d∈decls)) (Implementation.mbodies (ℂ pid))
 
+{-
+Refinements of bind and return for the nested monad for command evaluation
+-}
+_>>=c_ : ∀ {I O O' : Ctx}{W : World c}{a} →
+          M I W (λ W → Val W a ⊎ Env O W) →
+          (∀ {W'} → Env O W' → M I W' (λ W → Val W a ⊎ Env O' W)) →
+          M I W (λ W → Val W a ⊎ Env O' W)
+m >>=c f = m >>= λ{
+  (inj₁ v) → return (inj₁ v) ;
+  (inj₂ E) → f E }
+
+continue : ∀ {Γ : Ctx}{W : World c}{a} → M Γ W (λ W → Val W a ⊎ Env Γ W)
+continue = getEnv λ E → return (inj₂ E)
+
+{-
+Fueled interpreter
+-}
 mutual
 
-  --
-  -- object initialization
-  --
-
+  {-
+  Arguments are passed as mutable and thus have to be evaluated, after which
+  we store the values in the store and we pass the references.
+  -}
   eval-args : ∀ {Γ as W} → ℕ → All (Expr Γ) as → M Γ W (λ W' → All (λ a → (vty a) ∈ W') as)
-  eval-args k args = evalₑ* k args >>= λ vs → store* (map-all val vs)
+  eval-args k args =
+    evalₑ* k args >>= λ vs →
+    store* (map-all val vs)
 
+  {-
+  Object initialization:
+  Creates a default object; stores a mutable reference to it on the heap; calls the constructor
+  on the resulting reference.
+  -}
   constructM : ℕ → ∀ cid → ∀ {W} → M (Class.constr (Σ cid)) W (flip Val (ref cid))
   constructM k cid with ℂ cid
   constructM k cid | (implementation construct mbodies) =
@@ -165,6 +197,10 @@ mutual
     usingEnv (E ⊕ r') (eval-constructor k ε r construct) ^ r >>= λ{ (_ , r) →
     return $ ref r ε }}
 
+  {-
+  Constructor interpretation:
+  The difficult case being the one where we have a super call.
+  -}
   eval-constructor : ∀ {cid' cid W} → ℕ → Σ ⊢ cid' <: cid → (obj cid') ∈ W → Constructor cid →
                      M (constrctx cid) W (flip Val void)
   eval-constructor zero _ _ _ = doTimeout
@@ -185,8 +221,14 @@ mutual
       eval-body k b >>= λ _ →
       return unit
     }}}
-  eval-constructor {_}{cls id} (suc k) _ _ (body x) = eval-body k x >>= λ _ → return unit
+  eval-constructor {_}{cls id} (suc k) _ _ (body x) =
+    eval-body k x >>= λ _ →
+    return unit
 
+  {-
+  Method evaluation including super calls.
+  The difficult case again being the one where we have a super call.
+  -}
   eval-method : ∀ {cid m as b pid W Γ} → ℕ →
                 Σ ⊢ cid <: pid → (obj cid) ∈ W →
                 All (λ ty → vty ty ∈ W) as →
@@ -212,10 +254,9 @@ mutual
       -- call body
       usingEnv (mutret ∷ mutself' ∷ args) (eval-body k b) }}}}}
 
-  --
-  -- evaluation of expressions
-  --
-
+  {-
+  evaluation of expressions
+  -}
   evalₑ : ∀ {Γ : Ctx}{a} → ℕ → Expr Γ a → ∀ {W} → M Γ W (flip Val a)
   evalₑ zero _ = doTimeout
 
@@ -255,7 +296,7 @@ mutual
         -- evaluate the arguments
         eval-args k args ^ o >>= λ{ (rvs , o) →
         store (val (ref o ε)) ^ (o ′ rvs) >>= λ{ (mutself , o , rvs) →
-        -- dynamic lookup of the method on the runtime class of the reference
+        -- dynamic dispatch: dynamic lookup of the method on the runtime class of the reference
         -- and execution of the call
         (eval-method k ε o rvs (mbody dyn-cid (inherit _ s₁ mtd))) }}}
 
@@ -272,21 +313,10 @@ mutual
     eval-args k args >>= λ rvs →
     usingEnv rvs (constructM k C)
 
-  --
-  -- command evaluation
-  --
 
-  _>>=c_ : ∀ {I O O' : Ctx}{W : World c}{a} →
-           M I W (λ W → Val W a ⊎ Env O W) →
-           (∀ {W'} → Env O W' → M I W' (λ W → Val W a ⊎ Env O' W)) →
-           M I W (λ W → Val W a ⊎ Env O' W)
-  m >>=c f = m >>= λ{
-    (inj₁ v) → return (inj₁ v) ;
-    (inj₂ E) → f E }
-
-  continue : ∀ {Γ : Ctx}{W : World c}{a} → M Γ W (λ W → Val W a ⊎ Env Γ W)
-  continue = getEnv λ E → return (inj₂ E)
-
+  {-
+  Statement evaluation
+  -}
   evalc : ∀ {I : Ctx}{O : Ctx}{W : World c}{a} → ℕ →
           Stmt I a O → M I W (λ W → Val W a ⊎ Env O W)
 
@@ -344,7 +374,18 @@ mutual
       (num (suc _)) → continue
     }
 
-  -- evaluating a method body
+  {-
+  An helper for interpreting a sequence of statements
+  -}
+  eval-stmts : ∀ {Γ Γ' W a} → ℕ → Stmts Γ a Γ' → M Γ W (λ W → Val W a ⊎ Env Γ' W)
+  eval-stmts k ε = continue
+  eval-stmts k (x ◅ st) =
+    evalc k x >>=c λ E' →
+    usingEnv E' (eval-stmts k st)
+
+  {-
+  An helper for interpreting method bodies (i.e. sequence of Stmts optionally followed by a return).
+  -}
   eval-body : ∀ {I : Ctx}{W : World c}{a} → ℕ → Body I a → M I W (λ W → Val W a)
   eval-body k (body ε re) = evalₑ k re
   eval-body k (body stmts@(_ ◅ _) e) =
@@ -352,6 +393,9 @@ mutual
       (inj₁ v) → return v ;
       (inj₂ E) → usingEnv E (evalₑ k e) }
 
+  {-
+  An helper for interpreting a list of expressions in the same context.
+  -}
   evalₑ* : ∀ {Γ W as} → ℕ → All (Expr Γ) as → M Γ W (λ W → All (Val W) as)
   evalₑ* k [] = return []
   evalₑ* k (e ∷ es) =
@@ -359,25 +403,22 @@ mutual
     evalₑ* k es ^ v >>= λ{ (vs , v) →
     return (v ∷ vs) }
 
-  eval-stmts : ∀ {Γ Γ' W a} → ℕ → Stmts Γ a Γ' → M Γ W (λ W → Val W a ⊎ Env Γ' W)
-  eval-stmts k ε = continue
-  eval-stmts k (x ◅ st) =
-    evalc k x >>=c λ E' →
-    usingEnv E' (eval-stmts k st)
+eval : ∀ {a} → ℕ → Prog a → Result [] (flip Val a)
+eval k (lib , main) = eval-body k main [] []
 
-  -- evaluating a program
-  eval : ∀ {a} → ℕ → Prog a → Result [] (flip Val a)
-  eval k (lib , main) = eval-body k main [] []
-
--- a few predicates on programs:
--- ... saying it will terminate succesfully in a state where P holds
+{-
+a few predicates on program interpretation:
+... saying it will terminate succesfully in a state where P holds
+-}
 _⇓⟨_⟩_ : ∀ {a} → Prog a → ℕ → (P : ∀ {W} → Val W a → Set) → Set
 p ⇓⟨ k ⟩ P with eval k p
 p ⇓⟨ k ⟩ P | exception _ _ _ = ⊥
 p ⇓⟨ k ⟩ P | timeout = ⊥
 p ⇓⟨ k ⟩ P | returns ext μ v = P v
 
--- ...saying it will raise an exception in a state where P holds
+{-
+...saying it will raise an exception in a state where P holds
+-}
 _⇓⟨_⟩!_ : ∀ {a} → Prog a → ℕ → (P : ∀ {W} → Store W → Exception → Set) → Set
 p ⇓⟨ k ⟩! P with eval k p
 p ⇓⟨ k ⟩! P | exception _ μ e = P μ e

@@ -25,12 +25,19 @@ open import MJ.Syntax Ct
 data Body (I : Ctx) : Ty c → Set where
   body : ∀ {r}{O : Ctx} → Stmts I r O → Expr O r → Body I r
 
+{-
+A helper to generate the shape of the context for method bodies
+-}
 methodctx : Cid c → List (Ty c) → Ctx
 methodctx cid as = (ref cid ∷ as)
 
+{-
+A helper to generate the shape of the context for constructors
+-}
 constrctx : Cid c → Ctx
 constrctx cid = let cl = Σ cid in (ref cid ∷ Class.constr cl)
 
+-- A method is either just a body, or a body prefixed by a super call.
 data Method (cid : Cid c)(m : String) : Sig c → Set where
   super_⟨_⟩then_ : ∀ {as b} →
                 let
@@ -45,6 +52,7 @@ data Method (cid : Cid c)(m : String) : Sig c → Set where
                   Body (Γ +local b) b → Method cid m (as , b)
   body        : ∀ {as b} → Body (methodctx cid as) b → Method cid m (as , b)
 
+-- Constructors are similar
 data Constructor (cid : Cid c) : Set where
   super_then_ : let
                   pid = Class.parent (Σ cid)
@@ -58,6 +66,10 @@ data Constructor (cid : Cid c) : Set where
                   Constructor cid
   body        : Body (constrctx cid) void → Constructor cid
 
+{-
+A class implementation consists of a constructor and a body for every
+METHOD declaration.
+-}
 record Implementation (cid : Cid c) : Set where
   constructor implementation
   open Class (Σ cid) public
@@ -65,7 +77,9 @@ record Implementation (cid : Cid c) : Set where
     construct : Constructor cid
     mbodies   : All (λ{ (name , sig) → Method cid name sig }) (decls METHOD)
 
+-- Code is a lookup table for class implementations for every class identifier
 Code = ∀ cid → Implementation cid
 
+-- Mirroring `IsMember METHOD` we define the notion of an inherited method body.
 InheritedMethod : ∀ (cid : Cid c)(m : String) → Sig c → Set
 InheritedMethod cid m s = ∃ λ pid → Σ ⊢ cid <: pid × Method pid m s

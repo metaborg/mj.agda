@@ -22,17 +22,30 @@ open import Function.Inverse using (Inverse)
 
 open import MJ.Types as Types
 
+{-
+We can observe that a class declares a member in a particular namespace using a
+predicate Declares.
+-}
 Declares : Cid c → (ns : NS) → String → typing ns → Set
 Declares cid ns m ty = let cl = Σ cid in (m , ty) ∈ (Class.decls cl ns)
 
--- declarative membership
+{-
+We define a notion of *declarative membership* of C as the product
+of a witness that C inherits from P and a declaration in P.
+-}
 IsMember : Cid c → (ns : NS) → String → typing ns → Set
 IsMember cid ns m ty = let C = Σ cid in ∃ λ P → Σ ⊢ cid <: P × Declares P ns m ty
 
+{-
+We can prove that Object has no members.
+-}
 ∉Object : ∀ {ns m a} → ¬ IsMember Object ns m a
 ∉Object (.Object , ε , mem) rewrite Σ-Object = ¬x∈[] mem
 ∉Object (._ , () ◅ _ , _)
 
+{-
+And we can show that Declares and IsMember are decidable relations
+-}
 find-declaration : ∀ cid ns n ty → Dec (Declares cid ns n ty)
 find-declaration cid ns m ty = find (Str._≟_ ×-≟ _typing-≟_) (m , ty) (Class.decls (Σ cid) ns)
 
@@ -51,17 +64,28 @@ find-member cid ns n ty = helper cid ns n ty (rooted cid)
         impossible (_ , ε , d) = ¬q d
         impossible (pid , Core.super ◅ s , d) = ¬r (pid , s , d)
 
--- algorithmic membership: this formalizes a notion of accessible members
--- because in Java one cannot dot-access an overridden member
+{-
+Using said decision procedures we can formalize a notion of accessible members.
+-}
 AccMember : Cid c → (ns : NS) → String → typing ns → Set
 AccMember cid ns n ty = True (find-member cid ns n ty)
 
+{-
+All accessible members are also declarative members, but not vice versa,
+because overrides make their super inaccessible.
+-}
 sound : ∀ {cid ns n ty} → AccMember cid ns n ty → IsMember cid ns n ty
 sound p = toWitness p
 
+{-
+Declarative members are inherited:
+-}
 inherit' : ∀ {C P ns m a} → Σ ⊢ C <: P → IsMember P ns m a → IsMember C ns m a
 inherit' S (_ , S' , def) = , S ◅◅ S' , def
 
+{-
+Accessible members are inherited (but may point to different definitions thanks to overrides):
+-}
 inherit : ∀ {m ns ty pid} cid → Σ ⊢ cid <: pid → AccMember pid ns m ty → AccMember cid ns m ty
 inherit {m}{ns}{ty} cid s mb with find-member cid ns m ty
 ... | yes mb' = tt

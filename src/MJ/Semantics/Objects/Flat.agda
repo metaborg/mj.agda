@@ -36,15 +36,29 @@ private
   collect (super {cid} ◅ ch) ns = Class.decls (Σ (cls cid)) ns ++ collect ch ns
   collect ε ns = Class.decls (Σ Object) ns
 
+  {-
+  We define collect members by delegation to collection of members over a particular
+  inheritance chain.
+  This makes the definition structurally recursive and is sound by the fact that
+  inheritance chains are unique.
+  -}
   collect-members : ∀ cid ns → List (String × typing ns)
   collect-members cid ns = collect (rooted cid) ns
 
+  {-
+  An Object is then simply represented by a list of values for all it's members.
+  -}
   Obj : (World c) → (cid : _) → Set
   Obj W cid = All (λ d → Val W (proj₂ d)) (collect-members cid FIELD)
 
   weaken-obj : ∀ {W W'} cid → W' ⊒ W → Obj W cid → Obj W' cid
   weaken-obj cid ext O = List∀.map (weaken-val ext) O
 
+  {-
+  We can relate the flat Object structure with the hierarchical notion of membership
+  through the definition of `collect`.
+  This allows us to get and set members on Objects.
+  -}
   getter : ∀ {W n a} cid → Obj W cid → IsMember cid FIELD n a → Val W a
   getter cid O q with rooted cid
   getter .Object O (.Object , ε , def) | ε = ∈-all (proj₁ (first⟶∈ def)) O
@@ -67,6 +81,10 @@ private
     own ++-all setter _ inherited (_ , s , def) v
   setter Object O mem v = ⊥-elim (∉Object mem)
 
+  {-
+  A default object instance can be created for every class simply by tabulating `default`
+  over the types of all fields of a class.
+  -}
   defaultObject' : ∀ {W cid} → (ch : Σ ⊢ cid <: Object) → All (λ d → Val W (proj₂ d)) (collect ch FIELD)
   defaultObject' ε rewrite Σ-Object = []
   defaultObject' {cid = Object} (() ◅ _)
@@ -75,7 +93,9 @@ private
     ++-all
     defaultObject' z
 
-open import Relation.Nullary.Decidable
+{-
+We collect these definitions under the abstract ObjEncoding interface for usage in the semantics
+-}
 encoding : ObjEncoding
 encoding = record {
     Obj = Obj ;
