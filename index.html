@@ -1,159 +1,163 @@
 <!DOCTYPE HTML>
-<html><head><meta charset="utf-8"><title>Readme</title><link rel="stylesheet" href="Agda.css"></head><body><pre><a id="1" class="Keyword">module</a> <a id="8" href="Readme.html" class="Module">Readme</a> <a id="15" class="Keyword">where</a>
+<html><head><meta charset="utf-8"><title>Readme</title><link rel="stylesheet" href="Agda.css"></head><body><pre><a id="1" class="Comment">{-
 
-<a id="22" class="Comment">{-
+  This is the readme of the Agda mechanization accompanying our POPL 2018 paper:
 
-This repository contains the Agda mechanization that belongs with our
-POPL 2018 paper: Intrinsically Typed Interpreters for Imperative Languages.
+    &quot;Intrinsically-Typed Interpreters for Imperative Languages&quot;
 
-This development has been tested against Agda 2.5.3.
-If you have this installed you should be able simply run `make` in the
-project root, which will checkout some libraries in `./lib/` first and
-then build `./src/Readme.agda` which serves as the main entrypoint
-to the development.
+  The repository is hosted here: https://github.com/metaborg/mj.agda
 
-Alternatively you can run `make doc` to build the html version of the development
-which is useful if you want to navigate the code (starting e.g. in `doc/Readme.html`)
-without having an editor setup for it.
-The html docs are syntax-highlighted and you can click references to navigate
-to their definitions.
+  This development has been tested against Agda 2.5.3. If you have this
+  installed you should be able simply run `make` in the project root, which will
+  checkout some libraries in `./lib/` first and then build `./src/Readme.agda`
+  which serves as the main entrypoint to the development.
 
+  Alternatively you can run `make docs` to build the html version of the
+  development which is useful if you want to navigate the code (starting e.g. in
+  `docs/index.html`) without having an editor setup for it. The html docs are
+  syntax-highlighted and you can click references to navigate to their
+  definitions.
+
+  Note that there are minor differences between the Agda code used in the paper
+  and this mechanization.
+  These discrepancies are summarized at the end of this readme.
 -}</a>
 
-<a id="768" class="Comment">{-
+<a id="1006" class="Keyword">module</a> <a id="1013" href="Readme.html" class="Module">Readme</a> <a id="1020" class="Keyword">where</a>
+
+<a id="1027" class="Comment">{-
   * Section 2 *
 
-  We develop a monadic, well-typed interpreter
-  for STLC and interpret a few example programs.
+  We develop a monadic, well-typed interpreter for STLC and interpret a few
+  example programs.
 -}</a>
-<a id="887" class="Keyword">open</a> <a id="892" class="Keyword">import</a> <a id="899" href="STLC.Semantics.html" class="Module">STLC.Semantics</a>
-<a id="914" class="Keyword">open</a> <a id="919" class="Keyword">import</a> <a id="926" href="STLC.Examples.html" class="Module">STLC.Examples</a>
+<a id="1146" class="Keyword">open</a> <a id="1151" class="Keyword">import</a> <a id="1158" href="STLC.Semantics.html" class="Module">STLC.Semantics</a>
+<a id="1173" class="Keyword">open</a> <a id="1178" class="Keyword">import</a> <a id="1185" href="STLC.Examples.html" class="Module">STLC.Examples</a>
 
-<a id="941" class="Comment">{-
+<a id="1200" class="Comment">{-
   * Section 3.1 - 3.3 *
 
-  And demonstrate how naively extending the approach to cover
-  imperative state is possible, but requires explicit weakening
-  of bound values in the interpreter:
+  And demonstrate how naively extending the approach to cover imperative state
+  is possible, but requires explicit weakening of bound values in the
+  interpreter:
 -}</a>
-<a id="1136" class="Keyword">open</a> <a id="1141" class="Keyword">import</a> <a id="1148" href="STLCRef.SemanticsLB.html" class="Module">STLCRef.SemanticsLB</a>
+<a id="1395" class="Keyword">open</a> <a id="1400" class="Keyword">import</a> <a id="1407" href="STLCRef.SemanticsLB.html" class="Module">STLCRef.SemanticsLB</a>
 
-<a id="1169" class="Comment">{-
+<a id="1428" class="Comment">{-
   * Section 3.4 : dependent passing style *
-  We can improve the semantics with a form of monadic strength
-  and get rid of explicit weakening.
--}</a>
-<a id="1319" class="Keyword">open</a> <a id="1324" class="Keyword">import</a> <a id="1331" href="STLCRef.Semantics.html" class="Module">STLCRef.Semantics</a>
-<a id="1349" class="Keyword">open</a> <a id="1354" class="Keyword">import</a> <a id="1361" href="STLCRef.Examples.html" class="Module">STLCRef.Examples</a>
 
-<a id="1379" class="Comment">{-
+  We can improve the semantics with a form of monadic strength and get rid of
+  explicit weakening.
+-}</a>
+<a id="1579" class="Keyword">open</a> <a id="1584" class="Keyword">import</a> <a id="1591" href="STLCRef.Semantics.html" class="Module">STLCRef.Semantics</a>
+<a id="1609" class="Keyword">open</a> <a id="1614" class="Keyword">import</a> <a id="1621" href="STLCRef.Examples.html" class="Module">STLCRef.Examples</a>
+
+<a id="1639" class="Comment">{-
   * Section 4 until 4.3 *
 
-  We show how we can mechanize the scopes and frames uniform model of binding
-  in a language independent manner.
+  We show how we can mechanize the scopes and frames uniform model of binding in
+  a language independent manner.
 -}</a>
-<a id="1526" class="Keyword">open</a> <a id="1531" class="Keyword">import</a> <a id="1538" href="ScopeGraph.ScopesFrames.html" class="Module">ScopeGraph.ScopesFrames</a>
+<a id="1786" class="Keyword">open</a> <a id="1791" class="Keyword">import</a> <a id="1798" href="ScopeGraph.ScopesFrames.html" class="Module">ScopeGraph.ScopesFrames</a>
 
-<a id="1563" class="Comment">{-
+<a id="1823" class="Comment">{-
   * Section 4.4 *
 
-  And demonstrate its basic usage by writing an
-  interpreter for STLC where scopes are used to capture lexical binding
-  and frames are used to model lexical environments.
+  And demonstrate its basic usage by writing an interpreter for STLC where
+  scopes and frames are used to model lexical binding.
 -}</a>
-<a id="1761" class="Keyword">open</a> <a id="1766" class="Keyword">import</a> <a id="1773" href="STLCSF.Semantics.html" class="Module">STLCSF.Semantics</a>
+<a id="1978" class="Keyword">open</a> <a id="1983" class="Keyword">import</a> <a id="1990" href="STLCSF.Semantics.html" class="Module">STLCSF.Semantics</a>
 
-<a id="1791" class="Comment">{-
+<a id="2008" class="Comment">{-
   * Section 5 *
 
-  We take these techniques and show that they scale
-  by giving an intrinsically typed interpreter for
-  Middleweight Java.
-  A language with:
+  We take these techniques and show that they scale by giving an intrinsically-
+  typed interpreter for Middleweight Java. A language with:
 
   - Imperative objects
   - Sub-typing
   - Mutable, block-scoped environments
   - Exceptions and early returns
 -}</a>
-<a id="2068" class="Keyword">open</a> <a id="2073" class="Keyword">import</a> <a id="2080" href="MJSF.Syntax.html" class="Module">MJSF.Syntax</a>
-<a id="2092" class="Keyword">open</a> <a id="2097" class="Keyword">import</a> <a id="2104" href="MJSF.Values.html" class="Module">MJSF.Values</a>
-<a id="2116" class="Keyword">open</a> <a id="2121" class="Keyword">import</a> <a id="2128" href="MJSF.Monad.html" class="Module">MJSF.Monad</a>
-<a id="2139" class="Keyword">open</a> <a id="2144" class="Keyword">import</a> <a id="2151" href="MJSF.Semantics.html" class="Module">MJSF.Semantics</a>
+<a id="2282" class="Keyword">open</a> <a id="2287" class="Keyword">import</a> <a id="2294" href="MJSF.Syntax.html" class="Module">MJSF.Syntax</a>
+<a id="2306" class="Keyword">open</a> <a id="2311" class="Keyword">import</a> <a id="2318" href="MJSF.Values.html" class="Module">MJSF.Values</a>
+<a id="2330" class="Keyword">open</a> <a id="2335" class="Keyword">import</a> <a id="2342" href="MJSF.Monad.html" class="Module">MJSF.Monad</a>
+<a id="2353" class="Keyword">open</a> <a id="2358" class="Keyword">import</a> <a id="2365" href="MJSF.Semantics.html" class="Module">MJSF.Semantics</a>
 
-<a id="2167" class="Comment">{-
+<a id="2381" class="Comment">{-
   And demonstrate that it is executable:
 -}</a>
-<a id="2214" class="Keyword">open</a> <a id="2219" class="Keyword">import</a> <a id="2226" href="MJSF.Examples.Integer.html" class="Module">MJSF.Examples.Integer</a>
+<a id="2428" class="Keyword">open</a> <a id="2433" class="Keyword">import</a> <a id="2440" href="MJSF.Examples.Integer.html" class="Module">MJSF.Examples.Integer</a>
 
-<a id="2249" class="Comment">{-
+<a id="2463" class="Comment">{-
   * Appendix A *
 
   The following code artifacts *are not* described in the paper, but are used as
-  a comparison point to evaluate the impact on the interpreter of using
-  the scopes and frames model of binding.
+  a comparison point to evaluate the impact on the interpreter of using the
+  scopes and frames model of binding.
 
-  This is an intrinsically typed interpreter for MJ without the use of scope-and-frames.
-  Instead it describes a language-*dependent* classtable construction to deal with
-  object dot-access binding and typing contexts and environments to deal with
-  lexical binding respectively.
+  This is an intrinsically-typed interpreter for MJ without the use of
+  scope-and-frames. Instead it describes a language-*dependent* classtable
+  construction to deal with object dot-access binding and typing contexts and
+  environments to deal with lexical binding respectively.
 -}</a>
-<a id="2751" class="Keyword">open</a> <a id="2756" class="Keyword">import</a> <a id="2763" href="MJ.Syntax.Typed.html" class="Module">MJ.Syntax.Typed</a>
+<a id="2965" class="Keyword">open</a> <a id="2970" class="Keyword">import</a> <a id="2977" href="MJ.Syntax.Typed.html" class="Module">MJ.Syntax.Typed</a>
 
-<a id="2780" class="Comment">-- lexcial contexts</a>
-<a id="2800" class="Keyword">open</a> <a id="2805" class="Keyword">import</a> <a id="2812" href="MJ.LexicalScope.html" class="Module">MJ.LexicalScope</a>
+<a id="2994" class="Comment">-- lexcial contexts</a>
+<a id="3014" class="Keyword">open</a> <a id="3019" class="Keyword">import</a> <a id="3026" href="MJ.LexicalScope.html" class="Module">MJ.LexicalScope</a>
 
-<a id="2829" class="Comment">-- classtable</a>
-<a id="2843" class="Keyword">open</a> <a id="2848" class="Keyword">import</a> <a id="2855" href="MJ.Classtable.Core.html" class="Module">MJ.Classtable.Core</a>
-<a id="2874" class="Keyword">open</a> <a id="2879" class="Keyword">import</a> <a id="2886" href="MJ.Classtable.Membership.html" class="Module">MJ.Classtable.Membership</a>
-<a id="2911" class="Keyword">open</a> <a id="2916" class="Keyword">import</a> <a id="2923" href="MJ.Classtable.Code.html" class="Module">MJ.Classtable.Code</a>
+<a id="3043" class="Comment">-- classtable</a>
+<a id="3057" class="Keyword">open</a> <a id="3062" class="Keyword">import</a> <a id="3069" href="MJ.Classtable.Core.html" class="Module">MJ.Classtable.Core</a>
+<a id="3088" class="Keyword">open</a> <a id="3093" class="Keyword">import</a> <a id="3100" href="MJ.Classtable.Membership.html" class="Module">MJ.Classtable.Membership</a>
+<a id="3125" class="Keyword">open</a> <a id="3130" class="Keyword">import</a> <a id="3137" href="MJ.Classtable.Code.html" class="Module">MJ.Classtable.Code</a>
 
-<a id="2943" class="Comment">-- semantics</a>
-<a id="2956" class="Keyword">open</a> <a id="2961" class="Keyword">import</a> <a id="2968" href="MJ.Semantics.Values.html" class="Module">MJ.Semantics.Values</a>
-<a id="2988" class="Keyword">open</a> <a id="2993" class="Keyword">import</a> <a id="3000" href="MJ.Semantics.Objects.Flat.html" class="Module">MJ.Semantics.Objects.Flat</a>
-<a id="3026" class="Keyword">open</a> <a id="3031" class="Keyword">import</a> <a id="3038" href="MJ.Semantics.Monadic.html" class="Module">MJ.Semantics.Monadic</a>
+<a id="3157" class="Comment">-- semantics</a>
+<a id="3170" class="Keyword">open</a> <a id="3175" class="Keyword">import</a> <a id="3182" href="MJ.Semantics.Values.html" class="Module">MJ.Semantics.Values</a>
+<a id="3202" class="Keyword">open</a> <a id="3207" class="Keyword">import</a> <a id="3214" href="MJ.Semantics.Objects.Flat.html" class="Module">MJ.Semantics.Objects.Flat</a>
+<a id="3240" class="Keyword">open</a> <a id="3245" class="Keyword">import</a> <a id="3252" href="MJ.Semantics.Monadic.html" class="Module">MJ.Semantics.Monadic</a>
 
-<a id="3060" class="Comment">-- examples</a>
-<a id="3072" class="Keyword">open</a> <a id="3077" class="Keyword">import</a> <a id="3084" href="MJ.Examples.Integer.html" class="Module">MJ.Examples.Integer</a>
-<a id="3104" class="Keyword">open</a> <a id="3109" class="Keyword">import</a> <a id="3116" href="MJ.Examples.Exceptions.html" class="Module">MJ.Examples.Exceptions</a>
+<a id="3274" class="Comment">-- examples</a>
+<a id="3286" class="Keyword">open</a> <a id="3291" class="Keyword">import</a> <a id="3298" href="MJ.Examples.Integer.html" class="Module">MJ.Examples.Integer</a>
+<a id="3318" class="Keyword">open</a> <a id="3323" class="Keyword">import</a> <a id="3330" href="MJ.Examples.Exceptions.html" class="Module">MJ.Examples.Exceptions</a>
 
-<a id="3140" class="Comment">{-
-  Additionally we demonstrate briefly how Agda&#39;s typeclass mechanism
-  is not sufficiently strong to infer store extension facts for weakening.
-  (Notably rejects equivalent as well because the two instances are overlapping)
+<a id="3354" class="Comment">{-
+  Additionally we demonstrate briefly how Agda&#39;s typeclass mechanism is not
+  sufficiently strong to infer store extension facts for weakening. (Notably
+  rejects equivalent as well because the two instances are overlapping)
 -}</a>
-<a id="3371" class="Keyword">open</a> <a id="3376" class="Keyword">import</a> <a id="3383" href="Experiments.Infer.html" class="Module">Experiments.Infer</a>
+<a id="3585" class="Keyword">open</a> <a id="3590" class="Keyword">import</a> <a id="3597" href="Experiments.Infer.html" class="Module">Experiments.Infer</a>
 
-<a id="3402" class="Comment">{-
+<a id="3616" class="Comment">{-
 There are a few discrepancies with paper:
 
-- Universe polymorphic definitions in the development are presented in
-  their simplified (monomorphic) form in the paper
+- Universe polymorphic definitions in the development are presented in their
+  simplified (monomorphic) form in the paper
 
-- MJSF: pattern matching lambdas are not useful for pattern matching
-  against, which we need in order to initialize method and field slots.
-  Instead of having the `All` with the pattern matching lambda, we use a
-  tagging predicate; e.g. `#m`.  This is morally equivalent to the `All`
-  used in the paper (Section 5.4).
+- MJSF: pattern matching lambdas are not useful for pattern matching against,
+  which we need in order to initialize method and field slots. Instead of having
+  the `All` with the pattern matching lambda, we use a tagging predicate; e.g.
+  `#m`. This is morally equivalent to the `All` used in the paper (Section 5.4).
 
-Then there are a few notable differences between the original presentation
-of MJ and our development:
+- The STLC and STLC+Ref implementations in this repository add integers and
+  integer operations in order to write some more interesting example programs.
+
+Then there are a few notable differences between the original presentation of MJ
+and our development:
 
 - MJ distinguishes promotable expressions (method invocation and object
-  creation) and all other expressions.  We admit arbitrary expressions
-  to be promoted.  This does not change the semantics in any significant
-  way.  The expressions that we allow to be promoted are side-effect
-  free.
+  creation) and all other expressions. We admit arbitrary expressions to be
+  promoted. This does not change the semantics in any significant way. The
+  expressions that we allow to be promoted are side-effect free.
 
-- returns are implemented by modeling non-void methods as having an
-  expression as its last statement (like in MJ).
+- returns are implemented by modeling non-void methods as having an expression
+  as its last statement (like in MJ).
 
-- MJ only has equality comparison expressions that can be used as
-  conditional expressions.  We allow arbitrary expressions, and use
-  `ifz`.  It would be straightforward to add booleans.
+- MJ only has equality comparison expressions that can be used as conditional
+  expressions. We allow arbitrary expressions, and use `ifz`. It would be
+  straightforward to add booleans.
 
-- If statements have ordinary statements as their sub-statements.  These
-  can either be block statements or any other statement which does not
-  allocate a new frame.
+- If statements have ordinary statements as their sub-statements. These can
+  either be block statements or any other statement which does not allocate a
+  new frame.
 -}</a>
 </pre></body></html>
