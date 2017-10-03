@@ -20,6 +20,8 @@ to their definitions.
 -}
 
 {-
+  * Section 2 *
+
   We develop a monadic, well-typed interpreter
   for STLC and interpret a few example programs.
 -}
@@ -27,6 +29,8 @@ open import STLC.Semantics
 open import STLC.Examples
 
 {-
+  * Section 3.1 - 3.3 *
+
   And demonstrate how naively extending the approach to cover
   imperative state is possible, but requires explicit weakening
   of bound values in the interpreter:
@@ -34,6 +38,7 @@ open import STLC.Examples
 open import STLCRef.SemanticsLB
 
 {-
+  * Section 3.4 : dependent passing style *
   We can improve the semantics with a form of monadic strength
   and get rid of explicit weakening.
 -}
@@ -41,6 +46,25 @@ open import STLCRef.Semantics
 open import STLCRef.Examples
 
 {-
+  * Section 4 until 4.3 *
+
+  We show how we can mechanize the scopes and frames uniform model of binding
+  in a language independent manner.
+-}
+open import ScopeGraph.ScopesFrames
+
+{-
+  * Section 4.4 *
+
+  And demonstrate its basic usage by writing an
+  interpreter for STLC where scopes are used to capture lexical binding
+  and frames are used to model lexical environments.
+-}
+open import STLCSF.Semantics
+
+{-
+  * Section 5 *
+
   We take these techniques and show that they scale
   by giving an intrinsically typed interpreter for
   Middleweight Java.
@@ -51,34 +75,6 @@ open import STLCRef.Examples
   - Mutable, block-scoped environments
   - Exceptions and early returns
 -}
-open import MJ.Syntax.Typed
-open import MJ.Semantics.Values
-open import MJ.Semantics.Objects.Flat
-open import MJ.Semantics.Monadic
-open import MJ.Examples.Integer
-open import MJ.Examples.Exceptions
-
-{-
-  Like many imperative languages the MJ development uses a variety
-  of binding patterns.
-  We show how we can use the Scopes & Frames approach to model
-  these patterns uniformly in a well-typed manner
-
-  To that end we first develop a language independent mechanization of
-  the Scopes & Frames model of binding:
--}
-open import ScopeGraph.ScopesFrames
-
-{-
-  And demonstrate its basic usage by writing an
-  interpreter for STLC where scopes are used to capture lexical binding
-  and frames are used to model lexical environments.
--}
-open import STLCSF.Semantics
-
-{-
-  Again we scale it to the size of Middleweight Java:
--}
 open import MJSF.Syntax
 open import MJSF.Values
 open import MJSF.Monad
@@ -88,6 +84,37 @@ open import MJSF.Semantics
   And demonstrate that it is executable:
 -}
 open import MJSF.Examples.Integer
+
+{-
+  * Appendix A *
+
+  The following code artifacts *are not* described in the paper, but are used as
+  a comparison point to evaluate the impact on the interpreter of using
+  the scopes and frames model of binding.
+
+  This is an intrinsically typed interpreter for MJ without the use of scope-and-frames.
+  Instead it describes a language-*dependent* classtable construction to deal with
+  object dot-access binding and typing contexts and environments to deal with
+  lexical binding respectively.
+-}
+open import MJ.Syntax.Typed
+
+-- lexcial contexts
+open import MJ.LexicalScope
+
+-- classtable
+open import MJ.Classtable.Core
+open import MJ.Classtable.Membership
+open import MJ.Classtable.Code
+
+-- semantics
+open import MJ.Semantics.Values
+open import MJ.Semantics.Objects.Flat
+open import MJ.Semantics.Monadic
+
+-- examples
+open import MJ.Examples.Integer
+open import MJ.Examples.Exceptions
 
 {-
   Additionally we demonstrate briefly how Agda's typeclass mechanism
