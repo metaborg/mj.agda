@@ -60,7 +60,7 @@ module SyntaxG (g : Graph) where
 
   -- Inheritance links
   data Inherits : Scope → Scope → Set where
-    obj   : ∀ {s ds sʳ} ⦃ shape : g s ≡ (ds , [ sʳ ]) ⦄ → Inherits s s
+    obj   : ∀ s {ds sʳ} ⦃ shape : g s ≡ (ds , [ sʳ ]) ⦄ → Inherits s s
     super : ∀ {s ds sʳ sᵖ s'} ⦃ shape : g s ≡ (ds , sʳ ∷ sᵖ ∷ []) ⦄ → Inherits sᵖ s' → Inherits s s'
 
 
@@ -122,11 +122,11 @@ module SyntaxG (g : Graph) where
              All (λ{ (ts , rt) → (s ↦ (mᵗ ts rt)) × Meth s ts rt }) oms → -- overrides
              Class sʳ s
 
-  data Program (a : VTy) : Set where
+  data Program (sʳ : Scope)(a : VTy) : Set where
     program :
-      ∀ sʳ {cs}⦃ shape : g sʳ ≡ (cs , []) ⦄ →
+      ∀ cs ⦃ shape : g sʳ ≡ (cs , []) ⦄ →
         -- implementation of all the classes
         All (#c Class) cs →
         -- main function
         Body sʳ a →
-        Program a
+        Program sʳ a

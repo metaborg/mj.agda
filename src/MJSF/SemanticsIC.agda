@@ -21,9 +21,10 @@ open import ScopeGraph.ScopesFrames k Ty
 
 module Semantics (g : Graph) where
 
+  open SyntaxG g
   open ValuesG g
   open MonadG g
-  open UsesVal Valᵗ valᵗ-weaken renaming (getFrame to getFrame')
+  open UsesVal Valᵗ valᵗ-weaken renaming (getFrame to getFrame') public
 
   -----------------
   -- AUXILIARIES --
@@ -53,7 +54,7 @@ module Semantics (g : Graph) where
                              override oms
 
   init-obj : ∀ {sʳ s s' Σ} → Class sʳ s → Inherits s s' → M sʳ (Frame s) Σ
-  init-obj (class0 ⦃ shape ⦄ ms fs oms) obj
+  init-obj (class0 ⦃ shape ⦄ ms fs oms) (obj _)
     = getFrame >>= λ f →
       init _ ⦃ shape ⦄ (slotify ms ++-all defaults fs) (f ∷ []) >>= λ f' →
       (usingFrame f' (override oms) ^ f') >>= λ{ (_ , f') → return f' }
@@ -66,7 +67,7 @@ module Semantics (g : Graph) where
     init _ ⦃ shape ⦄ (slotify ms ++-all defaults fs) (f' ∷ f ∷ []) >>= λ f'' →
     (usingFrame f'' (override oms) ^ f'') >>= λ{ (_ , f'') →
     return f'' }}}
-  init-obj (class1 _ ⦃ shape ⦄ _ _ _) (obj ⦃ shape' ⦄) with (trans (sym shape) shape')
+  init-obj (class1 _ ⦃ shape ⦄ _ _ _) (obj _ ⦃ shape' ⦄) with (trans (sym shape) shape')
   ... | ()
 
   _>>=ᶜ_     :  ∀ {s s' s'' r Σ} →
@@ -155,25 +156,19 @@ module Semantics (g : Graph) where
     eval-body (suc k) (body-void stmts) = eval-stmts k stmts >>= λ f →
                                           return (reflv void)
 
-  postulate root-frame : ∀ sʳ cs ⦃ eq : g sʳ ≡ (cs , []) ⦄ → All (#c Class) cs → HeapFrame sʳ (sʳ ∷ [])
-  -- root-frame sr cs ⦃ eq ⦄ ℂ =
-    -- subst (flip Slots _) (sym $ cong proj₁ eq) (map-all (λ{ (#c' p) → cᵗ p {!!} {!here refl!}}) ℂ) , subst (flip Links _) (sym $ cong proj₂ eq) []
-
   open import Common.Weakening
   open Weakenable ⦃...⦄
   -- a few predicates on programs:
   -- ... saying it will terminate succesfully in a state where P holds
-  _⇓⟨_⟩_ : ∀ {a} → Program a → ℕ → (P : ∀ {W} → Val<: a W → Set) → Set
-  (program rs ℂ p) ⇓⟨ k ⟩ P with root-frame rs _ ℂ
-  ... | rf with eval-body k p (here refl) (rf ∷ [])
+  _⊢_⇓⟨_⟩_ : ∀ {sʳ a} → HeapFrame sʳ (sʳ ∷ []) → Program sʳ a → ℕ → (P : ∀ {W} → Val<: a W → Set) → Set
+  rf ⊢ (program _ ℂ p) ⇓⟨ k ⟩ P with eval-body k p (here refl) (rf ∷ [])
   ... | nullpointer = ⊥
   ... | timeout = ⊥
   ... | ok (_ , _ , v , _) = P v
 
   -- ...saying it will raise an exception in a state where P holds
-  _⇓⟨_⟩!_ : ∀ {a} → Program a → ℕ → (P : ∀ {W} → Val<: a W → Set) → Set
-  (program rs ℂ p) ⇓⟨ k ⟩! P with root-frame rs _ ℂ
-  ... | rf with eval-body k p (here refl) (rf ∷ [])
+  _⊢_⇓⟨_⟩!_ : ∀ {sʳ a} → HeapFrame sʳ (sʳ ∷ []) → Program sʳ a → ℕ → (P : ∀ {W} → Val<: a W → Set) → Set
+  rf ⊢ (program _ ℂ p) ⇓⟨ k ⟩! P with eval-body k p (here refl) (rf ∷ [])
   ... | nullpointer = ⊤
   ... | timeout = ⊥
   ... | ok (_ , _ , v , _) = ⊥

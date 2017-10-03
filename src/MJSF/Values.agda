@@ -10,7 +10,7 @@ open import ScopeGraph.ScopesFrames k Ty
 
 module ValuesG (g : Graph) where
 
-  open SyntaxG g public
+  open SyntaxG g
   open UsesGraph g public
   open import Common.Weakening
   open Weakenable ⦃...⦄
