@@ -1,0 +1,20 @@
+<!DOCTYPE HTML>
+<html><head><meta charset="utf-8"><title>MJ.LexicalScope</title><link rel="stylesheet" href="Agda.css"></head><body><pre><a id="1" class="Keyword">open</a> <a id="6" class="Keyword">import</a> <a id="13" href="Prelude.html" class="Module">Prelude</a>
+<a id="21" class="Keyword">open</a> <a id="26" class="Keyword">import</a> <a id="33" href="MJ.Classtable.Core.html" class="Module">MJ.Classtable.Core</a>
+
+<a id="53" class="Keyword">module</a> <a id="60" href="MJ.LexicalScope.html" class="Module">MJ.LexicalScope</a> <a id="76" class="Symbol">{</a><a id="77" href="MJ.LexicalScope.html#77" class="Bound">c</a><a id="78" class="Symbol">}(</a><a id="80" href="MJ.LexicalScope.html#80" class="Bound">Σ</a> <a id="82" class="Symbol">:</a> <a id="84" href="MJ.Classtable.Core.html#Classtable" class="Record">Classtable</a> <a id="95" href="MJ.LexicalScope.html#77" class="Bound">c</a><a id="96" class="Symbol">)</a> <a id="98" class="Keyword">where</a>
+
+<a id="105" class="Keyword">open</a> <a id="110" class="Keyword">import</a> <a id="117" href="Data.List.html" class="Module">Data.List</a>
+<a id="127" class="Keyword">open</a> <a id="132" class="Keyword">import</a> <a id="139" href="Data.List.Any.html" class="Module">Data.List.Any</a>
+<a id="153" class="Keyword">open</a> <a id="158" class="Keyword">import</a> <a id="165" href="Data.List.Any.Membership.Propositional.html" class="Module">Data.List.Any.Membership.Propositional</a>
+<a id="204" class="Keyword">open</a> <a id="209" class="Keyword">import</a> <a id="216" href="MJ.Types.html" class="Module">MJ.Types</a>
+
+<a id="Ctx" href="MJ.LexicalScope.html#Ctx" class="Function">Ctx</a> <a id="230" class="Symbol">:</a> <a id="232" class="PrimitiveType">Set</a>
+<a id="236" href="MJ.LexicalScope.html#Ctx" class="Function">Ctx</a> <a id="240" class="Symbol">=</a> <a id="242" href="Agda.Builtin.List.html#List" class="Datatype">List</a> <a id="247" class="Symbol">(</a><a id="248" href="MJ.Types.html#Ty" class="Datatype">Ty</a> <a id="251" href="MJ.LexicalScope.html#77" class="Bound">c</a><a id="252" class="Symbol">)</a>
+
+<a id="Var" href="MJ.LexicalScope.html#Var" class="Function">Var</a> <a id="259" class="Symbol">:</a> <a id="261" href="MJ.LexicalScope.html#Ctx" class="Function">Ctx</a> <a id="265" class="Symbol">→</a> <a id="267" href="MJ.Types.html#Ty" class="Datatype">Ty</a> <a id="270" href="MJ.LexicalScope.html#77" class="Bound">c</a> <a id="272" class="Symbol">→</a> <a id="274" class="PrimitiveType">Set</a>
+<a id="278" href="MJ.LexicalScope.html#Var" class="Function">Var</a> <a id="282" href="MJ.LexicalScope.html#282" class="Bound">Γ</a> <a id="284" href="MJ.LexicalScope.html#284" class="Bound">a</a> <a id="286" class="Symbol">=</a> <a id="288" href="MJ.LexicalScope.html#284" class="Bound">a</a> <a id="290" href="Data.List.Any.Membership.html#Propositional.M._%E2%88%88_" class="Function Operator">∈</a> <a id="292" href="MJ.LexicalScope.html#282" class="Bound">Γ</a>
+
+<a id="_+local_" href="MJ.LexicalScope.html#_%2Blocal_" class="Function Operator">_+local_</a> <a id="304" class="Symbol">:</a> <a id="306" href="MJ.LexicalScope.html#Ctx" class="Function">Ctx</a> <a id="310" class="Symbol">→</a> <a id="312" href="MJ.Types.html#Ty" class="Datatype">Ty</a> <a id="315" href="MJ.LexicalScope.html#77" class="Bound">c</a> <a id="317" class="Symbol">→</a> <a id="319" href="MJ.LexicalScope.html#Ctx" class="Function">Ctx</a>
+<a id="323" href="MJ.LexicalScope.html#_%2Blocal_" class="Function Operator">_+local_</a> <a id="332" href="MJ.LexicalScope.html#332" class="Bound">Γ</a> <a id="334" href="MJ.LexicalScope.html#334" class="Bound">a</a> <a id="336" class="Symbol">=</a> <a id="338" href="MJ.LexicalScope.html#334" class="Bound">a</a> <a id="340" href="Agda.Builtin.List.html#List._%E2%88%B7_" class="InductiveConstructor Operator">∷</a> <a id="342" href="MJ.LexicalScope.html#332" class="Bound">Γ</a>
+</pre></body></html>
