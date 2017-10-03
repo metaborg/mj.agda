@@ -23,7 +23,7 @@ test-idexpr : eval 2 (idexpr · unit) [] ≡ just unit
 test-idexpr = refl
 
 
--- curried addition: λ x . λ y . x + y
+-- curried addition: λ x . λ y . y + x
 curry+ : Expr [] (int ⇒ (int ⇒ int))
 curry+ = ƛ (ƛ (iop _+_ (var (here refl)) (var (there (here refl)))))
 

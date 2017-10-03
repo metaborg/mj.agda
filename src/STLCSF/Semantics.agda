@@ -37,6 +37,7 @@ module STLCSF.Semantics (k : ℕ) where
 data Ty : Set where
   unit : Ty
   _⇒_  : (a b : Ty) → Ty
+  int  : Ty
 
 -- The library is loaded and passed two arguments:
 -- * `k` is the size of the scope graph for an object program
@@ -66,6 +67,8 @@ module Syntax (g : Graph) where
     var   : ∀ {t} → (s ↦ t) → Expr s t
     ƛ     : ∀ {s' a b} → ⦃ shape : g s' ≡ ( [ a ] , [ s ] ) ⦄ → Expr s' b → Expr s (a ⇒ b)
     _·_   : ∀ {a b} → Expr s (a ⇒ b) → Expr s a → Expr s b
+    num   : ℤ → Expr s int
+    iop   : (ℤ → ℤ → ℤ) → (l r : Expr s int) → Expr s int
 
 
   ------------
@@ -75,15 +78,17 @@ module Syntax (g : Graph) where
   -- We can also define well-typed values as described in the paper
   -- Section 4.4:
   data Val : Ty → (Σ : HeapTy) → Set where
-    unit   :  ∀ {Σ} → Val unit Σ
-    ⟨_,_⟩  :  ∀ {Σ s s' a b}⦃ shape : g s' ≡ ( [ a ] , [ s ] ) ⦄ →
-              Expr s' b → Frame s Σ → Val (a ⇒ b) Σ
+    unit   : ∀ {Σ} → Val unit Σ
+    ⟨_,_⟩  : ∀ {Σ s s' a b}⦃ shape : g s' ≡ ( [ a ] , [ s ] ) ⦄ →
+             Expr s' b → Frame s Σ → Val (a ⇒ b) Σ
+    num    : ∀ {Σ} → ℤ → Val int Σ
 
   -- 
 
   val-weaken : ∀ {t Σ Σ'} → Σ ⊑ Σ' → Val t Σ → Val t Σ'
   val-weaken ext ⟨ e , f ⟩ = ⟨ e , wk ext f ⟩
   val-weaken ext unit      = unit
+  val-weaken ext (num z)   = num z
 
   -- We can now load the frames definitions of the scopes-and-frames
   -- library.  As described in Section 4.3 of the paper, our notion of
@@ -147,11 +152,23 @@ module Syntax (g : Graph) where
   sₑ {s} _ = s
 
   eval : ℕ → ∀ {s t Σ} → Expr s t → M s (Val t) Σ
-  eval zero     _        =  timeout
-  eval (suc k) unit      =  return unit
-  eval (suc k) (var x)   =  getv x
-  eval (suc k) (ƛ e)     =  getFrame >>= λ f → return ⟨ e , f ⟩
-  eval (suc k) (l · r)   =  eval k l >>= λ{ ⟨ e , f ⟩ →
-                            (eval k r ^ f) >>= λ{ (v , f) →
-                            init (sₑ e) (v ∷ []) (f ∷ []) >>= λ f' →
-                            usingFrame f' (eval k e) }}
+  eval zero     _      =
+    timeout
+  eval (suc k) unit    =
+    return unit
+  eval (suc k) (var x) =
+    getv x
+  eval (suc k) (ƛ e)   =
+    getFrame >>= λ f →
+    return ⟨ e , f ⟩
+  eval (suc k) (l · r) =
+    eval k l >>= λ{ ⟨ e , f ⟩ →
+    (eval k r ^ f) >>= λ{ (v , f) →
+    init (sₑ e) (v ∷ []) (f ∷ []) >>= λ f' →
+    usingFrame f' (eval k e) }}
+  eval (suc k) (num z) =
+    return (num z)
+  eval (suc k) (iop f l r) =
+    eval k l >>= λ{ (num z₁) →
+    eval k r >>= λ{ (num z₂) →
+    return (num (f z₁ z₂)) }}
