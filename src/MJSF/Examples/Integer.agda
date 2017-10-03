@@ -24,9 +24,6 @@ open import ScopeGraph.ScopesFrames k Ty
 {-
     class Integer {
       int x = 0;
-      int get() {
-        return this.x;
-      }
       int set(Integer b) {
         this.x = b.get()
         return;
