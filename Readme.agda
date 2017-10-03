@@ -4,7 +4,11 @@
 
     "Intrinsically-Typed Interpreters for Imperative Languages"
 
-  The repository is hosted here: https://github.com/metaborg/mj.agda
+  The repository is hosted here:
+  - https://github.com/metaborg/mj.agda
+
+  A rendered and linked version of this readme can be found here:
+  - https://metaborg.github.io/mj.agda/
 
   This development has been tested against Agda 2.5.3. If you have this
   installed you should be able simply run `make` in the project root, which will
