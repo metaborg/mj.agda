@@ -24,9 +24,6 @@ open import ScopeGraph.ScopesFrames k Ty
 {-
     class Integer {
       int x = 0;
-      int get() {
-        return this.x;
-      }
       int set(Integer b) {
         this.x = b.get()
         return;
@@ -68,9 +65,9 @@ IntegerImpl = class0 {ms = intmethods}{intfields}
   ( -- methods
     (#m' (meth (# 2) (body-void (
       set
-        (upcast refl (var (path [] (there (here refl)))))
+        (var (path [] (there (here refl))))
         (path [] (there (here refl)))
-        (upcast refl (get (upcast refl (var (path [] (here refl)))) (path [] (there (here refl)))))
+        (get (var (path [] (here refl))) (path [] (there (here refl))))
       ◅ ε
     )))) ∷ [])
   ( -- fields
@@ -83,14 +80,14 @@ main = body
     (
         loc (# 3) (ref INT)
       ◅ loc (# 4) (ref INT)
-      ◅ asgn (path (here refl ∷ []) (here refl)) (upcast refl (new (path (here refl ∷ here refl ∷ []) (here refl))))
-      ◅ asgn (path [] (here refl)) (upcast refl (new (path (here refl ∷ here refl ∷ []) (here refl))))
-      ◅ set (upcast refl (var (path (here refl ∷ []) (here refl)))) (path [] (there (here refl))) (upcast refl (num (+ 9)))
-      ◅ set (upcast refl (var (path [] (here refl)))) (path [] (there (here refl))) (upcast refl (num (+ 18)))
-      ◅ do (upcast refl (call (upcast refl (var (path [] (here refl)))) (path [] (here refl)) (upcast refl (var (path (here refl ∷ []) (here refl))) ∷ [])))
+      ◅ asgn (path (here refl ∷ []) (here refl)) (new (path (here refl ∷ here refl ∷ []) (here refl)))
+      ◅ asgn (path [] (here refl)) (new (path (here refl ∷ here refl ∷ []) (here refl)))
+      ◅ set (var (path (here refl ∷ []) (here refl))) (path [] (there (here refl))) (num (+ 9))
+      ◅ set (var (path [] (here refl))) (path [] (there (here refl))) (num (+ 18))
+      ◅ do (call (var (path [] (here refl))) (path [] (here refl)) (var (path (here refl ∷ []) (here refl)) ∷ []))
       ◅ ε
     )
-    (upcast refl (get (upcast refl (var (path [] (here refl)))) (path [] (there (here refl)))))
+    (get (var (path [] (here refl))) (path [] (there (here refl))))
 
 p : Program (# 0) int
 p = program classes (#c' IntegerImpl  ∷ []) main
