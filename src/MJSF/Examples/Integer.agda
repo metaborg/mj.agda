@@ -95,7 +95,7 @@ main = body
 p : Program (# 0) int
 p = program classes (#c' IntegerImpl  ∷ []) main
 
-open import MJSF.SemanticsIC
+open import MJSF.Semantics
 open Semantics _ φ
 open import MJSF.Values
 open ValuesG _ φ

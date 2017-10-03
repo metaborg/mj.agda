@@ -1,4 +1,4 @@
-module Readme where
+module Everything where
 
 open import MJ.Semantics.Monadic
 

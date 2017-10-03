@@ -47,5 +47,6 @@ module Monad
 
   open Weakenable ⦃...⦄
 
-  test : ∀ {c} → M V c
-  test = bind (λ x → bind (λ y → ret (App (wk x) (wk y))) get) get
+  {- uncomment to see the compiler error -}
+  -- test : ∀ {c} → M V c
+  -- test = bind (λ x → bind (λ y → ret (App (wk x) (wk y))) get) get

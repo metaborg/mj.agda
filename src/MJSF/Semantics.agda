@@ -2,10 +2,12 @@ open import Data.Nat hiding (_^_ ; _+_)
 open import Data.List.Most
 open import Data.Integer
 open import Data.Unit
+open import Data.Empty
 open import Data.Product hiding (map)
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open ≡-Reasoning
 open import Function
+open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Star hiding (return ; _>>=_ ; map)
 
 open import Common.Strength
@@ -15,20 +17,18 @@ module MJSF.Semantics (k : ℕ) where
 open import MJSF.Syntax k
 open import MJSF.Values k
 open import MJSF.Monad k
-open import ScopeGraph.ScopesFrames k Ty hiding (Scope)
+open import ScopeGraph.ScopesFrames k Ty
 
-module Syntax (g : Graph) where
+module Semantics (g : Graph) where
 
+  open SyntaxG g
   open ValuesG g
   open MonadG g
-  open UsesVal Valᵗ valᵗ-weaken renaming (getFrame to getFrame')
+  open UsesVal Valᵗ valᵗ-weaken renaming (getFrame to getFrame') public
 
   -----------------
   -- AUXILIARIES --
   -----------------
-  --------------
-  -- DEFAULTS --
-  --------------
 
   default : {Σ : List Scope} → (t : VTy) → Val t Σ
   default int     = num (ℤ.pos 0)
@@ -42,16 +42,56 @@ module Syntax (g : Graph) where
   defaults {[]}          []           = []
   defaults {vᵗ t ∷ fs} (#v' _ ∷ ts) = vᵗ (reflv (default t)) ∷ defaults {fs} ts
 
-  mutual
-    eval<:  :  ℕ → ∀ {t s Σ} → Expr<: s t → M s (Val<: t) Σ
-    eval    :  ℕ → ∀ {t s Σ} → Expr s t → M s (Val<: t) Σ
+  slotify : ∀ {ms s Σ} → All (#m (Meth s)) ms → Slots ms Σ
+  slotify {[]}            []           = []
+  slotify {mᵗ ts rt ∷ mts} (#m' m ∷ ms) = mᵗ m ∷ slotify {mts} ms
 
+  override : ∀ {s Σ}{oms : List (List VTy × VTy)} →
+             All (λ x → (s ↦ (mᵗ (proj₁ x) (proj₂ x))) × Meth s (proj₁ x) (proj₂ x)) oms →
+             M s (λ _ → ⊤) Σ
+  override [] = return tt
+  override ((p , m) ∷ oms) = setv p (mᵗ m) >>= λ _ →
+                             override oms
+
+  init-obj : ∀ {sʳ s s' Σ} → Class sʳ s → Inherits s s' → M sʳ (Frame s) Σ
+  init-obj (class0 ⦃ shape ⦄ ms fs oms) (obj _)
+    = getFrame >>= λ f →
+      init _ ⦃ shape ⦄ (slotify ms ++-all defaults fs) (f ∷ []) >>= λ f' →
+      (usingFrame f' (override oms) ^ f') >>= λ{ (_ , f') → return f' }
+  init-obj (class0 ⦃ shape ⦄ _ _ _) (super ⦃ shape' ⦄ _) with (trans (sym shape) shape')
+  ... | ()
+  init-obj (class1 p ⦃ shape ⦄ ms fs oms) (super ⦃ shape' ⦄ x) with (trans (sym shape) shape')
+  ... | refl =
+    getv p >>= λ{ (cᵗ class' ic f') →
+    (usingFrame f' (init-obj class' x) ^ f') >>= λ{ (f , f') →
+    init _ ⦃ shape ⦄ (slotify ms ++-all defaults fs) (f' ∷ f ∷ []) >>= λ f'' →
+    (usingFrame f'' (override oms) ^ f'') >>= λ{ (_ , f'') →
+    return f'' }}}
+  init-obj (class1 _ ⦃ shape ⦄ _ _ _) (obj _ ⦃ shape' ⦄) with (trans (sym shape) shape')
+  ... | ()
+
+  _>>=ᶜ_     :  ∀ {s s' s'' r Σ} →
+               M s (λ Σ → Val<: r Σ ⊎ Frame s' Σ) Σ →
+               (∀ {Σ'} → Frame s' Σ' → M s (λ Σ → Val<: r Σ ⊎ Frame s'' Σ) Σ') →
+               M s (λ Σ → Val<: r Σ ⊎ Frame s'' Σ) Σ
+  (m >>=ᶜ f) = m >>= λ{
+      (inj₁ v) → return (inj₁ v) ;
+      (inj₂ fr) → f fr
+    }
+
+  continue : ∀ {s r Σ} → M s (λ Σ → Val<: r Σ ⊎ Frame s Σ) Σ
+  continue = fmap inj₂ getFrame
+
+  mutual
+    -- upcasts
+    eval<:  :  ℕ → ∀ {t s Σ} → Expr<: s t → M s (Val<: t) Σ
     eval<: k (upcast σ e) = fmap (up<: σ) (eval k e)
 
     -- coerces to val
     evalᶜ : ℕ → ∀ {t s Σ} → Expr<: s t → M s (Val t) Σ
     evalᶜ k e = join (fmap coerceᴹ (eval<: k e))
 
+    eval    :  ℕ → ∀ {t s Σ} → Expr s t → M s (Val<: t) Σ
     eval zero _ = timeoutᴹ
     eval (suc k) (num x) = return (reflv (num x))
     eval (suc k) (iop x l r) = evalᶜ k l >>= λ{ (num il) →
@@ -59,8 +99,8 @@ module Syntax (g : Graph) where
                                return (reflv (num (il + ir))) }}
     eval (suc k) null = return (reflv null)
     eval (suc k) (var x)          =  getv x >>= λ{ (vᵗ v) → return v }
-    eval (suc k) (new x)          =  getv x >>= λ{ (cᵗ class _ f) →
-                                     usingFrame f (init-obj k class) >>= λ{ f' →
+    eval (suc k) (new x)          =  getv x >>= λ{ (cᵗ class ic f) →
+                                     usingFrame f (init-obj class ic) >>= λ{ f' →
                                      return (reflv (ref f')) }}
     eval (suc k) (get e p)        =  evalᶜ k e >>= λ{ null → raise ; (ref f) →
                                      usingFrame f (getv p) >>= λ{ (vᵗ v) →
@@ -72,7 +112,7 @@ module Syntax (g : Graph) where
                                      (eval-args k args ^ (v ′ f)) >>= λ{ (slots , v , f) →
                                      init s ⦃ shape ⦄ (vᵗ v ∷ slots) (f ∷ []) >>= λ f' →
                                      usingFrame f' (eval-body k b) }}}
-  
+
     eval-args : ℕ → ∀ {s ts Σ} → All (Expr<: s) ts → M s (Slots (Data.List.Most.map vᵗ ts)) Σ
     eval-args zero _ = timeoutᴹ
     eval-args (suc k) [] = return []
@@ -80,59 +120,55 @@ module Syntax (g : Graph) where
                                  (eval-args k es ^ v) >>= λ{ (slots , v) →
                                  return (vᵗ v ∷ slots) }
 
-    eval-stmt : ℕ → ∀ {s s' Σ} → Stmt s s' → M s (Frame s') Σ
+    eval-stmt : ℕ → ∀ {s s' r Σ} → Stmt s r s' → M s (λ Σ → Val<: r Σ ⊎ Frame s' Σ) Σ
     eval-stmt zero _ = timeoutᴹ
-    eval-stmt (suc k) (do e) = eval<: k e >>= λ _ → getFrame
+    eval-stmt (suc k) (do e) = eval<: k e >>= λ _ → continue
     eval-stmt (suc k) (ifz c t e) =
       evalᶜ k c >>= λ{ (num (+ zero)) → eval-stmt k t
       ; (num i) → eval-stmt k e }
     eval-stmt (suc k) (set e x e') =
       evalᶜ k e >>= λ{ null → raise ; (ref f) →
       (eval<: k e' ^ f) >>= λ{ (v , f) →
-      usingFrame f (setv x (vᵗ v)) >>= λ _ → getFrame }}
+      usingFrame f (setv x (vᵗ v)) >>= λ _ → continue }}
     eval-stmt (suc k) (loc s t) =
-      getFrame >>= λ f → init s (vᵗ (default<: t) ∷ []) (f ∷ [])
+      getFrame >>= λ f → fmap inj₂ (init s (vᵗ (default<: t) ∷ []) (f ∷ []))
     eval-stmt (suc k) (asgn x e) =
       eval<: k e >>= λ{ v →
-      setv x (vᵗ v) >>= λ _ → getFrame }
+      setv x (vᵗ v) >>= λ _ → continue }
     eval-stmt (suc k) (block stmts) =
-      getFrame >>= λ f →
-      (eval-stmts k stmts ^ f) >>= λ{ (_ , f) →
-      return f }
+      (eval-stmts k stmts) >>= λ{ _ →
+      continue }
+    eval-stmt (suc k) (ret e) =
+      (eval<: k e) >>= λ{ v →
+      return (inj₁ v) }
 
-    eval-stmts : ℕ → ∀ {s s' Σ} → Stmts s s' → M s (Frame s') Σ
+    eval-stmts : ℕ → ∀ {s r s' Σ} → Stmts s r s' → M s (λ Σ → Val<: r Σ ⊎ Frame s' Σ) Σ
     eval-stmts zero _ = timeoutᴹ
-    eval-stmts (suc k) ε = getFrame
-    eval-stmts (suc k) (stmt ◅ stmts) = eval-stmt k stmt >>= λ f' →
+    eval-stmts (suc k) ε = continue
+    eval-stmts (suc k) (stmt ◅ stmts) = eval-stmt k stmt >>=ᶜ λ f' →
                                         usingFrame f' (eval-stmts k stmts)
 
     eval-body : ℕ → ∀ {s t Σ} → Body s t → M s (Val<: t) Σ
     eval-body zero _ = timeoutᴹ
-    eval-body (suc k) (body stmts e) = eval-stmts k stmts >>= λ f →
-                                       usingFrame f (eval<: k e)
+    eval-body (suc k) (body stmts e) = eval-stmts k stmts >>= λ{
+      (inj₁ v)  → return v;
+      (inj₂ fr) → usingFrame fr (eval<: k e) }
     eval-body (suc k) (body-void stmts) = eval-stmts k stmts >>= λ f →
                                           return (reflv void)
 
-    init-obj : ℕ → ∀ {sʳ s Σ} → Class sʳ s → M sʳ (Frame s) Σ
-    init-obj zero _ = timeoutᴹ
-    init-obj (suc k) (class0 ⦃ shape ⦄ ms fs oms)
-      = getFrame >>= λ f →
-        init _ ⦃ shape ⦄ (slotify ms ++-all defaults fs) (f ∷ []) >>= λ f' →
-        (usingFrame f' (override oms) ^ f') >>= λ{ (_ , f') → return f' }
-    init-obj (suc k) (class1 p ⦃ shape ⦄ ms fs oms)
-      = getv p >>= λ{ (cᵗ class' _ f') →
-        (usingFrame f' (init-obj k class') ^ f') >>= λ{ (f , f') →
-        init _ ⦃ shape ⦄ (slotify ms ++-all defaults fs) (f' ∷ f ∷ []) >>= λ f'' →
-        (usingFrame f'' (override oms) ^ f'') >>= λ{ (_ , f'') → return f'' }}}
+  open import Common.Weakening
+  open Weakenable ⦃...⦄
+  -- a few predicates on programs:
+  -- ... saying it will terminate succesfully in a state where P holds
+  _⊢_⇓⟨_⟩_ : ∀ {sʳ a} → HeapFrame sʳ (sʳ ∷ []) → Program sʳ a → ℕ → (P : ∀ {W} → Val<: a W → Set) → Set
+  rf ⊢ (program _ ℂ p) ⇓⟨ k ⟩ P with eval-body k p (here refl) (rf ∷ [])
+  ... | nullpointer = ⊥
+  ... | timeout = ⊥
+  ... | ok (_ , _ , v , _) = P v
 
-    slotify : ∀ {ms s Σ} → All (#m (Meth s)) ms → Slots ms Σ
-    slotify {[]}            []           = []
-    slotify {mᵗ ts rt ∷ mts} (#m' m ∷ ms) = mᵗ m ∷ slotify {mts} ms
-    
-    override : ∀ {s Σ}{oms : List (List VTy × VTy)} → 
-               All (λ x → (s ↦ (mᵗ (proj₁ x) (proj₂ x))) × Meth s (proj₁ x) (proj₂ x)) oms →
-               M s (λ _ → ⊤) Σ
-    override [] = return tt
-    override ((p , m) ∷ oms) = setv p (mᵗ m) >>= λ _ →
-                               override oms
-
+  -- ...saying it will raise an exception in a state where P holds
+  _⊢_⇓⟨_⟩!_ : ∀ {sʳ a} → HeapFrame sʳ (sʳ ∷ []) → Program sʳ a → ℕ → (P : ∀ {W} → Val<: a W → Set) → Set
+  rf ⊢ (program _ ℂ p) ⇓⟨ k ⟩! P with eval-body k p (here refl) (rf ∷ [])
+  ... | nullpointer = ⊤
+  ... | timeout = ⊥
+  ... | ok (_ , _ , v , _) = ⊥
