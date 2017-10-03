@@ -6,7 +6,7 @@ module STLCRef.Examples where
 
 open import STLCRef.Semantics
 open import Data.List.Most
-open import Relation.Binary.PropositionalEquality -- for de Bruijn numerals
+open import Relation.Binary.PropositionalEquality
 open import Data.Integer hiding (suc)
 open import Agda.Builtin.Nat hiding (_+_)
 open import Data.Maybe
@@ -25,7 +25,7 @@ test-idexpr : eval 2 (idexpr · unit) [] [] ≡ just (_ , [] , unit , _)
 test-idexpr = refl
 
 
--- curried addition: λ x . λ y . x + y
+-- curried addition: λ x . λ y . y + x
 curry+ : Expr [] (int ⇒ (int ⇒ int))
 curry+ = ƛ (ƛ (iop _+_ (var (here refl)) (var (there (here refl)))))
 
@@ -57,7 +57,7 @@ landin-fac =
                          (iop (Data.Integer._*_) (var (here refl))
                               ((! (var (there (here refl)))) · (iop (Data.Integer._-_) (var (here refl)) (num (+ 1)))))))
   (LET ((var (there (here refl))) ≔ var (here refl))
-  ((var (there (here refl))) · (num (+ 4)))))
+  (var (there (here refl))) · (num (+ 4))))
 
 test-landin-fac : eval 20 landin-fac [] [] ≡ just (_ , _ , num (+ 24) , _)
 test-landin-fac = refl
@@ -73,7 +73,7 @@ landin-div =
   LET (ref {t = int ⇒ int} (ƛ (var (here refl))))
   (LET (ƛ {a = int} ((! (var (there (here refl)))) · num (+ zero)))
   (LET ((var (there (here refl))) ≔ var (here refl))
-  ((var (there (here refl))) · (num (+ zero)))))
+  (var (there (here refl))) · (num (+ zero))))
 
 
 test-landin-div : eval 1337 landin-div [] [] ≡ nothing
