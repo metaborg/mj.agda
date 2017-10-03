@@ -2,7 +2,7 @@
 
   This is the readme of the Agda mechanization accompanying our POPL 2018 paper:
 
-    "Intrinsically Typed Interpreters for Imperative Languages"
+    "Intrinsically-Typed Interpreters for Imperative Languages"
 
   The repository is hosted here: https://github.com/metaborg/mj.agda
 
@@ -17,6 +17,9 @@
   syntax-highlighted and you can click references to navigate to their
   definitions.
 
+  Note that there are minor differences between the Agda code used in the paper
+  and this mechanization.
+  These discrepancies are summarized at the end of this readme.
 -}
 
 module Readme where
@@ -60,15 +63,14 @@ open import ScopeGraph.ScopesFrames
   * Section 4.4 *
 
   And demonstrate its basic usage by writing an interpreter for STLC where
-  scopes are used to capture lexical binding and frames are used to model
-  lexical environments.
+  scopes and frames are used to model lexical binding.
 -}
 open import STLCSF.Semantics
 
 {-
   * Section 5 *
 
-  We take these techniques and show that they scale by giving an intrinsically
+  We take these techniques and show that they scale by giving an intrinsically-
   typed interpreter for Middleweight Java. A language with:
 
   - Imperative objects
@@ -93,7 +95,7 @@ open import MJSF.Examples.Integer
   a comparison point to evaluate the impact on the interpreter of using the
   scopes and frames model of binding.
 
-  This is an intrinsically typed interpreter for MJ without the use of
+  This is an intrinsically-typed interpreter for MJ without the use of
   scope-and-frames. Instead it describes a language-*dependent* classtable
   construction to deal with object dot-access binding and typing contexts and
   environments to deal with lexical binding respectively.
@@ -134,6 +136,9 @@ There are a few discrepancies with paper:
   which we need in order to initialize method and field slots. Instead of having
   the `All` with the pattern matching lambda, we use a tagging predicate; e.g.
   `#m`. This is morally equivalent to the `All` used in the paper (Section 5.4).
+
+- The STLC and STLC+Ref implementations in this repository add integers and
+  integer operations in order to write some more interesting example programs.
 
 Then there are a few notable differences between the original presentation of MJ
 and our development:

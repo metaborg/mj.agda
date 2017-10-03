@@ -10,6 +10,12 @@ docs/%.html: %.agda
 
 all: lib Readme.agdai
 
+docs/.git/:
+	-rm -r docs/
+	git clone --branch gh-pages git@github.com:metaborg/mj.agda.git docs/
+
+gh-pages: docs/.git/ docs
+
 docs: lib docs/src/Everything.html docs/Readme.html
 	cp docs/{Readme.html,index.html}
 
