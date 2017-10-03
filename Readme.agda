@@ -70,7 +70,7 @@ open import MJ.Examples.Exceptions
 open import ScopeGraph.ScopesFrames
 
 {-
-  And demonstrate it's basic usage by writing an
+  And demonstrate its basic usage by writing an
   interpreter for STLC where scopes are used to capture lexical binding
   and frames are used to model lexical environments.
 -}

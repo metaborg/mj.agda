@@ -16,6 +16,7 @@ module Common.Strength where
     weaken-pair = record { wk = λ{ ext (x , y) → (wk ext x , wk ext y) } }
 
   -- an alias
+  infixr 10 _′_
   _′_ : ∀ {i j}{W : Set}{p : W → Set i}{q : W → Set j}{w : W} → p w → q w → (p ⊗ q) w
   _′_ = _,_
 

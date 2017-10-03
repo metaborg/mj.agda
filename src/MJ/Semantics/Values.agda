@@ -19,7 +19,7 @@ open Core c
 open Classtable Ct
 open import MJ.Classtable.Membership Ct
 open import MJ.LexicalScope Ct
-open import MJ.Semantics.Weakenable
+open import Common.Weakening
 
 open Weakenable ⦃...⦄
 
@@ -80,13 +80,13 @@ weaken-val ext (ref x sub) = ref (∈-⊒ x ext) sub
 instance
 
   val-weakenable : ∀ {a} → Weakenable (λ W → Val W a)
-  val-weakenable = record { weaken = weaken-val }
+  val-weakenable = record { wk = weaken-val }
 
   list-weakenable : ∀ {a}{A : World c → Set a}⦃ wₐ : Weakenable A ⦄ → Weakenable (λ W → List (A W))
-  list-weakenable ⦃ wₐ ⦄ = record {weaken = λ ext v → List.map (weaken ext) v }
+  list-weakenable ⦃ wₐ ⦄ = record {wk = λ ext v → List.map (wk ext) v }
 
   list∀-weakenable : ∀ {b}{B : Set b}{xs : List B}
                      {a}{A : B → World c → Set a}⦃ wₐ : ∀ x → Weakenable (A x) ⦄ →
                      Weakenable (λ W → All (λ x → A x W) xs)
-  list∀-weakenable ⦃ wₐ ⦄ = record { weaken = λ ext v → List∀.map (λ y → weaken ⦃ wₐ _ ⦄ ext y) v }
+  list∀-weakenable ⦃ wₐ ⦄ = record { wk = λ ext v → List∀.map (λ y → wk ⦃ wₐ _ ⦄ ext y) v }
 
