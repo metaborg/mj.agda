@@ -83,16 +83,13 @@ module Semantics (g : Graph) where
   continue = fmap inj₂ getFrame
 
   mutual
-    -- upcasts
-    eval<:  :  ℕ → ∀ {t s Σ} → Expr<: s t → M s (Val<: t) Σ
-    eval<: k (upcast σ e) = fmap (up<: σ) (eval k e)
-
     -- coerces to val
-    evalᶜ : ℕ → ∀ {t s Σ} → Expr<: s t → M s (Val t) Σ
-    evalᶜ k e = join (fmap coerceᴹ (eval<: k e))
+    evalᶜ : ℕ → ∀ {t s Σ} → Expr s t → M s (Val t) Σ
+    evalᶜ k e = join (fmap coerceᴹ (eval k e))
 
     eval    :  ℕ → ∀ {t s Σ} → Expr s t → M s (Val<: t) Σ
     eval zero _ = timeoutᴹ
+    eval (suc k) (upcast s e) = eval k e >>= λ{ v → return (up<: s v) }
     eval (suc k) (num x) = return (reflv (num x))
     eval (suc k) (iop x l r) = evalᶜ k l >>= λ{ (num il) →
                                evalᶜ k r >>= λ{ (num ir) →
@@ -105,7 +102,7 @@ module Semantics (g : Graph) where
     eval (suc k) (get e p)        =  evalᶜ k e >>= λ{ null → raise ; (ref f) →
                                      usingFrame f (getv p) >>= λ{ (vᵗ v) →
                                      return v }}
-    eval (suc k) (call e p args)  =  eval<: k e >>= λ v →
+    eval (suc k) (call e p args)  =  eval k e >>= λ v →
                                      (coerceᴹ v ^ v) >>= λ{ (null , _) → raise ; (ref f , v) →
                                      (usingFrame f (getv p) ^ (v ′ f))
                                       >>= λ{ (mᵗ (meth s ⦃ shape ⦄ b) , v , f) →
@@ -113,33 +110,33 @@ module Semantics (g : Graph) where
                                      init s ⦃ shape ⦄ (vᵗ v ∷ slots) (f ∷ []) >>= λ f' →
                                      usingFrame f' (eval-body k b) }}}
 
-    eval-args : ℕ → ∀ {s ts Σ} → All (Expr<: s) ts → M s (Slots (Data.List.Most.map vᵗ ts)) Σ
+    eval-args : ℕ → ∀ {s ts Σ} → All (Expr s) ts → M s (Slots (Data.List.Most.map vᵗ ts)) Σ
     eval-args zero _ = timeoutᴹ
     eval-args (suc k) [] = return []
-    eval-args (suc k) (e ∷ es) = eval<: k e >>= λ v →
+    eval-args (suc k) (e ∷ es) = eval k e >>= λ v →
                                  (eval-args k es ^ v) >>= λ{ (slots , v) →
                                  return (vᵗ v ∷ slots) }
 
     eval-stmt : ℕ → ∀ {s s' r Σ} → Stmt s r s' → M s (λ Σ → Val<: r Σ ⊎ Frame s' Σ) Σ
     eval-stmt zero _ = timeoutᴹ
-    eval-stmt (suc k) (do e) = eval<: k e >>= λ _ → continue
+    eval-stmt (suc k) (do e) = eval k e >>= λ _ → continue
     eval-stmt (suc k) (ifz c t e) =
       evalᶜ k c >>= λ{ (num (+ zero)) → eval-stmt k t
       ; (num i) → eval-stmt k e }
     eval-stmt (suc k) (set e x e') =
       evalᶜ k e >>= λ{ null → raise ; (ref f) →
-      (eval<: k e' ^ f) >>= λ{ (v , f) →
+      (eval k e' ^ f) >>= λ{ (v , f) →
       usingFrame f (setv x (vᵗ v)) >>= λ _ → continue }}
     eval-stmt (suc k) (loc s t) =
       getFrame >>= λ f → fmap inj₂ (init s (vᵗ (default<: t) ∷ []) (f ∷ []))
     eval-stmt (suc k) (asgn x e) =
-      eval<: k e >>= λ{ v →
+      eval k e >>= λ{ v →
       setv x (vᵗ v) >>= λ _ → continue }
     eval-stmt (suc k) (block stmts) =
       (eval-stmts k stmts) >>= λ{ _ →
       continue }
     eval-stmt (suc k) (ret e) =
-      (eval<: k e) >>= λ{ v →
+      (eval k e) >>= λ{ v →
       return (inj₁ v) }
 
     eval-stmts : ℕ → ∀ {s r s' Σ} → Stmts s r s' → M s (λ Σ → Val<: r Σ ⊎ Frame s' Σ) Σ
@@ -152,7 +149,7 @@ module Semantics (g : Graph) where
     eval-body zero _ = timeoutᴹ
     eval-body (suc k) (body stmts e) = eval-stmts k stmts >>= λ{
       (inj₁ v)  → return v;
-      (inj₂ fr) → usingFrame fr (eval<: k e) }
+      (inj₂ fr) → usingFrame fr (eval k e) }
     eval-body (suc k) (body-void stmts) = eval-stmts k stmts >>= λ f →
                                           return (reflv void)
 

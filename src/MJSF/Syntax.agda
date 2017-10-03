@@ -70,35 +70,32 @@ module SyntaxG (g : Graph) where
 
   mutual
     data Expr (s : Scope) : VTy → Set where
-      call     :  ∀ {s' ts t} → Expr<: s (ref s') →
+      call     :  ∀ {s' ts t} → Expr s (ref s') →
                   (s' ↦ (mᵗ (ref s' ∷ ts) t)) →
-                  All (Expr<: s) ts → Expr s t
-      get      :  ∀ {s' t} → Expr<: s (ref s') → (s' ↦ vᵗ t) → Expr s t
+                  All (Expr s) ts → Expr s t
+      get      :  ∀ {s' t} → Expr s (ref s') → (s' ↦ vᵗ t) → Expr s t
       var      :  ∀ {t} → (s ↦ vᵗ t) → Expr s t
       new      :  ∀ {sʳ s'} → s ↦ cᵗ sʳ s' → Expr s (ref s')
       null     :  ∀ {s'} → Expr s (ref s')
       num      :  ℤ → Expr s int
-      iop      :  (ℤ → ℤ → ℤ) → (l r : Expr<: s int) → Expr s int
-
-    data Expr<: (s : Scope) (t : VTy) : Set where
-      upcast  : ∀ {t'} →
-                t' <: t → Expr s t' → Expr<: s t
+      iop      :  (ℤ → ℤ → ℤ) → (l r : Expr s int) → Expr s int
+      upcast   :  ∀ {t' t} → t' <: t → Expr s t' → Expr s t
 
   mutual
     data Stmt (s : Scope)(r : VTy) : Scope → Set where
-      do    : ∀ {t'} → Expr<: s t' → Stmt s r s
-      ifz   : ∀ {s' s'' : Scope} → Expr<: s int → Stmt s r s → Stmt s r s → Stmt s r s -- branches are blocks
-      set   : ∀ {s' t'} → Expr<: s (ref s') → (s' ↦ vᵗ t') → Expr<: s t' → Stmt s r s
+      do    : ∀ {t'} → Expr s t' → Stmt s r s
+      ifz   : ∀ {s' s'' : Scope} → Expr s int → Stmt s r s → Stmt s r s → Stmt s r s -- branches are blocks
+      set   : ∀ {s' t'} → Expr s (ref s') → (s' ↦ vᵗ t') → Expr s t' → Stmt s r s
       loc   : ∀ (s' : Scope)(t' : VTy)⦃ shape : g s' ≡ ([ vᵗ t' ] , [ s ]) ⦄ → Stmt s r s'
-      asgn  : ∀ {t'} → (s ↦ vᵗ t') → Expr<: s t' → Stmt s r s
-      ret   : Expr<: s r → Stmt s r s
+      asgn  : ∀ {t'} → (s ↦ vᵗ t') → Expr s t' → Stmt s r s
+      ret   : Expr s r → Stmt s r s
       block : ∀ {s'} → Stmts s r s' → Stmt s r s
 
     Stmts : Scope → VTy → Scope → Set
     Stmts s r s' = Star (λ s s' → Stmt s r s') s s'
 
   data Body (s : Scope) : VTy → Set where
-    body      : ∀ {s' t} → Stmts s t s' → Expr<: s' t → Body s t
+    body      : ∀ {s' t} → Stmts s t s' → Expr s' t → Body s t
     body-void : ∀ {s'} → Stmts s void s' → Body s void
 
   data Meth (s : Scope) : List VTy → VTy → Set where
