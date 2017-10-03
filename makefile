@@ -8,7 +8,7 @@ docs/%.html: %.agda
 %.agdai: %.agda
 	agda $<
 
-all: lib src/Readme.agdai
+all: lib Readme.agdai
 
 docs: lib docs/src/Everything.html docs/Readme.html
 	cp docs/{Readme.html,index.html}
