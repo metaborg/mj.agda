@@ -41,19 +41,19 @@ intmethods =
   {- set -} mᵗ ((ref (# 1)) ∷ []) void
   ∷ []
 
-INT : Scope
-INT = # 1
+Integer : Scope
+Integer = # 1
 
 g : Graph
 -- root scope
 g zero = classes , []
--- class scope of INT class
+-- class scope of Integer class
 g (suc zero)= (intmethods ++ intfields) , zero ∷ []
--- scope of INT::set method
+-- scope of Integer.set method
 g (suc (suc zero)) = (vᵗ (ref (# 1)) ∷ []) , # 1 ∷ []
 -- scopes of main
-g (suc (suc (suc zero))) = vᵗ (ref INT) ∷ [] , (# 0 ∷ [])
-g (suc (suc (suc (suc zero)))) = vᵗ (ref INT) ∷ [] , # 3 ∷ []
+g (suc (suc (suc zero))) = vᵗ (ref Integer) ∷ [] , (# 0 ∷ [])
+g (suc (suc (suc (suc zero)))) = vᵗ (ref Integer) ∷ [] , # 3 ∷ []
 g (suc (suc (suc (suc (suc ())))))
 
 open SyntaxG g
@@ -88,8 +88,8 @@ IntegerImpl = class0 {ms = intmethods}{intfields}
 main : Body (# 0) int
 main = body
     (
-        loc (# 3) (ref INT)
-      ◅ loc (# 4) (ref INT)
+        loc (# 3) (ref Integer)
+      ◅ loc (# 4) (ref Integer)
       ◅ asgn (path (here refl ∷ []) (here refl)) (new (path (here refl ∷ here refl ∷ []) (here refl)))
       ◅ asgn (path [] (here refl)) (new (path (here refl ∷ here refl ∷ []) (here refl)))
       ◅ set (var (path (here refl ∷ []) (here refl))) (path [] (there (here refl))) (num (+ 9))
