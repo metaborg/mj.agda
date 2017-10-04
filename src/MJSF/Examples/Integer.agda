@@ -45,20 +45,20 @@ intmethods =
 INT : Scope
 INT = # 1
 
-φ : Graph
+g : Graph
 -- root scope
-φ zero = classes , []
+g zero = classes , []
 -- class scope of INT class
-φ (suc zero)= (intmethods ++ intfields) , zero ∷ []
+g (suc zero)= (intmethods ++ intfields) , zero ∷ []
 -- scope of INT::set method
-φ (suc (suc zero)) = (vᵗ (ref (# 1)) ∷ []) , # 1 ∷ []
+g (suc (suc zero)) = (vᵗ (ref (# 1)) ∷ []) , # 1 ∷ []
 -- scopes of main
-φ (suc (suc (suc zero))) = vᵗ (ref INT) ∷ [] , (# 0 ∷ [])
-φ (suc (suc (suc (suc zero)))) = vᵗ (ref INT) ∷ [] , # 3 ∷ []
-φ (suc (suc (suc (suc (suc ())))))
+g (suc (suc (suc zero))) = vᵗ (ref INT) ∷ [] , (# 0 ∷ [])
+g (suc (suc (suc (suc zero)))) = vᵗ (ref INT) ∷ [] , # 3 ∷ []
+g (suc (suc (suc (suc (suc ())))))
 
-open SyntaxG φ
-open UsesGraph φ
+open SyntaxG g
+open UsesGraph g
 
 IntegerImpl : Class (# 0) (# 1)
 IntegerImpl = class0 {ms = intmethods}{intfields}
@@ -75,15 +75,15 @@ IntegerImpl = class0 {ms = intmethods}{intfields}
   []
 
 {-
-  main(): int {
-    loc x
-    loc y
-    x := new INT
-    y := new INT
-    x.x := 9
-    y.x := 18
-    y.set(x)
-    return y.x
+  int main() {
+    INT x;
+    INT y;
+    x = new INT();
+    y = new INT();
+    x.x = 9;
+    y.x = 18;
+    y.set(x);
+    return y.x;
   }
 -}
 main : Body (# 0) int
@@ -104,9 +104,9 @@ p : Program (# 0) int
 p = program classes (#c' (IntegerImpl , # 1 , obj (# 1) ⦃ refl ⦄)  ∷ []) main
 
 open import MJSF.Semantics
-open Semantics _ φ
+open Semantics _ g
 open import MJSF.Values
-open ValuesG _ φ
+open ValuesG _ g
 
 test : p ⇓⟨ 100 ⟩ (λ v → v ≡ num (+ 18) )
 test = refl
