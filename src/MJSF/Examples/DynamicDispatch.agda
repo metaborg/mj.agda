@@ -16,7 +16,7 @@ open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary.Decidable
 
 k : ℕ
-k = 11
+k = 10
 
 open import MJSF.Syntax k
 open import ScopeGraph.ScopesFrames k Ty
@@ -72,7 +72,8 @@ Int = # 1
 IntInc : Scope
 IntInc = # 2
 
--- Main class omitted; main() function is given below, as child scope of the root scope
+-- Main class omitted; main() function is given below, as child scope
+-- of the root scope.
 
 classes : List Ty
 classes = (cᵗ Root Int ∷
@@ -94,12 +95,6 @@ IntInc-methods =
   []
 IntInc-fields = []
 
-Main-methods Main-fields : List Ty
-Main-fields = []
-Main-methods =
-  {- Main.main -} mᵗ [] int ∷ -- minor discrepancies: not parameterized by String[] args; instead of printing, it returns a number
-  []
-
 g : Graph
 -- root scope
 g zero =
@@ -111,37 +106,34 @@ g (suc zero) =
 -- class scope of IntInc class
 g (suc (suc zero)) =
   (IntInc-methods ++ IntInc-fields) , zero ∷ # 1 ∷ []
--- class scope of IntInc class
-g (suc (suc (suc zero))) =
-  (Main-methods ++ Main-fields) , zero ∷ []
 
--- scope of Int.get method; 4
-g (suc (suc (suc (suc zero)))) =
+-- scope of Int.get method; 3
+g (suc (suc (suc zero))) =
   [] , Int ∷ []
--- scope of Int.inc method; 5
-g (suc (suc (suc (suc (suc zero))))) =
+-- scope of Int.inc method; 4
+g (suc (suc (suc (suc zero)))) =
   vᵗ (ref Int) ∷ [] , Int ∷ []
 
--- scope of IntInc.get method; 6
-g (suc (suc (suc (suc (suc (suc zero)))))) =
+-- scope of IntInc.get method; 5
+g (suc (suc (suc (suc (suc zero))))) =
   [] , IntInc ∷ []
--- scope of IntInc.doinc method; 7
-g (suc (suc (suc (suc (suc (suc (suc zero))))))) =
+-- scope of IntInc.doinc method; 6
+g (suc (suc (suc (suc (suc (suc zero)))))) =
   vᵗ (ref Int) ∷ [] , IntInc ∷ []
 
--- local variable scope of Int.doinc method; 8
-g (suc (suc (suc (suc (suc (suc (suc (suc zero)))))))) =
-  vᵗ (ref Int) ∷ [] , # 7 ∷ []
+-- local variable scope of Int.doinc method; 7
+g (suc (suc (suc (suc (suc (suc (suc zero))))))) =
+  vᵗ (ref Int) ∷ [] , # 6 ∷ []
 
--- x local variable scope of Main.main method; 9
-g (suc (suc (suc (suc (suc (suc (suc (suc (suc zero))))))))) =
+-- x local variable scope of Main.main method; 8
+g (suc (suc (suc (suc (suc (suc (suc (suc zero)))))))) =
   vᵗ (ref Int) ∷ [] , Root ∷ []
 
--- y local variable scope of Main.main method; 10
-g (suc (suc (suc (suc (suc (suc (suc (suc (suc (suc zero)))))))))) =
-  vᵗ (ref IntInc) ∷ [] , # 9 ∷ []
+-- y local variable scope of Main.main method; 9
+g (suc (suc (suc (suc (suc (suc (suc (suc (suc zero))))))))) =
+  vᵗ (ref IntInc) ∷ [] , # 8 ∷ []
 
-g (suc (suc (suc (suc (suc (suc (suc (suc (suc (suc (suc ())))))))))))
+g (suc (suc (suc (suc (suc (suc (suc (suc (suc (suc ()))))))))))
 
 open SyntaxG g
 open UsesGraph g
@@ -150,10 +142,10 @@ IntImpl : Class Root Int
 IntImpl =
   class0 {ms = Int-methods} {fs = Int-fields}
     -- methods
-    (#m' (meth (# 4)
+    (#m' (meth (# 3)
                (body ε
                      (var (path ((here refl) ∷ []) (there (there (here refl))))))) ∷
-    (#m' (meth (# 5)
+    (#m' (meth (# 4)
                (body (asgn (path ((here refl) ∷ []) (there (there (here refl))))
                            (get (var (path [] (here refl))) (path [] (there (there (here refl))))) ◅
                            ε)
@@ -171,8 +163,8 @@ IntIncImpl =
     -- path to parent
     (path [] (here refl))
     -- methods
-    (#m' (meth (# 7)
-               (body ((loc (# 8) (ref Int)) ◅
+    (#m' (meth (# 6)
+               (body ((loc (# 7) (ref Int)) ◅
                       asgn (path [] (here refl))
                            (new (path ((here refl) ∷ ((here refl) ∷ ((here refl) ∷ [])))
                                       (here refl))) ◅
@@ -191,7 +183,7 @@ IntIncImpl =
     []
     -- overrides
     (((path ((there (here refl)) ∷ []) (here refl)) ,
-    (meth (# 6)
+    (meth (# 5)
            (body ε
                  (iop Data.Integer._+_
                       (var (path ((here refl) ∷ ((there (here refl)) ∷ []))
@@ -200,14 +192,14 @@ IntIncImpl =
 
 main : Body Root int
 main =
-  body ((loc (# 9) (ref Int)) ◅
+  body ((loc (# 8) (ref Int)) ◅
        ((asgn (path [] (here refl))
               (new (path (here refl ∷ [])
                    (here refl)))) ◅
        (set (var (path [] (here refl)))
             (path [] (there (there (here refl))))
             (num (+ 18))) ◅
-       (loc (# 10) (ref IntInc)) ◅
+       (loc (# 9) (ref IntInc)) ◅
        ((asgn (path [] (here refl))
               (new (path (here refl ∷ here refl ∷ [])
                          (there (here refl))))) ◅
