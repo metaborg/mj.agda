@@ -295,10 +295,9 @@ mutual
       r@(ref {dyn-cid} o s₁) →
         -- evaluate the arguments
         eval-args k args ^ o >>= λ{ (rvs , o) →
-        store (val (ref o ε)) ^ (o ′ rvs) >>= λ{ (mutself , o , rvs) →
         -- dynamic dispatch: dynamic lookup of the method on the runtime class of the reference
         -- and execution of the call
-        (eval-method k ε o rvs (mbody dyn-cid (inherit _ s₁ mtd))) }}}
+        (eval-method k ε o rvs (mbody dyn-cid (inherit _ s₁ mtd))) }}
 
   -- field lookup in the heap
   evalₑ (suc k) (get e _ {_}{fld}) =
