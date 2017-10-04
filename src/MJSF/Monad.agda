@@ -86,6 +86,12 @@ module MonadG (g : Graph) where
     with (initFrame s slots links h)
   ...  | (f' , h') = ok (_ , h' , f' , ∷ʳ-⊒ s Σ)
 
+  initι      :  ∀ {Σ s' ds es} → (s : Scope) → ⦃ shape : g s ≡ (ds , es) ⦄ →
+               (Frame s (Σ ∷ʳ s) → Slots ds (Σ ∷ʳ s)) → Links es Σ → M s' (Frame s) Σ
+  initι {Σ} s slots links _ h
+    with (initFrameι s slots links h)
+  ...  | (f' , h') = ok (_ , h' , f' , ∷ʳ-⊒ s Σ)
+
   getv       :  ∀ {s t Σ} → (s ↦ t) → M s (Valᵗ t) Σ
   getv p f h = return (getVal p f h) f h
 

@@ -42,21 +42,22 @@ module Semantics (g : Graph) where
   defaults {[]}          []           = []
   defaults {vᵗ t ∷ fs} (#v' _ ∷ ts) = vᵗ (reflv (default t)) ∷ defaults {fs} ts
 
-  slotify : ∀ {ms s Σ} → All (#m (Meth s)) ms → Slots ms Σ
-  slotify {[]}            []           = []
-  slotify {mᵗ ts rt ∷ mts} (#m' m ∷ ms) = mᵗ m ∷ slotify {mts} ms
+  slotify : ∀ {ms s Σ} → Frame s Σ → All (#m (Meth s)) ms → Slots ms Σ
+  slotify {[]}             f []           = []
+  slotify {mᵗ ts rt ∷ mts} f (#m' m ∷ ms) = mᵗ f m ∷ slotify {mts} f ms
 
   override : ∀ {s Σ}{oms : List (List VTy × VTy)} →
              All (λ x → (s ↦ (mᵗ (proj₁ x) (proj₂ x))) × Meth s (proj₁ x) (proj₂ x)) oms →
              M s (λ _ → ⊤) Σ
   override [] = return tt
-  override ((p , m) ∷ oms) = setv p (mᵗ m) >>= λ _ →
+  override ((p , m) ∷ oms) = getFrame >>= λ f →
+                             setv p (mᵗ f m) >>= λ _ →
                              override oms
 
   init-obj : ∀ {sʳ s s' Σ} → Class sʳ s → Inherits s s' → M sʳ (Frame s) Σ
   init-obj (class0 ⦃ shape ⦄ ms fs oms) (obj _)
     = getFrame >>= λ f →
-      init _ ⦃ shape ⦄ (slotify ms ++-all defaults fs) (f ∷ []) >>= λ f' →
+      initι _ ⦃ shape ⦄ (λ f → (slotify f ms) ++-all (defaults fs)) (f ∷ []) >>= λ f' →
       (usingFrame f' (override oms) ^ f') >>= λ{ (_ , f') → return f' }
   init-obj (class0 ⦃ shape ⦄ _ _ _) (super ⦃ shape' ⦄ _) with (trans (sym shape) shape')
   ... | ()
@@ -64,7 +65,7 @@ module Semantics (g : Graph) where
   ... | refl =
     getv p >>= λ{ (cᵗ class' ic f') →
     (usingFrame f' (init-obj class' x) ^ f') >>= λ{ (f , f') →
-    init _ ⦃ shape ⦄ (slotify ms ++-all defaults fs) (f' ∷ f ∷ []) >>= λ f'' →
+    initι _ ⦃ shape ⦄ (λ f → (slotify f ms) ++-all (defaults fs)) (f' ∷ f ∷ []) >>= λ f'' →
     (usingFrame f'' (override oms) ^ f'') >>= λ{ (_ , f'') →
     return f'' }}}
   init-obj (class1 _ ⦃ shape ⦄ _ _ _) (obj _ ⦃ shape' ⦄) with (trans (sym shape) shape')
@@ -102,12 +103,10 @@ module Semantics (g : Graph) where
     eval (suc k) (get e p)        =  evalᶜ k e >>= λ{ null → raise ; (ref f) →
                                      usingFrame f (getv p) >>= λ{ (vᵗ v) →
                                      return v }}
-    eval (suc k) (call e p args)  =  eval k e >>= λ v →
-                                     (coerceᴹ v ^ v) >>= λ{ (null , _) → raise ; (ref f , v) →
-                                     (usingFrame f (getv p) ^ (v ′ f))
-                                      >>= λ{ (mᵗ (meth s ⦃ shape ⦄ b) , v , f) →
-                                     (eval-args k args ^ (v ′ f)) >>= λ{ (slots , v , f) →
-                                     init s ⦃ shape ⦄ (vᵗ v ∷ slots) (f ∷ []) >>= λ f' →
+    eval (suc k) (call e p args)  =  evalᶜ k e >>= λ { null → raise ; (ref f) →
+                                     usingFrame f (getv p) >>= λ{ (mᵗ f' (meth s ⦃ shape ⦄ b)) →
+                                     (eval-args k args ^ f') >>= λ{ (slots , f') →
+                                     init s ⦃ shape ⦄ slots (f' ∷ []) >>= λ f' →
                                      usingFrame f' (eval-body k b) }}}
 
     eval-args : ℕ → ∀ {s ts Σ} → All (Expr s) ts → M s (Slots (Data.List.Most.map vᵗ ts)) Σ

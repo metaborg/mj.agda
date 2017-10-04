@@ -15,6 +15,7 @@ module ValuesG (g : Graph) where
   open import Common.Weakening
   open Weakenable ⦃...⦄
 
+
   ------------
   -- VALUES --
   ------------
@@ -33,7 +34,7 @@ module ValuesG (g : Graph) where
 
   data Valᵗ : Ty → List Scope → Set where
     cᵗ : ∀ {sʳ s s' Σ} → Class sʳ s → Inherits s s' → Frame sʳ Σ → Valᵗ (cᵗ sʳ s) Σ
-    mᵗ : ∀ {s ts rt Σ} → Meth s ts rt → Valᵗ (mᵗ ts rt) Σ
+    mᵗ : ∀ {s ts rt Σ} → Frame s Σ → Meth s ts rt → Valᵗ (mᵗ ts rt) Σ
     vᵗ : ∀ {t Σ} → Val<: t Σ → Valᵗ (vᵗ t) Σ
 
 
@@ -56,7 +57,7 @@ module ValuesG (g : Graph) where
 
   valᵗ-weaken : ∀ {t Σ Σ'} → Σ ⊑ Σ' → Valᵗ t Σ → Valᵗ t Σ'
   valᵗ-weaken ext (vᵗ v)    =  vᵗ (val<:-weaken ext v)
-  valᵗ-weaken ext (mᵗ m)    =  mᵗ m
+  valᵗ-weaken ext (mᵗ f m)    =  mᵗ (wk ext f) m
   valᵗ-weaken ext (cᵗ c ic f)  =  cᵗ c ic (wk ext f)
 
 

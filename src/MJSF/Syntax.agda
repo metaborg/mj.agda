@@ -16,10 +16,14 @@ private
   Scope = Fin k
 
 data VTy : Set where
-  void : VTy;  int : VTy;  ref : Scope → VTy
+  void : VTy
+  int : VTy
+  ref : Scope → VTy
 
 data Ty : Set where
-  vᵗ : VTy → Ty;  mᵗ : List VTy → VTy → Ty;  cᵗ : Scope → Scope → Ty
+  vᵗ : VTy → Ty
+  mᵗ : List VTy → VTy → Ty
+  cᵗ : Scope → Scope → Ty
 
 -------------
 -- HAS TAG --
@@ -71,7 +75,7 @@ module SyntaxG (g : Graph) where
   mutual
     data Expr (s : Scope) : VTy → Set where
       call     :  ∀ {s' ts t} → Expr s (ref s') →
-                  (s' ↦ (mᵗ (ref s' ∷ ts) t)) →
+                  (s' ↦ (mᵗ ts t)) →
                   All (Expr s) ts → Expr s t
       get      :  ∀ {s' t} → Expr s (ref s') → (s' ↦ vᵗ t) → Expr s t
       var      :  ∀ {t} → (s ↦ vᵗ t) → Expr s t

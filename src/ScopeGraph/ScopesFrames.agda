@@ -68,17 +68,8 @@ module UsesGraph (g : Graph) where
 
     open Weakenable ⦃...⦄
     instance
-      weaken-slots : ∀ {ts} → Weakenable (Slots ts)
-      weaken-slots = record { wk = wk ⦃ all-weakenable (λ t → weaken-val' {t}) ⦄ }
-
-      weaken-links : ∀ {es} → Weakenable (Links es)
-      weaken-links = record { wk = wk ⦃ all-weakenable (λ a → any-weakenable {x = a}) ⦄ }
-
       weaken-heapframe : ∀ {s} → Weakenable (HeapFrame s)
       weaken-heapframe = record { wk = λ{ ext (slots , links) → (wk ext slots , wk ext links) } }
-
-      weaken-heap : ∀ {Σ'} → Weakenable (λ Σ → FrameHeap Σ Σ')
-      weaken-heap = record { wk = wk ⦃ all-weakenable (λ s → weaken-heapframe {s = s}) ⦄ }
 
       weaken-frame : ∀ {s} → Weakenable (Frame s)
       weaken-frame = record { wk = Weakenable.wk any-weakenable }
@@ -92,11 +83,17 @@ module UsesGraph (g : Graph) where
     initFrame s {Σ} ⦃ refl ⦄ slots links h
         = let ext = ∷ʳ-⊒ s Σ
               f'  = ∈-∷ʳ Σ s
-              h'  =
-                (wk ⦃ weaken-heap ⦄ ext h)
-                all-∷ʳ
-                ((wk ⦃ weaken-slots ⦄ ext slots , wk ext links))
+              h'  = (wk ext h) all-∷ʳ ((wk ext slots , wk ext links))
           in (f' , h')
+
+    initFrameι   :  (s : Scope) → ∀ {Σ ds es}⦃ shape : g s ≡ (ds , es) ⦄ →
+                    (Frame s (Σ ∷ʳ s) → Slots ds (Σ ∷ʳ s)) → Links es Σ → Heap Σ → Frame s (Σ ∷ʳ s) × Heap (Σ ∷ʳ s)
+    initFrameι s {Σ} ⦃ refl ⦄ slots links h
+        = let ext = ∷ʳ-⊒ s Σ
+              f'  = ∈-∷ʳ Σ s
+              h'  = (wk ext h) all-∷ʳ (slots f' , wk ext links)
+          in (f' , h')
+
 
     setSlot     :  ∀ {s t Σ} → t ∈ declsOf s → Val t Σ → Frame s Σ → Heap Σ → Heap Σ
     setSlot d v f h
