@@ -122,6 +122,8 @@ open import MJ.Semantics.Monadic
 -- examples
 open import MJ.Examples.Integer
 open import MJ.Examples.Exceptions
+open import MJ.Examples.While
+open import MJ.Examples.DynDispatch
 
 {-
   Additionally we demonstrate briefly how Agda's typeclass mechanism is not
