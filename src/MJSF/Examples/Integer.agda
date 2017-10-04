@@ -76,10 +76,10 @@ IntegerImpl = class0 {ms = intmethods}{intfields}
 
 {-
   int main() {
-    INT x;
-    INT y;
-    x = new INT();
-    y = new INT();
+    Integer x;
+    Integer y;
+    x = new Integer();
+    y = new Integer();
     x.x = 9;
     y.x = 18;
     y.set(x);
