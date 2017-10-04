@@ -39,8 +39,8 @@ data #v : (VTy → Set) → Ty → Set where
 data #m : (List VTy → VTy → Set) → Ty → Set where
   #m' : ∀ {ts rt p} → p ts rt → #m p (mᵗ ts rt)
 
-data #c (p : Scope → Scope → Set) : Ty → Set where
-  #c' : ∀ {sʳ s} → p sʳ s → #c p (cᵗ sʳ s)
+data #c (sʳ : Scope) (p : Scope → Set) : Ty → Set where
+  #c' : ∀ {s} → p s → #c sʳ p (cᵗ sʳ s)
 
 open import ScopeGraph.ScopesFrames k Ty hiding (Scope)
 
@@ -127,7 +127,7 @@ module SyntaxG (g : Graph) where
     program :
       ∀ cs ⦃ shape : g sʳ ≡ (cs , []) ⦄ →
         -- implementation of all the classes
-        All (#c Class) cs →
+        All (#c sʳ (λ s → Class sʳ s × ∃ λ s' → Inherits s s')) cs →
         -- main function
         Body sʳ a →
         Program sʳ a

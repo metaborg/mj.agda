@@ -101,15 +101,12 @@ main = body
     (get (var (path [] (here refl))) (path [] (there (here refl))))
 
 p : Program (# 0) int
-p = program classes (#c' IntegerImpl  ∷ []) main
+p = program classes (#c' (IntegerImpl , # 1 , obj (# 1) ⦃ refl ⦄)  ∷ []) main
 
 open import MJSF.Semantics
 open Semantics _ φ
 open import MJSF.Values
 open ValuesG _ φ
 
-rootframe : HeapFrame (# 0) (# 0 ∷ [])
-rootframe = ((ValuesG.cᵗ IntegerImpl (obj INT ⦃ refl ⦄ ) (here refl)) ∷ []) , []
-
-test : rootframe ⊢ p ⇓⟨ 100 ⟩ (λ v → v ≡ reflv (num (+ 18)) )
+test : p ⇓⟨ 100 ⟩ (λ v → v ≡ reflv (num (+ 18)) )
 test = refl
