@@ -50,7 +50,7 @@ module Semantics (g : Graph) where
   init-obj : ∀ {sʳ s s' Σ} → Class sʳ s → Inherits s s' → M sʳ (Frame s) Σ
   init-obj (class0 ⦃ shape ⦄ ms fs oms) (obj _)
     = getFrame >>= λ f →
-      initι _ ⦃ shape ⦄ (λ f → (map-all (λ{ (#m' m) → mᵗ f m }) ms) ++-all (defaults fs)) (f ∷ []) >>= λ f' →
+      initι _ ⦃ shape ⦄ (λ fc → (map-all (λ{ (#m' m) → mᵗ fc m }) ms) ++-all (defaults fs)) (f ∷ []) >>= λ f' →
       (usingFrame f' (override oms) ^ f') >>= λ{ (_ , f') → return f' }
   init-obj (class0 ⦃ shape ⦄ _ _ _) (super ⦃ shape' ⦄ _) with (trans (sym shape) shape')
   ... | ()
@@ -58,7 +58,7 @@ module Semantics (g : Graph) where
   ... | refl =
     getv p >>= λ{ (cᵗ class' ic f') →
     (usingFrame f' (init-obj class' x) ^ f') >>= λ{ (f , f') →
-    initι _ ⦃ shape ⦄ (λ f → (map-all (λ{ (#m' m) → mᵗ f m }) ms) ++-all (defaults fs)) (f' ∷ f ∷ []) >>= λ f'' →
+    initι _ ⦃ shape ⦄ (λ fc → (map-all (λ{ (#m' m) → mᵗ fc m }) ms) ++-all (defaults fs)) (f' ∷ f ∷ []) >>= λ f'' →
     (usingFrame f'' (override oms) ^ f'') >>= λ{ (_ , f'') →
     return f'' }}}
   init-obj (class1 _ ⦃ shape ⦄ _ _ _) (obj _ ⦃ shape' ⦄) with (trans (sym shape) shape')
