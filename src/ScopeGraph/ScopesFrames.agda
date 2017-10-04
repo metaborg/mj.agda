@@ -67,6 +67,7 @@ module UsesGraph (g : Graph) where
     Heap Σ = All (λ s → HeapFrame s Σ) Σ
 
     open Weakenable ⦃...⦄
+    
     instance
       weaken-heapframe : ∀ {s} → Weakenable (HeapFrame s)
       weaken-heapframe = record { wk = λ{ ext (slots , links) → (wk ext slots , wk ext links) } }
@@ -74,26 +75,22 @@ module UsesGraph (g : Graph) where
       weaken-frame : ∀ {s} → Weakenable (Frame s)
       weaken-frame = record { wk = Weakenable.wk any-weakenable }
 
-    -- helper
-    pair-eq : ∀ {A B : Set}{x : A × B}{a : A}{b : B} → x ≡ (a , b) → proj₁ x ≡ a × proj₂ x ≡ b
-    pair-eq {_} {_} {(p , q)} refl = refl , refl
-
     initFrame   :  (s : Scope) → ∀ {Σ ds es}⦃ shape : g s ≡ (ds , es) ⦄ →
                    Slots ds Σ → Links es Σ → Heap Σ → Frame s (Σ ∷ʳ s) × Heap (Σ ∷ʳ s)
-    initFrame s {Σ} ⦃ refl ⦄ slots links h
-        = let ext = ∷ʳ-⊒ s Σ
-              f'  = ∈-∷ʳ Σ s
-              h'  = (wk ext h) all-∷ʳ ((wk ext slots , wk ext links))
-          in (f' , h')
+    initFrame s {Σ} ⦃ refl ⦄ slots links h =
+      let ext = ∷ʳ-⊒ s Σ
+          f'  = ∈-∷ʳ Σ s
+          h'  = (wk ext h) all-∷ʳ (wk ext slots , wk ext links)
+      in (f' , h')
 
     initFrameι : (s : Scope) → ∀ {Σ ds es}⦃ shape : g s ≡ (ds , es) ⦄ →
                  (Frame s (Σ ∷ʳ s) → Slots ds (Σ ∷ʳ s)) → Links es Σ → Heap Σ →
                  Frame s (Σ ∷ʳ s) × Heap (Σ ∷ʳ s)
-    initFrameι s {Σ} ⦃ refl ⦄ slots links h
-        = let ext = ∷ʳ-⊒ s Σ
-              f'  = ∈-∷ʳ Σ s
-              h'  = (wk ext h) all-∷ʳ (slots f' , wk ext links)
-          in (f' , h')
+    initFrameι s {Σ} ⦃ refl ⦄ slots links h =
+      let ext = ∷ʳ-⊒ s Σ
+          f'  = ∈-∷ʳ Σ s
+          h'  = (wk ext h) all-∷ʳ (slots f' , wk ext links)
+      in (f' , h')
 
 
     setSlot : ∀ {s t Σ} → t ∈ declsOf s → Val t Σ → Frame s Σ → Heap Σ → Heap Σ
@@ -104,8 +101,9 @@ module UsesGraph (g : Graph) where
 
     getFrame : ∀ {s s' Σ} → (s ⟶ s') → Frame s Σ → Heap Σ → Frame s' Σ
     getFrame []      f h = f
-    getFrame (e ∷ p) f h  with (List∀.lookup h f)
-    ...                     | (slots , links) = getFrame p (List∀.lookup links e) h
+    getFrame (e ∷ p) f h
+      with (List∀.lookup h f)
+    ...  | (slots , links) = getFrame p (List∀.lookup links e) h
 
     getSlot : ∀ {s t Σ} → t ∈ declsOf s → Frame s Σ → Heap Σ → Val t Σ
     getSlot d f h
