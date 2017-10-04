@@ -108,7 +108,7 @@ module Semantics (g : Graph) where
       init s ⦃ shape ⦄ slots (f' ∷ []) >>= λ f' →
       usingFrame f' (eval-body k b) }}}
 
-    eval-args : ℕ → ∀ {s ts Σ} → All (Expr s) ts → M s (Slots (Data.List.Most.map vᵗ ts)) Σ
+    eval-args : ℕ → ∀ {s ts Σ} → All (Expr s) ts → M s (Slots (map vᵗ ts)) Σ
     eval-args zero _ = timeoutᴹ
     eval-args (suc k) [] = return []
     eval-args (suc k) (e ∷ es) =
