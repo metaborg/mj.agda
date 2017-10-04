@@ -107,6 +107,10 @@ module Semantics (g : Graph) where
       (eval-args k args ^ f') >>= λ{ (slots , f') →
       init s ⦃ shape ⦄ slots (f' ∷ []) >>= λ f' →
       usingFrame f' (eval-body k b) }}}
+    eval (suc k) (this p e) =
+      getf p >>= λ f →
+      usingFrame f (getl e) >>= λ f' →
+      return (ref f')
 
     eval-args : ℕ → ∀ {s ts Σ} → All (Expr s) ts → M s (Slots (map vᵗ ts)) Σ
     eval-args zero _ = timeoutᴹ
