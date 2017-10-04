@@ -86,8 +86,9 @@ module UsesGraph (g : Graph) where
               h'  = (wk ext h) all-∷ʳ ((wk ext slots , wk ext links))
           in (f' , h')
 
-    initFrameι   :  (s : Scope) → ∀ {Σ ds es}⦃ shape : g s ≡ (ds , es) ⦄ →
-                    (Frame s (Σ ∷ʳ s) → Slots ds (Σ ∷ʳ s)) → Links es Σ → Heap Σ → Frame s (Σ ∷ʳ s) × Heap (Σ ∷ʳ s)
+    initFrameι : (s : Scope) → ∀ {Σ ds es}⦃ shape : g s ≡ (ds , es) ⦄ →
+                 (Frame s (Σ ∷ʳ s) → Slots ds (Σ ∷ʳ s)) → Links es Σ → Heap Σ →
+                 Frame s (Σ ∷ʳ s) × Heap (Σ ∷ʳ s)
     initFrameι s {Σ} ⦃ refl ⦄ slots links h
         = let ext = ∷ʳ-⊒ s Σ
               f'  = ∈-∷ʳ Σ s
@@ -95,21 +96,26 @@ module UsesGraph (g : Graph) where
           in (f' , h')
 
 
-    setSlot     :  ∀ {s t Σ} → t ∈ declsOf s → Val t Σ → Frame s Σ → Heap Σ → Heap Σ
+    setSlot : ∀ {s t Σ} → t ∈ declsOf s → Val t Σ → Frame s Σ → Heap Σ → Heap Σ
     setSlot d v f h
       with (List∀.lookup h f)
     ...  | (slots , links) = h All[ f ]≔' (slots All[ d ]≔' v , links)
 
 
-    getFrame    :  ∀ {s s' Σ} → (s ⟶ s') → Frame s Σ → Heap Σ → Frame s' Σ
+    getFrame : ∀ {s s' Σ} → (s ⟶ s') → Frame s Σ → Heap Σ → Frame s' Σ
     getFrame []      f h = f
     getFrame (e ∷ p) f h  with (List∀.lookup h f)
     ...                     | (slots , links) = getFrame p (List∀.lookup links e) h
 
-    getSlot     :  ∀ {s t Σ} → t ∈ declsOf s → Frame s Σ → Heap Σ → Val t Σ
+    getSlot : ∀ {s t Σ} → t ∈ declsOf s → Frame s Σ → Heap Σ → Val t Σ
     getSlot d f h
       with (List∀.lookup h f)
     ...  | (slots , links) = List∀.lookup slots d
+
+    getLink : ∀ {s s' Σ} → s' ∈ edgesOf s → Frame s Σ → Heap Σ → Frame s' Σ
+    getLink e f h
+      with (List∀.lookup h f)
+    ...  | (slots , links) = List∀.lookup links e
 
     getVal  :  ∀ {s t} → (s ↦ t) → ∀ {Σ} → Frame s Σ → Heap Σ → Val t Σ
     getVal (path p d) f h = getSlot d (getFrame p f h) h

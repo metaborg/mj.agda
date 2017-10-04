@@ -85,26 +85,29 @@ module MonadG (g : Graph) where
   raise : ∀ {s Σ}{p : List Scope → Set} → M s p Σ
   raise _ _ = nullpointer
 
-  init      :  ∀ {Σ s' ds es} → (s : Scope) → ⦃ shape : g s ≡ (ds , es) ⦄ →
+  init : ∀ {Σ s' ds es} → (s : Scope) → ⦃ shape : g s ≡ (ds , es) ⦄ →
                Slots ds Σ → Links es Σ → M s' (Frame s) Σ
   init {Σ} s slots links _ h
     with (initFrame s slots links h)
   ...  | (f' , h') = ok (_ , h' , f' , ∷ʳ-⊒ s Σ)
 
-  initι      :  ∀ {Σ s' ds es} → (s : Scope) → ⦃ shape : g s ≡ (ds , es) ⦄ →
+  initι : ∀ {Σ s' ds es} → (s : Scope) → ⦃ shape : g s ≡ (ds , es) ⦄ →
                (Frame s (Σ ∷ʳ s) → Slots ds (Σ ∷ʳ s)) → Links es Σ → M s' (Frame s) Σ
   initι {Σ} s slots links _ h
     with (initFrameι s slots links h)
   ...  | (f' , h') = ok (_ , h' , f' , ∷ʳ-⊒ s Σ)
 
-  getv       :  ∀ {s t Σ} → (s ↦ t) → M s (Valᵗ t) Σ
+  getv : ∀ {s t Σ} → (s ↦ t) → M s (Valᵗ t) Σ
   getv p f h = return (getVal p f h) f h
 
-  getf  :  ∀ {s s' Σ} → (s ⟶ s')  → M s (Frame s') Σ
+  getf : ∀ {s s' Σ} → (s ⟶ s')  → M s (Frame s') Σ
   getf p f h = return (getFrame' p f h) f h
 
-  getd  :  ∀ {s t Σ} → t ∈ declsOf s → M s (Valᵗ t) Σ
+  getd : ∀ {s t Σ} → t ∈ declsOf s → M s (Valᵗ t) Σ
   getd d f h = return (getSlot d f h) f h
+
+  getl : ∀ {s s' Σ} → s' ∈ edgesOf s → M s (Frame s') Σ
+  getl e f h = return (getLink e f h) f h
 
   setd  :  ∀ {s t Σ} → t ∈ declsOf s → Valᵗ t Σ → M s (λ _ → ⊤) Σ
   setd d v f h with (setSlot d v f h)
