@@ -42,15 +42,6 @@ module Semantics (g : Graph) where
   defaults {[]}          []           = []
   defaults {vᵗ t ∷ fs} (#v' _ ∷ ts) = vᵗ (reflv (default t)) ∷ defaults {fs} ts
 
-  slotify-meths : ∀ {ms s Σ} → Frame s Σ → All (#m (Meth s)) ms → Slots ms Σ
-  slotify-meths {[]}             f []           = []
-  slotify-meths {mᵗ ts rt ∷ mts} f (#m' m ∷ ms) = mᵗ f m ∷ slotify-meths {mts} f ms
-
-  slotify-classes : ∀ {cs sʳ Σ} → Frame sʳ Σ → All (#c sʳ (λ s → Class sʳ s × ∃ λ s' → Inherits s s')) cs → Slots cs Σ
-  slotify-classes {[]}             f []                      = []
-  slotify-classes {cᵗ sʳ sᵖ ∷ cts} f (#c' (c , _ , ic) ∷ cs) =
-    cᵗ c ic f ∷ slotify-classes {cts} f cs
-
   override : ∀ {s Σ}{oms : List (List VTy × VTy)} →
              All (λ x → (s ↦ (mᵗ (proj₁ x) (proj₂ x))) × Meth s (proj₁ x) (proj₂ x)) oms →
              M s (λ _ → ⊤) Σ
@@ -62,7 +53,7 @@ module Semantics (g : Graph) where
   init-obj : ∀ {sʳ s s' Σ} → Class sʳ s → Inherits s s' → M sʳ (Frame s) Σ
   init-obj (class0 ⦃ shape ⦄ ms fs oms) (obj _)
     = getFrame >>= λ f →
-      initι _ ⦃ shape ⦄ (λ f → (slotify-meths f ms) ++-all (defaults fs)) (f ∷ []) >>= λ f' →
+      initι _ ⦃ shape ⦄ (λ f → (map-all (λ{ (#m' m) → mᵗ f m }) ms) ++-all (defaults fs)) (f ∷ []) >>= λ f' →
       (usingFrame f' (override oms) ^ f') >>= λ{ (_ , f') → return f' }
   init-obj (class0 ⦃ shape ⦄ _ _ _) (super ⦃ shape' ⦄ _) with (trans (sym shape) shape')
   ... | ()
@@ -70,7 +61,7 @@ module Semantics (g : Graph) where
   ... | refl =
     getv p >>= λ{ (cᵗ class' ic f') →
     (usingFrame f' (init-obj class' x) ^ f') >>= λ{ (f , f') →
-    initι _ ⦃ shape ⦄ (λ f → (slotify-meths f ms) ++-all (defaults fs)) (f' ∷ f ∷ []) >>= λ f'' →
+    initι _ ⦃ shape ⦄ (λ f → (map-all (λ{ (#m' m) → mᵗ f m }) ms) ++-all (defaults fs)) (f' ∷ f ∷ []) >>= λ f'' →
     (usingFrame f'' (override oms) ^ f'') >>= λ{ (_ , f'') →
     return f'' }}}
   init-obj (class1 _ ⦃ shape ⦄ _ _ _) (obj _ ⦃ shape' ⦄) with (trans (sym shape) shape')
@@ -159,7 +150,7 @@ module Semantics (g : Graph) where
 
   eval-program : ℕ → ∀ {sʳ t} → Program sʳ t → Res (∃ λ Σ' → (Heap Σ' × Val<: t Σ'))
   eval-program k (program _ ⦃ shape ⦄ cs b) =
-    let (f₀ , h₀) = initFrameι _ (λ f → slotify-classes f cs) [] []
+    let (f₀ , h₀) = initFrameι _ (λ f → map-all (λ{ (#c' (c , _ , ic)) → cᵗ c ic f }) cs) [] []
     in case (eval-body k b f₀ h₀) of λ{
          (ok (Σ' , h' , v , _)) → ok ((Σ' , h' , v))
        ; timeout → timeout
