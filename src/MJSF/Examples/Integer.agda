@@ -108,5 +108,5 @@ open Semantics _ φ
 open import MJSF.Values
 open ValuesG _ φ
 
-test : p ⇓⟨ 100 ⟩ (λ v → v ≡ reflv (num (+ 18)) )
+test : p ⇓⟨ 100 ⟩ (λ v → v ≡ num (+ 18) )
 test = refl

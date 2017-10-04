@@ -13,6 +13,7 @@ open import ScopeGraph.ScopesFrames k Ty
 
 module MonadG (g : Graph) where
 
+  open SyntaxG g
   open ValuesG g
   open UsesVal Valᵗ valᵗ-weaken renaming (getFrame to getFrame')
   open import Common.Weakening
@@ -65,8 +66,12 @@ module MonadG (g : Graph) where
   ...  | nullpointer = nullpointer
   ...  | ok (Σ , h' , v , ext) = ok (Σ , h' , (v , wk ext x) , ext)
 
-  coerceᴹ :  ∀ {t s Σ} → Val<: t Σ → M s (Val t) Σ
-  coerceᴹ (upcast σ v) f h = return (coerce<: σ v h) f h
+  coerceᴹ :  ∀ {t t' s Σ} → t <: t' → M s (Val t) Σ → M s (Val t') Σ
+  coerceᴹ σ m f h
+    with (m f h)
+  ...  | timeout = timeout
+  ...  | nullpointer = nullpointer
+  ...  | ok (Σ , h' , v , ext) = ok (Σ , h' , coerce σ v h' , ext)
 
   getFrame   :  ∀ {s Σ} → M s (Frame s) Σ
   getFrame f = return f f
