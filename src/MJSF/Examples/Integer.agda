@@ -39,7 +39,7 @@ intfields =
   {- x -} vᵗ int
   ∷ []
 intmethods =
-  {- set -} mᵗ ((ref (# 1)) ∷ (ref (# 1)) ∷ []) void
+  {- set -} mᵗ ((ref (# 1)) ∷ []) void
   ∷ []
 
 INT : Scope
@@ -51,7 +51,7 @@ INT = # 1
 -- class scope of INT class
 φ (suc zero)= (intmethods ++ intfields) , zero ∷ []
 -- scope of INT::set method
-φ (suc (suc zero)) = (vᵗ (ref (# 1)) ∷ vᵗ (ref (# 1)) ∷ []) , # 1 ∷ []
+φ (suc (suc zero)) = (vᵗ (ref (# 1)) ∷ []) , # 1 ∷ []
 -- scopes of main
 φ (suc (suc (suc zero))) = vᵗ (ref INT) ∷ [] , (# 0 ∷ [])
 φ (suc (suc (suc (suc zero)))) = vᵗ (ref INT) ∷ [] , # 3 ∷ []
@@ -65,7 +65,7 @@ IntegerImpl = class0 {ms = intmethods}{intfields}
   ( -- methods
     (#m' (meth (# 2) (body-void (
       set
-        (var (path [] (there (here refl))))
+        (var (path [] (here refl)))
         (path [] (there (here refl)))
         (get (var (path [] (here refl))) (path [] (there (here refl))))
       ◅ ε
