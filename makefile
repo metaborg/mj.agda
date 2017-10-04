@@ -1,5 +1,6 @@
 # some library paths
 STDPP = lib/stdlib++.agda
+STDPP-REV = dd4b86f6c666a
 AGDALIB = lib/agda
 
 docs/%.html: %.agda
@@ -20,14 +21,11 @@ docs: lib docs/src/Everything.html docs/Readme.html
 	cp docs/{Readme.html,index.html}
 
 ### libraries
-lib: lib/agda/std-lib lib/stdlib++.agda lib-update
-
-.PHONY: lib-update
-lib-update:
-	cd $(STDPP) && git pull
+lib: lib/agda/std-lib lib/stdlib++.agda
 
 lib/stdlib++.agda:
 	git clone -b 2.6 https://github.com/ElessarWebb/stdlib-plusplus.agda.git $(STDPP)
+	cd $(STDPP) && git reset --hard $(STDPP-REV)
 
 # checkout the compatible agda release source
 lib/agda:
