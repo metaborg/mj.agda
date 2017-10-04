@@ -74,7 +74,18 @@ IntegerImpl = class0 {ms = intmethods}{intfields}
     (#v' tt) ∷ [])
   []
 
--- a simple program
+{-
+  main(): int {
+    loc x
+    loc y
+    x := new INT
+    y := new INT
+    x.x := 9
+    y.x := 18
+    y.set(x)
+    return y.x
+  }
+-}
 main : Body (# 0) int
 main = body
     (
