@@ -23,7 +23,7 @@
 
   Note that there are minor differences between the Agda code used in the paper
   and this mechanization.
-  These discrepancies are summarized at the end of this readme.
+  These discrepancies are summarized in the footnotes of this readme.
 -}
 
 module Readme where
@@ -93,7 +93,7 @@ open import MJSF.Semantics
 open import MJSF.Examples.Integer
 
 {-
-  * Appendix A *
+  * Appendix A
 
   The following code artifacts *are not* described in the paper, but are used as
   a comparison point to evaluate the impact on the interpreter of using the
@@ -126,6 +126,8 @@ open import MJ.Examples.While
 open import MJ.Examples.DynDispatch
 
 {-
+  * Appendix B
+
   Additionally we demonstrate briefly how Agda's typeclass mechanism is not
   sufficiently strong to infer store extension facts for weakening. (Notably
   rejects equivalent as well because the two instances are overlapping)
@@ -133,35 +135,62 @@ open import MJ.Examples.DynDispatch
 open import Experiments.Infer
 
 {-
-There are a few discrepancies with paper:
+  We have made use of the operator _^_ defined as follows:
 
-- Universe polymorphic definitions in the development are presented in their
-  simplified (monomorphic) form in the paper
+  _^_  :  ∀ {Σ Γ}{p q : List Type → Set} ⦃ w : Weakenable q ⦄ → M Γ p Σ → q Σ → M Γ (p ⊗ q) Σ
 
-- MJSF: pattern matching lambdas are not useful for pattern matching against,
-  which we need in order to initialize method and field slots. Instead of having
-  the `All` with the pattern matching lambda, we use a tagging predicate; e.g.
-  `#m`. This is morally equivalent to the `All` used in the paper (Section 5.4).
+  Which, as also noted by our anonymous reviewers, is suspiciously similar to
+  the strength operator that characterizes a strong monad, which would be typed:
 
-- The STLC and STLC+Ref implementations in this repository add integers and
-  integer operations in order to write some more interesting example programs.
+  _^_  :  ∀ {P Q} → M P → Q → M (P ⊗ Q)
 
-Then there are a few notable differences between the original presentation of MJ
-and our development:
+  Where P and Q are objects of a category ℂ, and M is a monad for ℂ.
+  In the following development we show formally that we can define a category
+  of monotone predicates such that strength has it's usual type.
 
-- MJ distinguishes promotable expressions (method invocation and object
-  creation) and all other expressions. We admit arbitrary expressions to be
-  promoted. This does not change the semantics in any significant way. The
-  expressions that we allow to be promoted are side-effect free.
+  The example interpreter shows that indeed again, we may write an interpreter
+  without explicit weakening; but we have to write the interpreter in
+  pointfree style.
+  The paper focuses on the more pragmatic path to build these interpreters, but
+  we imagine that this development may be the target model for a future
+  specification language for dynamic semantics.
+-}
+open import Experiments.Category
+open import Experiments.StrongMonad
+open import Experiments.STLCRefPointfree
 
-- returns are implemented by modeling non-void methods as having an expression
-  as its last statement (like in MJ).
+{-
+  * Footnotes
 
-- MJ only has equality comparison expressions that can be used as conditional
-  expressions. We allow arbitrary expressions, and use `ifz`. It would be
-  straightforward to add booleans.
+  There are a few discrepancies with paper:
 
-- If statements have ordinary statements as their sub-statements. These can
-  either be block statements or any other statement which does not allocate a
-  new frame.
+  - Universe polymorphic definitions in the development are presented in their
+    simplified (monomorphic) form in the paper
+
+  - MJSF: pattern matching lambdas are not useful for pattern matching against,
+    which we need in order to initialize method and field slots. Instead of having
+    the `All` with the pattern matching lambda, we use a tagging predicate; e.g.
+    `#m`. This is morally equivalent to the `All` used in the paper (Section 5.4).
+
+  - The STLC and STLC+Ref implementations in this repository add integers and
+    integer operations in order to write some more interesting example programs.
+
+  Then there are a few notable differences between the original presentation of MJ
+  and our development:
+
+  - MJ distinguishes promotable expressions (method invocation and object
+    creation) and all other expressions. We admit arbitrary expressions to be
+    promoted. This does not change the semantics in any significant way. The
+    expressions that we allow to be promoted are side-effect free.
+
+  - returns are implemented by modeling non-void methods as having an expression
+    as its last statement (like in MJ).
+
+  - MJ only has equality comparison expressions that can be used as conditional
+    expressions. We allow arbitrary expressions, and use `ifz`. It would be
+    straightforward to add booleans.
+
+  - If statements have ordinary statements as their sub-statements. These can
+    either be block statements or any other statement which does not allocate a
+    new frame.
 -}
