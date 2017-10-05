@@ -182,8 +182,9 @@ IntIncImpl =
     -- fields
     []
     -- overrides
-    (((path ((there (here refl)) ∷ []) (here refl)) ,
-    (meth (# 5)
+    (#m'
+     (path ((there (here refl)) ∷ []) (here refl) ,
+     (meth (# 5)
            (body ε
                  (iop Data.Integer._+_
                       (var (path ((here refl) ∷ ((there (here refl)) ∷ []))
