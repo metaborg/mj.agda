@@ -164,4 +164,9 @@ and our development:
 - If statements have ordinary statements as their sub-statements. These can
   either be block statements or any other statement which does not allocate a
   new frame.
+
+- We include integers and integer operations.
+
+- Our syntax admits fields typed by `void`.
+
 -}
