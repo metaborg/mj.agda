@@ -39,13 +39,14 @@ module Semantics (g : Graph) where
   defaults {[]}          []           = []
   defaults {vᵗ t ∷ fs} (#v' _ ∷ ts) = vᵗ (default t) ∷ defaults {fs} ts
 
-  override : ∀ {s Σ}{oms : List (List VTy × VTy)} →
-             All (λ x → (s ↦ (mᵗ (proj₁ x) (proj₂ x))) × Meth s (proj₁ x) (proj₂ x)) oms →
+  override : ∀ {s Σ oms} →
+             All (#m (λ ts t → (s ↦ (mᵗ ts t)) × Meth s ts t)) oms →
              M s (λ _ → ⊤) Σ
   override [] = return tt
-  override ((p , m) ∷ oms) = getFrame >>= λ f →
-                             setv p (mᵗ f m) >>= λ _ →
-                             override oms
+  override (#m' (p , m) ∷ oms) =
+    getFrame >>= λ f →
+    setv p (mᵗ f m) >>= λ _ →
+    override oms
 
   init-obj : ∀ {sʳ s s' Σ} → Class sʳ s → Inherits s s' → M sʳ (Frame s) Σ
   init-obj (class0 ⦃ shape ⦄ ms fs oms) (obj _)
