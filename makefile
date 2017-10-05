@@ -1,8 +1,4 @@
 # some library paths
-STDPP = lib/stdlib++.agda
-STDPP-REV = dd4b86f6c666a
-AGDALIB = lib/agda
-
 docs/%.html: %.agda
 	agda $< --html --html-dir=./docs/
 
@@ -21,19 +17,13 @@ docs: lib docs/Readme.html
 	cp docs/{Readme.html,index.html}
 
 ### libraries
-lib: lib/agda/std-lib lib/stdlib++.agda
+lib: lib/stdlib lib/stdlib++
 
-lib/stdlib++.agda:
-	git clone -b 2.6 https://github.com/ElessarWebb/stdlib-plusplus.agda.git $(STDPP)
-	cd $(STDPP) && git reset --hard $(STDPP-REV)
+lib/stdlib++:
+	git submodule update --init lib/stdlib++
 
-# checkout the compatible agda release source
-lib/agda:
-	git clone -b release-2.5.3 https://github.com/agda/agda/ $(AGDALIB)
-
-# build the stdlib compatible with the agda release we're using
-lib/agda/std-lib: lib/agda
-	cd $(AGDALIB) && make fast-forward-std-lib
+lib/stdlib:
+	git submodule update --init lib/stdlib
 
 assumptions:
 	git grep --color -Hi "postulate" -- "src/**/*.agda"

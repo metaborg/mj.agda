@@ -2,5 +2,5 @@ name: mj
 include:
   .
   ./src/
-  ./lib/agda/std-lib/src/
-  ./lib/stdlib++.agda/src/
+  ./lib/stdlib/src/
+  ./lib/stdlib++/src/
