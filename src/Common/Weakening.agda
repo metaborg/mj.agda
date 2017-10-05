@@ -31,9 +31,9 @@ record Weakenable {i j}{A : Set i}(p : List A → Set j) : Set (i ⊔ j) where
   See `Experiments.Category` for a more general definition and
   treatment.
 
-  For the purposes of developing the interpreters presented in our
-  paper, however, the definition of `Weakenable` above is useful
-  indeed.
+  The definition of `Weakenable` above is specialized to the
+  interpreters in our paper which are all defined in terms of
+  weakenable predicates over lists.
 -}
 
 open Weakenable ⦃...⦄ public
