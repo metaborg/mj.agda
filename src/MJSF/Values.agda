@@ -53,7 +53,8 @@ module ValuesG (g : Graph) where
   --
   -- * classes which record a well-typed class definition and a
   --   witness that the class has a finite inheritance chain, both
-  --   used for initializing new object instances.
+  --   used for initializing new object instances, as well as a frame
+  --   pointer to the root frame (class table).
 
   data Valᵗ : Ty → List Scope → Set where
     vᵗ : ∀ {t Σ} → Val t Σ → Valᵗ (vᵗ t) Σ

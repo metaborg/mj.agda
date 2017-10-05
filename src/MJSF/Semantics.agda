@@ -18,6 +18,9 @@ open import MJSF.Monad k
 open import ScopeGraph.ScopesFrames k Ty
 open import Common.Weakening
 
+-- This file contains the definitional interpreter for MJ using scopes
+-- and frames, described in Section 5 of the paper.
+
 module Semantics (g : Graph) where
 
   open SyntaxG g
@@ -25,35 +28,75 @@ module Semantics (g : Graph) where
   open MonadG g
   open UsesVal Valᵗ valᵗ-weaken renaming (getFrame to getFrame') public
 
+
   -----------------
   -- AUXILIARIES --
   -----------------
 
+  -- The interpreter relies on a number of auxiliary function.  We
+  -- briefly summarize each.
+
+  -- In Java (and MJ), each field member of an object is initialized
+  -- to have a default value.  The `default` function defines a
+  -- default value for each value type in MJ.
+
   default : {Σ : List Scope} → (t : VTy) → Val t Σ
-  default int     = num (ℤ.pos 0)
+  default int     = num (+ 0)
   default (ref s) = null
   default void    = void
 
+  -- An alias for mapping `default` over a list of well-typed values:
+
   defaults : ∀ {fs : List Ty}{Σ} → All (#v (λ _ → ⊤)) fs → Slots fs Σ
-  defaults {[]}          []           = []
-  defaults {vᵗ t ∷ fs} (#v' _ ∷ ts) = vᵗ (default t) ∷ defaults {fs} ts
+  defaults fs = map-all (λ{ (#v' {t} _) → vᵗ (default t) }) fs
+
+  -- `override` overrides methods in parent objects by overwriting
+  -- method slots in super class frames by overriding child methods.
+  --
+  -- This notion of overriding does not straightforwardly scale to
+  -- deal with `super`, but `super` is not a part of MJ.  See the
+  -- paper or the MJ semantics in the appendix of this artifact for
+  -- discussion and inspiration for how to represent class methods
+  -- separately from object representations.
 
   override : ∀ {s Σ oms} →
              All (#m (λ ts t → (s ↦ (mᵗ ts t)) × Meth s ts t)) oms →
              M s (λ _ → ⊤) Σ
-  override [] = return tt
+  override [] =
+    return tt
   override (#m' (p , m) ∷ oms) =
     getFrame >>= λ f →
     setv p (mᵗ f m) >>= λ _ →
     override oms
+
+  -- `init-obj` takes as input a class definition and a witness that
+  -- the class has a finite inheritance chain.  The function is
+  -- structurally recursive over the inheritance chain finity witness.
+  --
+  -- Each object is initialized by using the `initι` function, which
+  -- allows us to refer to the "self" frame and store it in method
+  -- definitions (i.e., the `fc` passed to the method value
+  -- constructor `mᵗ` in `map-all` below).
+  --
+  -- Method slots are initialized using the method members in the
+  -- class definition.  Field slots are initialized using `defaults`
+  -- defined above.
+  --
+  -- After frame initialization, overrides are applied by using
+  -- `override` defined above.
+  --
+  -- `init-obj` is assumed to be invoked in the context of the root
+  -- frame, which all objects are linked to (because all scopes have
+  -- an edge to the root scope).
 
   init-obj : ∀ {sʳ s s' Σ} → Class sʳ s → Inherits s s' → M sʳ (Frame s) Σ
   init-obj (class0 ⦃ shape ⦄ ms fs oms) (obj _)
     = getFrame >>= λ f →
       initι _ ⦃ shape ⦄ (λ fc → (map-all (λ{ (#m' m) → mᵗ fc m }) ms) ++-all (defaults fs)) (f ∷ []) >>= λ f' →
       (usingFrame f' (override oms) ^ f') >>= λ{ (_ , f') → return f' }
-  init-obj (class0 ⦃ shape ⦄ _ _ _) (super ⦃ shape' ⦄ _) with (trans (sym shape) shape')
-  ... | ()
+  init-obj (class0 ⦃ shape ⦄ _ _ _) (super ⦃ shape' ⦄ _)
+    with (trans (sym shape) shape')
+  ...  | () -- absurd case: the scope shapes of `class0` and `super` do not match
   init-obj (class1 p ⦃ shape ⦄ ms fs oms) (super ⦃ shape' ⦄ x) with (trans (sym shape) shape')
   ... | refl =
     getv p >>= λ{ (cᵗ class' ic f') →
@@ -61,8 +104,17 @@ module Semantics (g : Graph) where
     initι _ ⦃ shape ⦄ (λ fc → (map-all (λ{ (#m' m) → mᵗ fc m }) ms) ++-all (defaults fs)) (f' ∷ f ∷ []) >>= λ f'' →
     (usingFrame f'' (override oms) ^ f'') >>= λ{ (_ , f'') →
     return f'' }}}
-  init-obj (class1 _ ⦃ shape ⦄ _ _ _) (obj _ ⦃ shape' ⦄) with (trans (sym shape) shape')
-  ... | ()
+  init-obj (class1 _ ⦃ shape ⦄ _ _ _) (obj _ ⦃ shape' ⦄)
+    with (trans (sym shape) shape')
+  ...  | () -- absurd case: the scope shapes of `class1` and `obj` do not match
+
+
+  -------------------------
+  -- EARLY RETURNS MONAD --
+  -------------------------
+
+  -- In order to deal with early returns, we define a specialized bind
+  -- which stops evaluation and returns the yielded value.
 
   _>>=ᶜ_     :  ∀ {s s' s'' r Σ} →
                M s (λ Σ → Val r Σ ⊎ Frame s' Σ) Σ →
@@ -73,15 +125,22 @@ module Semantics (g : Graph) where
       (inj₂ fr) → f fr
     }
 
+  -- Continue is used to indicate that evaluation should continue.
+  
   continue : ∀ {s r Σ} → M s (λ Σ → Val r Σ ⊎ Frame s Σ) Σ
   continue = fmap inj₂ getFrame
 
   mutual
+
+    ---------------------------
+    -- EXPRESSION EVALUATION --
+    ---------------------------
+
     eval    :  ℕ → ∀ {t s Σ} → Expr s t → M s (Val t) Σ
     eval zero _ =
       timeoutᴹ
     eval (suc k) (upcast σ e) =
-      coerceᴹ σ (eval k e)
+      coerceᴹ σ (eval k e)  -- upcasts coerce the object representation
     eval (suc k) (num x) =
       return (num x)
     eval (suc k) (iop x l r) =
@@ -103,9 +162,9 @@ module Semantics (g : Graph) where
       return v }}
     eval (suc k) (call e p args) =
       eval k e >>= λ { null → raise ; (ref f) →
-      usingFrame f (getv p) >>= λ{ (mᵗ f' (meth s ⦃ shape ⦄ b)) →
+      usingFrame f (getv p) >>= λ{ (mᵗ f' (meth s ⦃ shape ⦄ b)) →  -- f' is the "self"
       (eval-args k args ^ f') >>= λ{ (slots , f') →
-      init s ⦃ shape ⦄ slots (f' ∷ []) >>= λ f' →
+      init s ⦃ shape ⦄ slots (f' ∷ []) >>= λ f' →  -- f' is the static link of the method call frame
       usingFrame f' (eval-body k b) }}}
     eval (suc k) (this p e) =
       getf p >>= λ f →
@@ -120,6 +179,14 @@ module Semantics (g : Graph) where
       (eval-args k es ^ v) >>= λ{ (slots , v) →
       return (vᵗ v ∷ slots) }
 
+
+    --------------------------
+    -- STATEMENT EVALUATION --
+    --------------------------
+
+    -- The following function uses the early returns monadic bind and
+    -- `continue` operation defined above.
+
     eval-stmt : ℕ → ∀ {s s' r Σ} → Stmt s r s' → M s (λ Σ → Val r Σ ⊎ Frame s' Σ) Σ
     eval-stmt zero _ = timeoutᴹ
     eval-stmt (suc k) (do e) = eval k e >>= λ _ → continue
@@ -132,10 +199,12 @@ module Semantics (g : Graph) where
       (eval k e' ^ f) >>= λ{ (v , f) →
       usingFrame f (setv x (vᵗ v)) >>= λ _ → continue }}
     eval-stmt (suc k) (loc s t) =
-      getFrame >>= λ f → fmap inj₂ (init s (vᵗ (default t) ∷ []) (f ∷ []))
+      getFrame >>= λ f →
+      fmap inj₂ (init s (vᵗ (default t) ∷ []) (f ∷ [])) -- initializes a new local variable frame
     eval-stmt (suc k) (asgn x e) =
       eval k e >>= λ{ v →
-      setv x (vᵗ v) >>= λ _ → continue }
+      setv x (vᵗ v) >>= λ _ →
+      continue }
     eval-stmt (suc k) (block stmts) =
       eval-stmts k stmts >>= λ{ _ →
       continue }
@@ -152,6 +221,13 @@ module Semantics (g : Graph) where
       eval-stmt k stmt >>=ᶜ λ f' →
       usingFrame f' (eval-stmts k stmts)
 
+
+    ---------------------
+    -- BODY EVALUATION --
+    ---------------------
+
+    -- Defined in terms of statement evaluation; handles early returns:
+
     eval-body : ℕ → ∀ {s t Σ} → Body s t → M s (Val t) Σ
     eval-body zero _ =
       timeoutᴹ
@@ -163,6 +239,19 @@ module Semantics (g : Graph) where
       eval-stmts k stmts >>= λ _ →
       return void
 
+
+  ------------------------
+  -- PROGRAM EVALUATION --
+  ------------------------
+
+  -- Program evaluation first initializes the root frame to store all
+  -- class definitions, and subsequently evaluates the program main
+  -- function in the context of this root scope.
+  --
+  -- We use `initι` to initialize the root frame since class
+  -- definition values (`cᵗ`) store a pointer to the root frame, i.e.,
+  -- slots in the root frame are self-referential.
+
   eval-program : ℕ → ∀ {sʳ t} → Program sʳ t → Res (∃ λ Σ' → (Heap Σ' × Val t Σ'))
   eval-program k (program _ ⦃ shape ⦄ cs b) =
     let (f₀ , h₀) = initFrameι _ (λ f → map-all (λ{ (#c' (c , _ , ic)) → cᵗ c ic f }) cs) [] []
@@ -171,16 +260,17 @@ module Semantics (g : Graph) where
        ; timeout → timeout
        ; nullpointer → nullpointer }
 
-  -- a few predicates on programs:
-  -- ... saying it will terminate succesfully in a state where P holds
-  _⇓⟨_⟩_ : ∀ {sʳ a} → Program sʳ a → ℕ → (P : ∀ {W} → Val a W → Set) → Set
+  -- For testing our programs we introduce some short-hand notation:
+
+  -- The program will terminate succesfully in a state where p holds
+  _⇓⟨_⟩_ : ∀ {sʳ a} → Program sʳ a → ℕ → (p : ∀ {Σ} → Val a Σ → Set) → Set
   p ⇓⟨ k ⟩ P with eval-program k p
   ... | nullpointer = ⊥
   ... | timeout = ⊥
   ... | ok (_ , _ , v) = P v
 
-  -- ...saying it will raise an exception in a state where P holds
-  _⇓⟨_⟩!_ : ∀ {sʳ a} → Program sʳ a → ℕ → (P : ∀ {W} → Val a W → Set) → Set
+  -- The program will raise an exception in a state where p holds
+  _⇓⟨_⟩!_ : ∀ {sʳ a} → Program sʳ a → ℕ → (p : ∀ {Σ} → Val a Σ → Set) → Set
   p ⇓⟨ k ⟩! P with eval-program k p
   ... | nullpointer = ⊤
   ... | timeout = ⊥
