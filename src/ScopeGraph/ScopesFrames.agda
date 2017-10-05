@@ -194,7 +194,8 @@ module UsesGraph (g : Graph) where
     -- frame slots.  The function takes as argument a frame pointer
     -- into a heap extended by the scope that we are currently
     -- initializing, and slots are typed under this extended heap;
-    -- hence the slots can refer to the frame pointer parameter.
+    -- hence the slots can have self-references to the frame currently
+    -- being initialized.
 
     initFrameι : (s : Scope) → ∀ {Σ ds es}⦃ shape : g s ≡ (ds , es) ⦄ →
                  (Frame s (Σ ∷ʳ s) → Slots ds (Σ ∷ʳ s)) → Links es Σ → Heap Σ →
