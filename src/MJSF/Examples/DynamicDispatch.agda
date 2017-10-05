@@ -163,54 +163,60 @@ IntIncImpl =
     -- path to parent
     (path [] (here refl))
     -- methods
-    (#m' (meth (# 6)
-               (body ((loc (# 7) (ref Int)) ◅
-                      asgn (path [] (here refl))
-                           (new (path ((here refl) ∷ ((here refl) ∷ ((here refl) ∷ [])))
-                                      (here refl))) ◅
-                      (set (var (path [] (here refl)))
-                           (path [] (there (there (here refl))))
-                           (iop Data.Integer._+_
-                                (get (var (path ((here refl) ∷ []) (here refl)))
-                                     (path [] (there (there (here refl)))))
-                                (num (+ 1)))) ◅
-                      ε)
-               (call (this (here refl ∷ []) (here refl))
-                     (path (there (here refl) ∷ []) (there (here refl)))
-                     ((var (path [] (here refl))) ∷ [])))) ∷
+    (#m'
+      (meth
+        (# 6)
+        (body
+        ( loc (# 7) (ref Int)
+        ◅ asgn (path [] (here refl))
+               (new (path ((here refl) ∷ ((here refl) ∷ ((here refl) ∷ [])))
+                             (here refl)))
+        ◅ set (var (path [] (here refl)))
+                  (path [] (there (there (here refl))))
+                  (iop Data.Integer._+_
+                       (get (var (path ((here refl) ∷ []) (here refl)))
+                            (path [] (there (there (here refl)))))
+                       (num (+ 1)))
+        ◅ ε)
+      (call (this (here refl ∷ []) (here refl))
+            (path (there (here refl) ∷ []) (there (here refl)))
+            ((var (path [] (here refl))) ∷ [])))) ∷
     [])
     -- fields
     []
     -- overrides
     (#m'
      (path ((there (here refl)) ∷ []) (here refl) ,
-     (meth (# 5)
-           (body ε
-                 (iop Data.Integer._+_
-                      (var (path ((here refl) ∷ ((there (here refl)) ∷ []))
-                                 (there (there (here refl)))))
-                      (num (+ 1)))))) ∷ [])
+     (meth
+       (# 5)
+       (body
+         ε
+         (iop Data.Integer._+_
+              (var (path ((here refl) ∷ ((there (here refl)) ∷ []))
+                         (there (there (here refl)))))
+                   (num (+ 1)))))) ∷ [])
 
 main : Body Root int
 main =
-  body ((loc (# 8) (ref Int)) ◅
-       ((asgn (path [] (here refl))
-              (new (path (here refl ∷ [])
-                   (here refl)))) ◅
-       (set (var (path [] (here refl)))
-            (path [] (there (there (here refl))))
-            (num (+ 18))) ◅
-       (loc (# 9) (ref IntInc)) ◅
-       ((asgn (path [] (here refl))
-              (new (path (here refl ∷ here refl ∷ [])
-                         (there (here refl))))) ◅
-       ((set (var (path [] (here refl)))
-             (path (there (here refl) ∷ []) (there (there (here refl))))
-             (num (+ 0))) ◅
-       ε))))
-       (call (var (path [] (here refl)))
-             (path [] (here refl))
-             ((var (path ((here refl) ∷ []) (here refl))) ∷ []))
+  body
+    ( (loc (# 8) (ref Int))
+    ◅ asgn (path [] (here refl))
+           (new (path (here refl ∷ []) (here refl)))
+    ◅ set (var (path [] (here refl)))
+          (path [] (there (there (here refl))))
+          (num (+ 18))
+    ◅ loc (# 9) (ref IntInc)
+    ◅ asgn (path [] (here refl))
+           (new (path (here refl ∷ here refl ∷ [])
+                      (there (here refl))))
+    ◅ set (var (path [] (here refl)))
+          (path (there (here refl) ∷ []) (there (there (here refl))))
+          (num (+ 0))
+    ◅ ε)
+
+    (call (var (path [] (here refl)))
+          (path [] (here refl))
+          (var (path ((here refl) ∷ []) (here refl)) ∷ []))
 
 
 p : Program Root int
