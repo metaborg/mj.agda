@@ -171,7 +171,7 @@ module Semantics (g : Graph) where
          (ok (Σ' , h' , v , _)) → ok ((Σ' , h' , v))
        ; timeout → timeout
        ; nullpointer → nullpointer }
-         
+
 
   open import Common.Weakening
   open Weakenable ⦃...⦄

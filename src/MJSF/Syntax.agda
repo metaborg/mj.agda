@@ -70,7 +70,7 @@ data #m : (List VTy → VTy → Set) → Ty → Set where
 
 data #c (sʳ : Scope) (p : Scope → Set) : Ty → Set where
   #c' : ∀ {s} → p s → #c sʳ p (cᵗ sʳ s)
-  
+
 
 module SyntaxG (g : Graph) where
 
@@ -128,7 +128,7 @@ module SyntaxG (g : Graph) where
   -- lexical context scope before the statement `t` is the return type
   -- of the statement, and `s'` is the leixcal context scope after the
   -- statement.
-  
+
   mutual
     data Stmt (s : Scope)(r : VTy) : Scope → Set where
       do    : ∀ {t'} → Expr s t' → Stmt s r s
@@ -204,7 +204,7 @@ module SyntaxG (g : Graph) where
   -- and a main function to be evaluated in the context of the root
   -- scope.  The root scope has only class-typed declarations, and has
   -- no parent edges:
-  
+
   data Program (sʳ : Scope)(a : VTy) : Set where
     program :
       ∀ cs ⦃ shape : g sʳ ≡ (cs , []) ⦄ →
