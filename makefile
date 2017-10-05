@@ -42,7 +42,8 @@ assumptions:
 ### cleaning
 .PHONY: clean clean-all
 clean:
-	cd src && find . -iname '*.agdai' -exec rm {} \;
+	-rm Readme.agdai
+	-cd src && find . -iname '*.agdai' -exec rm {} \;
 
 clean-all: clean
 	rm -rf lib
