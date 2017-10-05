@@ -24,9 +24,8 @@ open import ScopeGraph.ScopesFrames k Ty
 {-
     class Integer {
       int x = 0;
-      int set(Integer b) {
+      void set(Integer b) {
         this.x = b.get()
-        return;
       }
     }
 -}
@@ -39,33 +38,33 @@ intfields =
   {- x -} vᵗ int
   ∷ []
 intmethods =
-  {- set -} mᵗ ((ref (# 1)) ∷ (ref (# 1)) ∷ []) void
+  {- set -} mᵗ ((ref (# 1)) ∷ []) void
   ∷ []
 
-INT : Scope
-INT = # 1
+Integer : Scope
+Integer = # 1
 
-φ : Graph
+g : Graph
 -- root scope
-φ zero = classes , []
--- class scope of INT class
-φ (suc zero)= (intmethods ++ intfields) , zero ∷ []
--- scope of INT::set method
-φ (suc (suc zero)) = (vᵗ (ref (# 1)) ∷ vᵗ (ref (# 1)) ∷ []) , # 1 ∷ []
+g zero = classes , []
+-- class scope of Integer class
+g (suc zero)= (intmethods ++ intfields) , zero ∷ []
+-- scope of Integer.set method
+g (suc (suc zero)) = (vᵗ (ref (# 1)) ∷ []) , # 1 ∷ []
 -- scopes of main
-φ (suc (suc (suc zero))) = vᵗ (ref INT) ∷ [] , (# 0 ∷ [])
-φ (suc (suc (suc (suc zero)))) = vᵗ (ref INT) ∷ [] , # 3 ∷ []
-φ (suc (suc (suc (suc (suc ())))))
+g (suc (suc (suc zero))) = vᵗ (ref Integer) ∷ [] , (# 0 ∷ [])
+g (suc (suc (suc (suc zero)))) = vᵗ (ref Integer) ∷ [] , # 3 ∷ []
+g (suc (suc (suc (suc (suc ())))))
 
-open SyntaxG φ
-open UsesGraph φ
+open SyntaxG g
+open UsesGraph g
 
 IntegerImpl : Class (# 0) (# 1)
 IntegerImpl = class0 {ms = intmethods}{intfields}
   ( -- methods
     (#m' (meth (# 2) (body-void (
       set
-        (var (path [] (there (here refl))))
+        (var (path [] (here refl)))
         (path [] (there (here refl)))
         (get (var (path [] (here refl))) (path [] (there (here refl))))
       ◅ ε
@@ -75,22 +74,22 @@ IntegerImpl = class0 {ms = intmethods}{intfields}
   []
 
 {-
-  main(): int {
-    loc x
-    loc y
-    x := new INT
-    y := new INT
-    x.x := 9
-    y.x := 18
-    y.set(x)
-    return y.x
+  int main() {
+    Integer x;
+    Integer y;
+    x = new Integer();
+    y = new Integer();
+    x.x = 9;
+    y.x = 18;
+    y.set(x);
+    return y.x;
   }
 -}
 main : Body (# 0) int
 main = body
     (
-        loc (# 3) (ref INT)
-      ◅ loc (# 4) (ref INT)
+        loc (# 3) (ref Integer)
+      ◅ loc (# 4) (ref Integer)
       ◅ asgn (path (here refl ∷ []) (here refl)) (new (path (here refl ∷ here refl ∷ []) (here refl)))
       ◅ asgn (path [] (here refl)) (new (path (here refl ∷ here refl ∷ []) (here refl)))
       ◅ set (var (path (here refl ∷ []) (here refl))) (path [] (there (here refl))) (num (+ 9))
@@ -101,15 +100,12 @@ main = body
     (get (var (path [] (here refl))) (path [] (there (here refl))))
 
 p : Program (# 0) int
-p = program classes (#c' IntegerImpl  ∷ []) main
+p = program classes (#c' (IntegerImpl , # 1 , obj (# 1) ⦃ refl ⦄)  ∷ []) main
 
 open import MJSF.Semantics
-open Semantics _ φ
+open Semantics _ g
 open import MJSF.Values
-open ValuesG _ φ
+open ValuesG _ g
 
-rootframe : HeapFrame (# 0) (# 0 ∷ [])
-rootframe = ((ValuesG.cᵗ IntegerImpl (obj INT ⦃ refl ⦄ ) (here refl)) ∷ []) , []
-
-test : rootframe ⊢ p ⇓⟨ 100 ⟩ (λ v → v ≡ reflv (num (+ 18)) )
+test : p ⇓⟨ 100 ⟩ (λ v → v ≡ num (+ 18) )
 test = refl

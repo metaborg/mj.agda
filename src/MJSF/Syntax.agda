@@ -16,10 +16,14 @@ private
   Scope = Fin k
 
 data VTy : Set where
-  void : VTy;  int : VTy;  ref : Scope → VTy
+  void : VTy
+  int : VTy
+  ref : Scope → VTy
 
 data Ty : Set where
-  vᵗ : VTy → Ty;  mᵗ : List VTy → VTy → Ty;  cᵗ : Scope → Scope → Ty
+  vᵗ : VTy → Ty
+  mᵗ : List VTy → VTy → Ty
+  cᵗ : Scope → Scope → Ty
 
 -------------
 -- HAS TAG --
@@ -35,8 +39,8 @@ data #v : (VTy → Set) → Ty → Set where
 data #m : (List VTy → VTy → Set) → Ty → Set where
   #m' : ∀ {ts rt p} → p ts rt → #m p (mᵗ ts rt)
 
-data #c (p : Scope → Scope → Set) : Ty → Set where
-  #c' : ∀ {sʳ s} → p sʳ s → #c p (cᵗ sʳ s)
+data #c (sʳ : Scope) (p : Scope → Set) : Ty → Set where
+  #c' : ∀ {s} → p s → #c sʳ p (cᵗ sʳ s)
 
 open import ScopeGraph.ScopesFrames k Ty hiding (Scope)
 
@@ -71,7 +75,7 @@ module SyntaxG (g : Graph) where
   mutual
     data Expr (s : Scope) : VTy → Set where
       call     :  ∀ {s' ts t} → Expr s (ref s') →
-                  (s' ↦ (mᵗ (ref s' ∷ ts) t)) →
+                  (s' ↦ (mᵗ ts t)) →
                   All (Expr s) ts → Expr s t
       get      :  ∀ {s' t} → Expr s (ref s') → (s' ↦ vᵗ t) → Expr s t
       var      :  ∀ {t} → (s ↦ vᵗ t) → Expr s t
@@ -80,6 +84,8 @@ module SyntaxG (g : Graph) where
       num      :  ℤ → Expr s int
       iop      :  (ℤ → ℤ → ℤ) → (l r : Expr s int) → Expr s int
       upcast   :  ∀ {t' t} → t' <: t → Expr s t' → Expr s t
+      this     :  ∀ {s' self} → s ⟶ s' → self ∈ edgesOf s' →
+                  Expr s (ref self)
 
   mutual
     data Stmt (s : Scope)(r : VTy) : Scope → Set where
@@ -100,9 +106,9 @@ module SyntaxG (g : Graph) where
 
   data Meth (s : Scope) : List VTy → VTy → Set where
     meth  :  ∀ {ts rt}(s' : Scope)
-             ⦃ shape : g s' ≡ (vᵗ (ref s) ∷ (map vᵗ ts) , [ s ]) ⦄ →
+             ⦃ shape : g s' ≡ (map vᵗ ts , [ s ]) ⦄ →
              Body s' rt →
-             Meth s (ref s ∷ ts) rt
+             Meth s ts rt
 
   data Class (sʳ s : Scope) : Set where
     class1  :  ∀ {ms fs sᵖ}{oms : List (List VTy × VTy)} →
@@ -123,7 +129,7 @@ module SyntaxG (g : Graph) where
     program :
       ∀ cs ⦃ shape : g sʳ ≡ (cs , []) ⦄ →
         -- implementation of all the classes
-        All (#c Class) cs →
+        All (#c sʳ (λ s → Class sʳ s × ∃ λ s' → Inherits s s')) cs →
         -- main function
         Body sʳ a →
         Program sʳ a
