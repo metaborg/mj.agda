@@ -56,7 +56,7 @@ module Syntax (g : Graph) where
   open UsesGraph g
 
 
-------------
+  ------------
   -- SYNTAX --
   ------------
 
