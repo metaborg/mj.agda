@@ -17,7 +17,7 @@ docs/.git/:
 
 gh-pages: docs/.git/ docs
 
-docs: lib docs/src/Everything.html docs/Readme.html
+docs: lib docs/Readme.html
 	cp docs/{Readme.html,index.html}
 
 ### libraries
