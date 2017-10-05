@@ -29,7 +29,7 @@ infixl 30 _⊚_
 _⊚_ : ∀ {i}{A : Set i}{W W' W'' : List A} → W' ⊒ W → W'' ⊒ W' → W'' ⊒ W
 _⊚_ co₁ co₂ = ⊑-trans co₁ co₂
 
--- Product on of indexed predicates
+-- Product of indexed predicates
 open import Relation.Unary
 open import Data.Product
 _⊗_ : ∀ {a}{i j}{W : Set a}(p : W → Set i)(q : W → Set j)(w : W) → Set (i ⊔ j)
