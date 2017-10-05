@@ -3,6 +3,10 @@ open import Data.List.Most
 open import Data.Integer
 open import Data.Product
 
+-- This file contains the definition of values for the definitional
+-- interpreter for MJ using scopes and frames, described in Section 5
+-- of the paper.
+
 module MJSF.Values (k : ℕ) where
 
 open import MJSF.Syntax k
@@ -15,10 +19,22 @@ module ValuesG (g : Graph) where
   open import Common.Weakening
   open Weakenable ⦃...⦄
 
-
   ------------
   -- VALUES --
   ------------
+
+  -- The values used in our interpreter at run time are either:
+  --
+  -- * object references `ref`, represented in terms of a frame scoped
+  --   by a class scope;
+  --
+  -- * null values (`ref` typed);
+  --
+  -- * an integer number literal (`int` typed); or
+  --
+  -- * `void` (`void typed -- note that there is no expression syntax
+  --   for producing a `void` value directly, but method bodies still
+  --   return `void`; we regard `void` as a unit type)
 
   data Val : VTy → List Scope → Set where
     ref    :  ∀ {s Σ} → Frame s Σ → Val (ref s) Σ
@@ -26,15 +42,31 @@ module ValuesG (g : Graph) where
     num    :  ∀ {Σ} → ℤ → Val int Σ
     void   :  ∀ {Σ} → Val void Σ
 
+  -- There are three kinds of values stored in frame slots at run
+  -- time, corresponding to each of the three kinds of declarations
+  -- defined in `MJSF.Syntax`:
+  --
+  -- * values, as defined above;
+  --
+  -- * methods, where a method records a "self" frame `Frame s Σ` and
+  --   a well-typed method definition `Meth s ts rt`, such that the
+  --   scope of the method corresponds to the "self"; and
+  --
+  -- * classes which record a well-typed class definition and a
+  --   witness that the class has a finite inheritance chain, both
+  --   used for initializing new object instances.
+
   data Valᵗ : Ty → List Scope → Set where
-    cᵗ : ∀ {sʳ s s' Σ} → Class sʳ s → Inherits s s' → Frame sʳ Σ → Valᵗ (cᵗ sʳ s) Σ
-    mᵗ : ∀ {s ts rt Σ} → Frame s Σ → Meth s ts rt → Valᵗ (mᵗ ts rt) Σ
     vᵗ : ∀ {t Σ} → Val t Σ → Valᵗ (vᵗ t) Σ
+    mᵗ : ∀ {s ts rt Σ} → Frame s Σ → Meth s ts rt → Valᵗ (mᵗ ts rt) Σ
+    cᵗ : ∀ {sʳ s s' Σ} → Class sʳ s → Inherits s s' → Frame sʳ Σ → Valᵗ (cᵗ sʳ s) Σ
 
 
   ---------------
   -- WEAKENING --
   ---------------
+
+  -- We define notions of weakening for each of the values summarized above:
 
   val-weaken    :  ∀ {t Σ Σ'} → Σ ⊑ Σ' → Val t Σ → Val t Σ'
   val-weaken ext (num i)  =  num i
@@ -51,6 +83,7 @@ module ValuesG (g : Graph) where
   valᵗ-weaken ext (mᵗ f m)    =  mᵗ (wk ext f) m
   valᵗ-weaken ext (cᵗ c ic f)  =  cᵗ c ic (wk ext f)
 
+  -- And pass these to the scope graph definition:
 
   open UsesVal Valᵗ valᵗ-weaken renaming (getFrame to getFrame')
 
@@ -59,10 +92,15 @@ module ValuesG (g : Graph) where
   -- COERCION --
   --------------
 
-  coerce : ∀ {t t' Σ} → t <: t' → Val t Σ → Heap Σ → Val t' Σ
-  coerce refl v h = v
-  coerce (super edge σ) null h = coerce σ null h
-  coerce (super edge σ) (ref f) h
+  -- Our definition of sub-typing gives rise to a notion of sub-type
+  -- coercion, defined below.  Coercions essentially traverse the
+  -- inheritance links of the frame hierarchy for an object instance,
+  -- as described in the paper.
+
+  coerce<: : ∀ {t t' Σ} → t <: t' → Val t Σ → Heap Σ → Val t' Σ
+  coerce<: refl v h = v
+  coerce<: (super edge σ) null h = coerce<: σ null h
+  coerce<: (super edge σ) (ref f) h
     with (lookup h f)
-  ...  | (_ , links)  =  coerce σ (ref (lookup links edge)) h
+  ...  | (_ , links)  =  coerce<: σ (ref (lookup links edge)) h
 

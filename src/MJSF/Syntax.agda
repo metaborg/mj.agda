@@ -9,8 +9,8 @@ open import Relation.Binary.PropositionalEquality hiding ([_])
 open ≡-Reasoning
 open import Data.Empty
 
--- This file contains the definitional interpreter for MJ using scopes
--- and frames, described in Section 5 of the paper.
+-- This file contains the syntax for the definitional interpreter for
+-- MJ using scopes and frames, described in Section 5 of the paper.
 
 -- The definitions are parameterized by a scope graph of size `k`, as
 -- usual:

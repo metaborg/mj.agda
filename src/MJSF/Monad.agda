@@ -71,7 +71,7 @@ module MonadG (g : Graph) where
     with (m f h)
   ...  | timeout = timeout
   ...  | nullpointer = nullpointer
-  ...  | ok (Σ , h' , v , ext) = ok (Σ , h' , coerce σ v h' , ext)
+  ...  | ok (Σ , h' , v , ext) = ok (Σ , h' , coerce<: σ v h' , ext)
 
   getFrame   :  ∀ {s Σ} → M s (Frame s) Σ
   getFrame f = return f f
