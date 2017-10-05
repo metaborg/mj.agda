@@ -19,12 +19,15 @@ docs: lib docs/Readme.html
 ### libraries
 lib: lib/stdlib lib/stdlib++
 
+.PHONY: lib/stdlib++
 lib/stdlib++:
 	git submodule update --init lib/stdlib++
 
+.PHONY: lib/stdlib
 lib/stdlib:
 	git submodule update --init lib/stdlib
 
+.PHONY: assumptions
 assumptions:
 	git grep --color -Hi "postulate" -- "src/**/*.agda"
 	git grep --color -Hi "TERMINATING" -- "src/**/*.agda"
