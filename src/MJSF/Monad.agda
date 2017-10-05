@@ -21,8 +21,6 @@ module MonadG (g : Graph) where
   open ValuesG g
   open UsesVal Valᵗ valᵗ-weaken renaming (getFrame to getFrame')
   open import Common.Weakening
-  open Weakenable ⦃...⦄
-  open import Common.Strength
 
   -- Computations may either time out, raise a null-pointer exception,
   -- or successfully terminate to produce a result:

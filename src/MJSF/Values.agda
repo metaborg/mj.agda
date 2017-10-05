@@ -17,7 +17,6 @@ module ValuesG (g : Graph) where
   open SyntaxG g
   open UsesGraph g public
   open import Common.Weakening
-  open Weakenable ⦃...⦄
 
   ------------
   -- VALUES --

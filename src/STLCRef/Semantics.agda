@@ -17,7 +17,6 @@ open import Data.List.Properties.Extra
 open import Data.List.All.Properties.Extra
 open import Function
 open import Common.Weakening
-open import Common.Strength
 
 ------------
 -- SYNTAX --
@@ -155,8 +154,7 @@ weaken ⦃ w ⦄ ext v = Weakenable.wk w ext v
 -- These definitions correspond to Section 3.4.
 --
 -- The definition of `_^_` below is defined in terms of the `_⊗_`
--- type, which is defined in `Common.Strength` in this artifact.
--- `Common.Strength._⊗_` is defined in a universe polymorphic manner.
+-- type, which is defined in `Common.Weakening` in this artifact.
 
 _^_  : ∀ {Σ Γ}{p q : StoreTy → Set} → ⦃ w : Weakenable q ⦄ → M Γ p Σ → q Σ → M Γ (p ⊗ q) Σ
 (f ^ x) E μ = case (f E μ) of λ {

@@ -30,12 +30,11 @@ open import MJ.Types
 open import MJ.LexicalScope Ct
 open import MJ.Semantics.Objects.Flat Ct ℂ using (encoding)
 open import MJ.Semantics.Weakenable
-open Weakenable ⦃...⦄
 
 open ObjEncoding encoding
 
 module Expressions where
-  
+
 {-}
 -- fragment of a typed smallstep semantics;
 -- this is tedious, because there are so many indices to repeat and keep track of
@@ -56,7 +55,7 @@ data _⟶_ {b} : State b → State b → Set where
     exp μ E (var {a = a} x) k ⟶ skip μ E (readvar x E μ) k
 
   iopₗ     : ∀ {W Γ a}{μ : Store W}{E : Env Γ W}{x k l r f} →
-    exp μ E (iop f l r) k ⟶ k-iopₗ 
+    exp μ E (iop f l r) k ⟶ k-iopₗ
 -}
 
 {-}

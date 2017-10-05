@@ -10,14 +10,13 @@ open import Function
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Star hiding (return ; _>>=_ ; map)
 
-open import Common.Strength
-
 module MJSF.Semantics (k : ℕ) where
 
 open import MJSF.Syntax k
 open import MJSF.Values k
 open import MJSF.Monad k
 open import ScopeGraph.ScopesFrames k Ty
+open import Common.Weakening
 
 module Semantics (g : Graph) where
 
@@ -168,13 +167,9 @@ module Semantics (g : Graph) where
   eval-program k (program _ ⦃ shape ⦄ cs b) =
     let (f₀ , h₀) = initFrameι _ (λ f → map-all (λ{ (#c' (c , _ , ic)) → cᵗ c ic f }) cs) [] []
     in case (eval-body k b f₀ h₀) of λ{
-         (ok (Σ' , h' , v , _)) → ok ((Σ' , h' , v))
+         (ok (Σ' , h' , v , _)) → ok (Σ' , h' , v)
        ; timeout → timeout
        ; nullpointer → nullpointer }
-
-
-  open import Common.Weakening
-  open Weakenable ⦃...⦄
 
   -- a few predicates on programs:
   -- ... saying it will terminate succesfully in a state where P holds

@@ -14,7 +14,6 @@ open import Data.List.All as List∀ hiding (lookup)
 open import Coinduction
 open import Data.Maybe hiding (All)
 open import Common.Weakening
-open import Common.Strength
 
 -- This file contains the Agda Scope Graph Library described in
 -- Section 4 of the paper.
@@ -61,7 +60,7 @@ module UsesGraph (g : Graph) where
   -- A resolution path is a witness that we can traverse a sequence of
   -- scope edges (`_⟶_`) in `g` to arrive at a declaration of type
   -- `t`:
-  
+
   data _⟶_ : Scope → Scope → Set where
     []   :  ∀ {s} → s ⟶ s
     _∷_  :  ∀ {s s' s''} → s' ∈ edgesOf s → s' ⟶ s'' → s ⟶ s''
@@ -98,7 +97,7 @@ module UsesGraph (g : Graph) where
 
     -- Slots are given by a list of values that are in one-to-one
     -- correspondence with a list of declarations (types):
-  
+
     Slots : (ds : List Ty) → (Σ : HeapTy) → Set
     Slots ds Σ = All (λ t → Val t Σ) ds
 
@@ -133,16 +132,9 @@ module UsesGraph (g : Graph) where
     -- is required to be weakenable.  We use Agda's instance arguments
     -- to automatically resolve the right notion of weakening where
     -- possible.
-    --
-    -- The following brings a `wk` function into scope, corresponding
-    -- to the `wk` field of the `Weakenable` record type, which is
-    -- parameterized by an `⦃ _ : Weakenable p ⦄` argument which is
-    -- automatically resolved when possible (see
-    -- http://agda.readthedocs.io/en/v2.5.3/language/instance-arguments.html).
 
-    open Weakenable ⦃...⦄
-
-    -- We add some instances to the instance argument scope:
+    -- We add some instances of the Weakenable typeclass
+    -- to the instance argument scope:
 
     instance
       weaken-val' : ∀ {t} → Weakenable (λ Σ → Val t Σ)

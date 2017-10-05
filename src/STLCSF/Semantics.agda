@@ -14,10 +14,6 @@ open import Function
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open ≡-Reasoning
 open import Common.Weakening
-open import Common.Strength
-
-open Weakenable ⦃...⦄
-
 
 -- This file contains the definitional interpreter for STLC using
 -- scopes and frames, described in Section 4 of the paper.
@@ -84,8 +80,6 @@ module Syntax (g : Graph) where
     ⟨_,_⟩  : ∀ {Σ s s' a b}⦃ shape : g s' ≡ ( [ a ] , [ s ] ) ⦄ →
              Expr s' b → Frame s Σ → Val (a ⇒ b) Σ
     num    : ∀ {Σ} → ℤ → Val int Σ
-
-  -- 
 
   val-weaken : ∀ {t Σ Σ'} → Σ ⊑ Σ' → Val t Σ → Val t Σ'
   val-weaken ext ⟨ e , f ⟩ = ⟨ e , wk ext f ⟩

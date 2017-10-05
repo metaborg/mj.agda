@@ -31,7 +31,6 @@ open import MJ.Types
 open import MJ.LexicalScope Ct
 open import MJ.Semantics.Objects.Flat Ct ℂ using (encoding)
 open import Common.Weakening
-open Weakenable ⦃...⦄
 
 {-
 Make the object encoding API available;
@@ -88,7 +87,6 @@ _>>=_   : ∀ {Γ W}{A B : WSet} → M Γ W A → (∀ {W'} → A W' → M Γ W'
 ... | timeout = timeout
 ... | returns ext μ' v = result-strengthen ext $ f v (map-all (wk ext) E) μ'
 
-open import Common.Strength
 infixl 10 _^_
 _^_  :  ∀ {Σ Γ}{A B : WSet} ⦃ w : Weakenable B ⦄ → M Γ Σ A → B Σ → M Γ Σ (A ⊗ B)
 (f ^ x) E μ with (f E μ)
@@ -242,15 +240,15 @@ mutual
     ⊥-elim (∉Object {METHOD}{m}{(as , b)}(sound x))
   eval-method (suc k) s o args (cls pid' , pid<:pid' , super x ⟨ supargs ⟩then b) =
     let super-met = mbody (Class.parent (Σ (cls pid'))) x in
-      store (val (ref o (s ◅◅ pid<:pid'))) ^ (args ′ o) >>= λ{ (mutself , args , o) →
+      store (val (ref o (s ◅◅ pid<:pid'))) ^ (args , o) >>= λ{ (mutself , args , o) →
       -- eval super args in method context
-      usingEnv (mutself ∷ args) (eval-args k supargs) ^ (args ′ o) >>= λ{ (rvs , args , o) →
+      usingEnv (mutself ∷ args) (eval-args k supargs) ^ (args , o) >>= λ{ (rvs , args , o) →
       -- call super
-      eval-method k (s ◅◅ pid<:pid' ◅◅ super ◅ ε) o rvs super-met ^ (args ′ o) >>= λ{ (retv , args , o) →
+      eval-method k (s ◅◅ pid<:pid' ◅◅ super ◅ ε) o rvs super-met ^ (args , o) >>= λ{ (retv , args , o) →
       -- store the super return value to be used as a mutable local
-      store (val retv) ^ (args ′ o) >>= λ{ (mutret , args , o) →
+      store (val retv) ^ (args , o) >>= λ{ (mutret , args , o) →
       -- store the mutable "this"
-      store (val (ref o (s ◅◅ pid<:pid'))) ^ (mutret ′ args) >>= λ{ (mutself' , mutret , args) →
+      store (val (ref o (s ◅◅ pid<:pid'))) ^ (mutret , args) >>= λ{ (mutself' , mutret , args) →
       -- call body
       usingEnv (mutret ∷ mutself' ∷ args) (eval-body k b) }}}}}
 

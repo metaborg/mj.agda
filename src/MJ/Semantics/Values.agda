@@ -21,8 +21,6 @@ open import MJ.Classtable.Membership Ct
 open import MJ.LexicalScope Ct
 open import Common.Weakening
 
-open Weakenable ⦃...⦄
-
 {-
 MJ inherits the values of STLC+Ref. In contrast to STCL+Ref, MJ also has
 null-pointers; which we add as a constructor to our value type Val. The value
@@ -91,7 +89,6 @@ weaken-val ext null = null
 weaken-val ext (ref x sub) = ref (∈-⊒ x ext) sub
 
 instance
-
   val-weakenable : ∀ {a} → Weakenable (λ W → Val W a)
   val-weakenable = record { wk = weaken-val }
 
