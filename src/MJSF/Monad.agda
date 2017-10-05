@@ -5,6 +5,10 @@ open import Data.Unit
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open ≡-Reasoning
 
+-- This file contains the definition of monads used for computation in
+-- the definitional interpreter for MJ using scopes and frames,
+-- described in Section 5 of the paper.
+
 module MJSF.Monad (k : ℕ) where
 
 open import MJSF.Syntax k
@@ -20,18 +24,22 @@ module MonadG (g : Graph) where
   open Weakenable ⦃...⦄
   open import Common.Strength
 
-  -----------
-  -- MONAD --
-  -----------
+  -- Computations may either time out, raise a null-pointer exception,
+  -- or successfully terminate to produce a result:
 
   data Res (a : Set) : Set where
     timeout : Res a
     nullpointer : Res a
     ok : (x : a) → Res a
 
+  -- The monad is similar to the monad used for STLCSF, except it uses
+  -- `Res` instead of `Maybe`:
+
   M : (s : Scope) → (List Scope → Set) → List Scope → Set
   M s p Σ = Frame s Σ → Heap Σ → Res (∃ λ Σ' → (Heap Σ' × p Σ' × Σ ⊑ Σ'))
 
+  -- We define some usual monad operations:
+  
   return     :  ∀ {s Σ}{p : List Scope → Set} → p Σ → M s p Σ
   return v f h = ok (_ , h , v , ⊑-refl)
 
@@ -57,7 +65,9 @@ module MonadG (g : Graph) where
                M s p Σ → (∀ {Σ'} → p Σ' → M s q Σ') → M s q Σ
   (a >>= b) = join (fmap b a)
 
-  -- Monadic strength
+  -- To program in dependent-passing style, we use the variant of
+  -- monadic strength also used for STLCSF.
+  
   _^_  :  ∀ {Σ Γ}{p q : List Scope → Set} ⦃ w : Weakenable q ⦄ →
           M Γ p Σ → q Σ → M Γ (p ⊗ q) Σ
   (a ^ x) f h
@@ -66,12 +76,16 @@ module MonadG (g : Graph) where
   ...  | nullpointer = nullpointer
   ...  | ok (Σ , h' , v , ext) = ok (Σ , h' , (v , wk ext x) , ext)
 
+  -- The remaining definitions in this file are straightforward
+  -- monadic liftings of the coercion function from `MJSF.Values` and
+  -- of the frame operations.
+
   coerceᴹ :  ∀ {t t' s Σ} → t <: t' → M s (Val t) Σ → M s (Val t') Σ
   coerceᴹ σ m f h
     with (m f h)
   ...  | timeout = timeout
   ...  | nullpointer = nullpointer
-  ...  | ok (Σ , h' , v , ext) = ok (Σ , h' , coerce σ v h' , ext)
+  ...  | ok (Σ , h' , v , ext) = ok (Σ , h' , coerce<: σ v h' , ext)
 
   getFrame   :  ∀ {s Σ} → M s (Frame s) Σ
   getFrame f = return f f

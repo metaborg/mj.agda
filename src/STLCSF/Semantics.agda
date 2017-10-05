@@ -40,7 +40,9 @@ data Ty : Set where
   int  : Ty
 
 -- The library is loaded and passed two arguments:
+--
 -- * `k` is the size of the scope graph for an object program
+--
 -- * `Ty` is the type of declarations in the scope graph
 
 open import ScopeGraph.ScopesFrames k Ty
