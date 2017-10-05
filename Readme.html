@@ -24,55 +24,55 @@
 
   Note that there are minor differences between the Agda code used in the paper
   and this mechanization.
-  These discrepancies are summarized at the end of this readme.
+  These discrepancies are summarized in the footnotes of this readme.
 -}</a>
 
-<a id="1113" class="Keyword">module</a> <a id="1120" href="Readme.html" class="Module">Readme</a> <a id="1127" class="Keyword">where</a>
+<a id="1119" class="Keyword">module</a> <a id="1126" href="Readme.html" class="Module">Readme</a> <a id="1133" class="Keyword">where</a>
 
-<a id="1134" class="Comment">{-
+<a id="1140" class="Comment">{-
   * Section 2 *
 
   We develop a monadic, well-typed interpreter for STLC and interpret a few
   example programs.
 -}</a>
-<a id="1253" class="Keyword">open</a> <a id="1258" class="Keyword">import</a> <a id="1265" href="STLC.Semantics.html" class="Module">STLC.Semantics</a>
-<a id="1280" class="Keyword">open</a> <a id="1285" class="Keyword">import</a> <a id="1292" href="STLC.Examples.html" class="Module">STLC.Examples</a>
+<a id="1259" class="Keyword">open</a> <a id="1264" class="Keyword">import</a> <a id="1271" href="STLC.Semantics.html" class="Module">STLC.Semantics</a>
+<a id="1286" class="Keyword">open</a> <a id="1291" class="Keyword">import</a> <a id="1298" href="STLC.Examples.html" class="Module">STLC.Examples</a>
 
-<a id="1307" class="Comment">{-
+<a id="1313" class="Comment">{-
   * Section 3.1 - 3.3 *
 
   And demonstrate how naively extending the approach to cover imperative state
   is possible, but requires explicit weakening of bound values in the
   interpreter:
 -}</a>
-<a id="1502" class="Keyword">open</a> <a id="1507" class="Keyword">import</a> <a id="1514" href="STLCRef.SemanticsLB.html" class="Module">STLCRef.SemanticsLB</a>
+<a id="1508" class="Keyword">open</a> <a id="1513" class="Keyword">import</a> <a id="1520" href="STLCRef.SemanticsLB.html" class="Module">STLCRef.SemanticsLB</a>
 
-<a id="1535" class="Comment">{-
+<a id="1541" class="Comment">{-
   * Section 3.4 : dependent passing style *
 
   We can improve the semantics with a form of monadic strength and get rid of
   explicit weakening.
 -}</a>
-<a id="1686" class="Keyword">open</a> <a id="1691" class="Keyword">import</a> <a id="1698" href="STLCRef.Semantics.html" class="Module">STLCRef.Semantics</a>
-<a id="1716" class="Keyword">open</a> <a id="1721" class="Keyword">import</a> <a id="1728" href="STLCRef.Examples.html" class="Module">STLCRef.Examples</a>
+<a id="1692" class="Keyword">open</a> <a id="1697" class="Keyword">import</a> <a id="1704" href="STLCRef.Semantics.html" class="Module">STLCRef.Semantics</a>
+<a id="1722" class="Keyword">open</a> <a id="1727" class="Keyword">import</a> <a id="1734" href="STLCRef.Examples.html" class="Module">STLCRef.Examples</a>
 
-<a id="1746" class="Comment">{-
+<a id="1752" class="Comment">{-
   * Section 4 until 4.3 *
 
   We show how we can mechanize the scopes and frames uniform model of binding in
   a language independent manner.
 -}</a>
-<a id="1893" class="Keyword">open</a> <a id="1898" class="Keyword">import</a> <a id="1905" href="ScopeGraph.ScopesFrames.html" class="Module">ScopeGraph.ScopesFrames</a>
+<a id="1899" class="Keyword">open</a> <a id="1904" class="Keyword">import</a> <a id="1911" href="ScopeGraph.ScopesFrames.html" class="Module">ScopeGraph.ScopesFrames</a>
 
-<a id="1930" class="Comment">{-
+<a id="1936" class="Comment">{-
   * Section 4.4 *
 
   And demonstrate its basic usage by writing an interpreter for STLC where
   scopes and frames are used to model lexical binding.
 -}</a>
-<a id="2085" class="Keyword">open</a> <a id="2090" class="Keyword">import</a> <a id="2097" href="STLCSF.Semantics.html" class="Module">STLCSF.Semantics</a>
+<a id="2091" class="Keyword">open</a> <a id="2096" class="Keyword">import</a> <a id="2103" href="STLCSF.Semantics.html" class="Module">STLCSF.Semantics</a>
 
-<a id="2115" class="Comment">{-
+<a id="2121" class="Comment">{-
   * Section 5 *
 
   We take these techniques and show that they scale by giving an intrinsically-
@@ -83,18 +83,18 @@
   - Mutable, block-scoped environments
   - Exceptions and early returns
 -}</a>
-<a id="2389" class="Keyword">open</a> <a id="2394" class="Keyword">import</a> <a id="2401" href="MJSF.Syntax.html" class="Module">MJSF.Syntax</a>
-<a id="2413" class="Keyword">open</a> <a id="2418" class="Keyword">import</a> <a id="2425" href="MJSF.Values.html" class="Module">MJSF.Values</a>
-<a id="2437" class="Keyword">open</a> <a id="2442" class="Keyword">import</a> <a id="2449" href="MJSF.Monad.html" class="Module">MJSF.Monad</a>
-<a id="2460" class="Keyword">open</a> <a id="2465" class="Keyword">import</a> <a id="2472" href="MJSF.Semantics.html" class="Module">MJSF.Semantics</a>
+<a id="2395" class="Keyword">open</a> <a id="2400" class="Keyword">import</a> <a id="2407" href="MJSF.Syntax.html" class="Module">MJSF.Syntax</a>
+<a id="2419" class="Keyword">open</a> <a id="2424" class="Keyword">import</a> <a id="2431" href="MJSF.Values.html" class="Module">MJSF.Values</a>
+<a id="2443" class="Keyword">open</a> <a id="2448" class="Keyword">import</a> <a id="2455" href="MJSF.Monad.html" class="Module">MJSF.Monad</a>
+<a id="2466" class="Keyword">open</a> <a id="2471" class="Keyword">import</a> <a id="2478" href="MJSF.Semantics.html" class="Module">MJSF.Semantics</a>
 
-<a id="2488" class="Comment">{-
+<a id="2494" class="Comment">{-
   And demonstrate that it is executable:
 -}</a>
-<a id="2535" class="Keyword">open</a> <a id="2540" class="Keyword">import</a> <a id="2547" href="MJSF.Examples.Integer.html" class="Module">MJSF.Examples.Integer</a>
+<a id="2541" class="Keyword">open</a> <a id="2546" class="Keyword">import</a> <a id="2553" href="MJSF.Examples.Integer.html" class="Module">MJSF.Examples.Integer</a>
 
-<a id="2570" class="Comment">{-
-  * Appendix A *
+<a id="2576" class="Comment">{-
+  * Appendix A
 
   The following code artifacts *are not* described in the paper, but are used as
   a comparison point to evaluate the impact on the interpreter of using the
@@ -105,65 +105,98 @@
   construction to deal with object dot-access binding and typing contexts and
   environments to deal with lexical binding respectively.
 -}</a>
-<a id="3072" class="Keyword">open</a> <a id="3077" class="Keyword">import</a> <a id="3084" href="MJ.Syntax.Typed.html" class="Module">MJ.Syntax.Typed</a>
+<a id="3076" class="Keyword">open</a> <a id="3081" class="Keyword">import</a> <a id="3088" href="MJ.Syntax.Typed.html" class="Module">MJ.Syntax.Typed</a>
 
-<a id="3101" class="Comment">-- lexcial contexts</a>
-<a id="3121" class="Keyword">open</a> <a id="3126" class="Keyword">import</a> <a id="3133" href="MJ.LexicalScope.html" class="Module">MJ.LexicalScope</a>
+<a id="3105" class="Comment">-- lexcial contexts</a>
+<a id="3125" class="Keyword">open</a> <a id="3130" class="Keyword">import</a> <a id="3137" href="MJ.LexicalScope.html" class="Module">MJ.LexicalScope</a>
 
-<a id="3150" class="Comment">-- classtable</a>
-<a id="3164" class="Keyword">open</a> <a id="3169" class="Keyword">import</a> <a id="3176" href="MJ.Classtable.Core.html" class="Module">MJ.Classtable.Core</a>
-<a id="3195" class="Keyword">open</a> <a id="3200" class="Keyword">import</a> <a id="3207" href="MJ.Classtable.Membership.html" class="Module">MJ.Classtable.Membership</a>
-<a id="3232" class="Keyword">open</a> <a id="3237" class="Keyword">import</a> <a id="3244" href="MJ.Classtable.Code.html" class="Module">MJ.Classtable.Code</a>
+<a id="3154" class="Comment">-- classtable</a>
+<a id="3168" class="Keyword">open</a> <a id="3173" class="Keyword">import</a> <a id="3180" href="MJ.Classtable.Core.html" class="Module">MJ.Classtable.Core</a>
+<a id="3199" class="Keyword">open</a> <a id="3204" class="Keyword">import</a> <a id="3211" href="MJ.Classtable.Membership.html" class="Module">MJ.Classtable.Membership</a>
+<a id="3236" class="Keyword">open</a> <a id="3241" class="Keyword">import</a> <a id="3248" href="MJ.Classtable.Code.html" class="Module">MJ.Classtable.Code</a>
 
-<a id="3264" class="Comment">-- semantics</a>
-<a id="3277" class="Keyword">open</a> <a id="3282" class="Keyword">import</a> <a id="3289" href="MJ.Semantics.Values.html" class="Module">MJ.Semantics.Values</a>
-<a id="3309" class="Keyword">open</a> <a id="3314" class="Keyword">import</a> <a id="3321" href="MJ.Semantics.Objects.Flat.html" class="Module">MJ.Semantics.Objects.Flat</a>
-<a id="3347" class="Keyword">open</a> <a id="3352" class="Keyword">import</a> <a id="3359" href="MJ.Semantics.Monadic.html" class="Module">MJ.Semantics.Monadic</a>
+<a id="3268" class="Comment">-- semantics</a>
+<a id="3281" class="Keyword">open</a> <a id="3286" class="Keyword">import</a> <a id="3293" href="MJ.Semantics.Values.html" class="Module">MJ.Semantics.Values</a>
+<a id="3313" class="Keyword">open</a> <a id="3318" class="Keyword">import</a> <a id="3325" href="MJ.Semantics.Objects.Flat.html" class="Module">MJ.Semantics.Objects.Flat</a>
+<a id="3351" class="Keyword">open</a> <a id="3356" class="Keyword">import</a> <a id="3363" href="MJ.Semantics.Monadic.html" class="Module">MJ.Semantics.Monadic</a>
 
-<a id="3381" class="Comment">-- examples</a>
-<a id="3393" class="Keyword">open</a> <a id="3398" class="Keyword">import</a> <a id="3405" href="MJ.Examples.Integer.html" class="Module">MJ.Examples.Integer</a>
-<a id="3425" class="Keyword">open</a> <a id="3430" class="Keyword">import</a> <a id="3437" href="MJ.Examples.Exceptions.html" class="Module">MJ.Examples.Exceptions</a>
-<a id="3460" class="Keyword">open</a> <a id="3465" class="Keyword">import</a> <a id="3472" href="MJ.Examples.While.html" class="Module">MJ.Examples.While</a>
-<a id="3490" class="Keyword">open</a> <a id="3495" class="Keyword">import</a> <a id="3502" href="MJ.Examples.DynDispatch.html" class="Module">MJ.Examples.DynDispatch</a>
+<a id="3385" class="Comment">-- examples</a>
+<a id="3397" class="Keyword">open</a> <a id="3402" class="Keyword">import</a> <a id="3409" href="MJ.Examples.Integer.html" class="Module">MJ.Examples.Integer</a>
+<a id="3429" class="Keyword">open</a> <a id="3434" class="Keyword">import</a> <a id="3441" href="MJ.Examples.Exceptions.html" class="Module">MJ.Examples.Exceptions</a>
+<a id="3464" class="Keyword">open</a> <a id="3469" class="Keyword">import</a> <a id="3476" href="MJ.Examples.While.html" class="Module">MJ.Examples.While</a>
+<a id="3494" class="Keyword">open</a> <a id="3499" class="Keyword">import</a> <a id="3506" href="MJ.Examples.DynDispatch.html" class="Module">MJ.Examples.DynDispatch</a>
 
-<a id="3527" class="Comment">{-
+<a id="3531" class="Comment">{-
+  * Appendix B
+
   Additionally we demonstrate briefly how Agda&#39;s typeclass mechanism is not
   sufficiently strong to infer store extension facts for weakening. (Notably
   rejects equivalent as well because the two instances are overlapping)
 -}</a>
-<a id="3758" class="Keyword">open</a> <a id="3763" class="Keyword">import</a> <a id="3770" href="Experiments.Infer.html" class="Module">Experiments.Infer</a>
+<a id="3778" class="Keyword">open</a> <a id="3783" class="Keyword">import</a> <a id="3790" href="Experiments.Infer.html" class="Module">Experiments.Infer</a>
 
-<a id="3789" class="Comment">{-
-There are a few discrepancies with paper:
+<a id="3809" class="Comment">{-
+  We have made use of the operator _^_ defined as follows:
 
-- Universe polymorphic definitions in the development are presented in their
-  simplified (monomorphic) form in the paper
+  _^_  :  ∀ {Σ Γ}{p q : List Type → Set} ⦃ w : Weakenable q ⦄ → M Γ p Σ → q Σ → M Γ (p ⊗ q) Σ
 
-- MJSF: pattern matching lambdas are not useful for pattern matching against,
-  which we need in order to initialize method and field slots. Instead of having
-  the `All` with the pattern matching lambda, we use a tagging predicate; e.g.
-  `#m`. This is morally equivalent to the `All` used in the paper (Section 5.4).
+  Which, as also noted by our anonymous reviewers, is suspiciously similar to
+  the strength operator that characterizes a strong monad, which would be typed:
 
-- The STLC and STLC+Ref implementations in this repository add integers and
-  integer operations in order to write some more interesting example programs.
+  _^_  :  ∀ {P Q} → M P → Q → M (P ⊗ Q)
 
-Then there are a few notable differences between the original presentation of MJ
-and our development:
+  Where P and Q are objects of a category ℂ, and M is a monad for ℂ.
+  In the following development we show formally that we can define a category
+  of monotone predicates such that strength has it&#39;s usual type.
 
-- MJ distinguishes promotable expressions (method invocation and object
-  creation) and all other expressions. We admit arbitrary expressions to be
-  promoted. This does not change the semantics in any significant way. The
-  expressions that we allow to be promoted are side-effect free.
+  The example interpreter shows that indeed again, we may write an interpreter
+  without explicit weakening; but we have to write the interpreter in
+  pointfree style.
+  The paper focuses on the more pragmatic path to build these interpreters, but
+  we imagine that this development may be the target model for a future
+  specification language for dynamic semantics.
+-}</a>
+<a id="4752" class="Keyword">open</a> <a id="4757" class="Keyword">import</a> <a id="4764" href="Experiments.Category.html" class="Module">Experiments.Category</a>
+<a id="4785" class="Keyword">open</a> <a id="4790" class="Keyword">import</a> <a id="4797" href="Experiments.StrongMonad.html" class="Module">Experiments.StrongMonad</a>
+<a id="4821" class="Keyword">open</a> <a id="4826" class="Keyword">import</a> <a id="4833" href="Experiments.STLCRefPointfree.html" class="Module">Experiments.STLCRefPointfree</a>
 
-- returns are implemented by modeling non-void methods as having an expression
-  as its last statement (like in MJ).
+<a id="4863" class="Comment">{-
+  * Footnotes
 
-- MJ only has equality comparison expressions that can be used as conditional
-  expressions. We allow arbitrary expressions, and use `ifz`. It would be
-  straightforward to add booleans.
+  There are a few discrepancies with paper:
 
-- If statements have ordinary statements as their sub-statements. These can
-  either be block statements or any other statement which does not allocate a
-  new frame.
+  - Universe polymorphic definitions in the development are presented in their
+    simplified (monomorphic) form in the paper
+
+  - MJSF: pattern matching lambdas are not useful for pattern matching against,
+    which we need in order to initialize method and field slots. Instead of having
+    the `All` with the pattern matching lambda, we use a tagging predicate; e.g.
+    `#m`. This is morally equivalent to the `All` used in the paper (Section 5.4).
+
+  - The STLC and STLC+Ref implementations in this repository add integers and
+    integer operations in order to write some more interesting example programs.
+
+  Then there are a few notable differences between the original presentation of MJ
+  and our development:
+
+  - MJ distinguishes promotable expressions (method invocation and object
+    creation) and all other expressions. We admit arbitrary expressions to be
+    promoted. This does not change the semantics in any significant way. The
+    expressions that we allow to be promoted are side-effect free.
+
+  - returns are implemented by modeling non-void methods as having an expression
+    as its last statement (like in MJ).
+
+  - MJ only has equality comparison expressions that can be used as conditional
+    expressions. We allow arbitrary expressions, and use `ifz`. It would be
+    straightforward to add booleans.
+
+  - If statements have ordinary statements as their sub-statements. These can
+    either be block statements or any other statement which does not allocate a
+    new frame.
+
+  - We include integers and integer operations.
+
+  - Our syntax admits fields typed by `void`.
 -}</a>
 </pre></body></html>
