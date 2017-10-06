@@ -237,11 +237,13 @@ open import Experiments.STLCRefPointfree
   fairly minimal requirement for convincing Agda's type checker that
   carrying types over monadic binds is safe.
  
-  The categorical model enjoy a cleaner treatment of weakening, but it
-  is to write interpreters in Agda using this model, because of the
-  additional level of encoding imposed by constructing and working
-  with objects and morphisms in a category.  However, we imagine that
-  the categorical development is a good target model for a future
-  specification language for dynamic semantics.
+  The categorical model enjoys a cleaner treatment of weakening, but
+  it is more cumbersome to write interpreters in Agda using this
+  model, because of the additional level of encoding imposed by
+  constructing and working with objects and morphisms in a category.
+  However, we imagine that the categorical development is a good
+  target model for a future specification language for dynamic
+  semantics.
 -}
+
 
