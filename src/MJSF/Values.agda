@@ -59,7 +59,7 @@ module ValuesG (g : Graph) where
   data Valᵗ : Ty → List Scope → Set where
     vᵗ : ∀ {t Σ} → Val t Σ → Valᵗ (vᵗ t) Σ
     mᵗ : ∀ {s ts rt Σ} → (self : Frame s Σ) → (body : Meth s ts rt) → Valᵗ (mᵗ ts rt) Σ
-    cᵗ : ∀ {sʳ s s' Σ} → (class-def : Class sʳ s) → (ic : Inherits s s') → Frame sʳ Σ → Valᵗ (cᵗ sʳ s) Σ
+    cᵗ : ∀ {sʳ s s' Σ} → (class-def : Class sʳ s) → (ic : Inherits s s') → (root : Frame sʳ Σ) → Valᵗ (cᵗ sʳ s) Σ
 
 
   ---------------
