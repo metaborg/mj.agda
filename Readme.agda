@@ -1,6 +1,6 @@
 {-
-
-  This is the readme of the Agda mechanization accompanying our POPL 2018 paper:
+  This is the readme of the Agda mechanization accompanying our POPL
+  2018 paper:
 
     "Intrinsically-Typed Interpreters for Imperative Languages"
 
@@ -10,20 +10,26 @@
   A rendered and linked version of this readme can be found here:
   - https://metaborg.github.io/mj.agda/
 
-  This development has been tested against Agda 2.5.3. If you have this
-  installed you should be able simply run `make` in the project root, which will
-  checkout some libraries in `./lib/` first and then build `./Readme.agda`
-  which serves as the main entrypoint to the development.
+  This development has been tested against Agda 2.5.3. If you have
+  this installed you should be able simply run `make` in the project
+  root, which will checkout some libraries in `./lib/` first and then
+  build `./Readme.agda` which serves as the main entrypoint to the
+  development.
 
-  Alternatively you can run `make docs` to build the html version of the
-  development which is useful if you want to navigate the code (starting e.g. in
-  `docs/index.html`) without having an editor setup for it. The html docs are
-  syntax-highlighted and you can click references to navigate to their
-  definitions.
+  Alternatively you can run `make docs` to build the html version of
+  the development which is useful if you want to navigate the code
+  (starting e.g. in `docs/index.html`) without having an editor setup
+  for it. The html docs are syntax-highlighted and you can click
+  references to navigate to their definitions.
 
-  Note that there are minor differences between the Agda code used in the paper
-  and this mechanization.
-  These discrepancies are summarized in the footnotes of this readme.
+  There are some minor differences between the Agda code used in the
+  paper and this mechanization.  One general (but minor) discrepancy
+  is that the definitions in the paper are typed in a manner that is
+  not universe polymorphic.  However, the development makes extensive
+  use of universe polymorphism, by explicitly quantifying over
+  universe levels (e.g., `i` in `{i} → (a : Set i) → a`).
+
+  Other discrepancies are summarized below in this readme.
 -}
 
 module Readme where
@@ -31,8 +37,11 @@ module Readme where
 {-
   * Section 2 *
 
-  We develop a monadic, well-typed interpreter for STLC and interpret a few
-  example programs.
+  We develop a monadic, well-typed interpreter for STLC and interpret
+  a few example programs.
+
+  Unlike the interpreter summarized in the paper, the STLC semantics
+  in the development makes use of integers and integer operations.
 -}
 open import STLC.Semantics
 open import STLC.Examples
@@ -40,17 +49,18 @@ open import STLC.Examples
 {-
   * Section 3.1 - 3.3 *
 
-  And demonstrate how naively extending the approach to cover imperative state
-  is possible, but requires explicit weakening of bound values in the
-  interpreter:
+  We demonstrate how naively extending the approach to cover
+  imperative state is possible, but requires explicit weakening of
+  bound values in the interpreter:
 -}
+
 open import STLCRef.SemanticsLB
 
 {-
   * Section 3.4 : dependent passing style *
 
-  We can improve the semantics with a form of monadic strength and get rid of
-  explicit weakening.
+  We can improve the semantics with a form of monadic strength to get
+  rid of explicit weakening.
 -}
 open import STLCRef.Semantics
 open import STLCRef.Examples
@@ -58,52 +68,96 @@ open import STLCRef.Examples
 {-
   * Section 4 until 4.3 *
 
-  We show how we can mechanize the scopes and frames uniform model of binding in
-  a language independent manner.
+  We implement the scopes and frames approach in the following small
+  Agda library.
 -}
+
 open import ScopesFrames.ScopesFrames
 
 {-
   * Section 4.4 *
 
-  And demonstrate its basic usage by writing an interpreter for STLC where
-  scopes and frames are used to model lexical binding.
+  We demonstrate the basic usage of this library on an interpreter for
+  STLC using scopes and frames.
 -}
 open import STLCSF.Semantics
 
 {-
   * Section 5 *
 
-  We take these techniques and show that they scale by giving an intrinsically-
-  typed interpreter for Middleweight Java. A language with:
+  We show how our techniques scale by defining an intrinsically-typed
+  interpreter for Middleweight Java (MJ). A language with:
 
   - Imperative objects
   - Sub-typing
   - Mutable, block-scoped environments
-  - Exceptions and early returns
+  - Early returns
+
+  The only discrepancy between the code in this development and the
+  code shown in the paper is the following:
+
+  - Pattern matching lambdas are not useful for pattern matching
+    against.  Instead of using `All` types with pattern matching
+    lambdas (Section 5.3 and 5.4), we use tagging predicates in
+    `MJSF.Syntax`.
+
+  Then there are a few notable differences between the original
+  presentation of MJ and our development:
+
+  - Original MJ distinguishes promotable expressions (method
+    invocation and object creation) and all other expressions. We
+    admit arbitrary expressions to be promoted. This does not change
+    the semantics in any significant way. The expressions that we
+    allow to be promoted are side-effect free.
+
+  - returns are implemented by modeling non-void methods as having an
+    expression as its last statement (technically, this is enforced by
+    the type rules of Original MJ; in our development it is
+    syntactically enforced).
+
+  - MJ only has equality comparison expressions that can be used as
+    conditional expressions.  We allow arbitrary expressions, and use
+    if-zero (`ifz`) for conditionals.  This does not correspond to MJ
+    or Java, but it would be straightforward to add Booleans and use a
+    more conventional `if` statement instead.
+
+  - If-zero statements have ordinary statements as their
+    sub-statements.  These can either be block statements or any other
+    statement which does not allocate a new frame.  In Original MJ, if
+    statements must be blocks.
+
+  - We include integers and integer operations, which are not in
+    Original MJ.
+
+  - Our MJ syntax admits fields typed by `void`, which Original MJ
+    does not.
+
 -}
+
 open import MJSF.Syntax
 open import MJSF.Values
 open import MJSF.Monad
 open import MJSF.Semantics
 
 {-
-  And demonstrate that it is executable:
+  We demonstrate that our interpreter is executable:
 -}
 open import MJSF.Examples.Integer
 open import MJSF.Examples.DynamicDispatch
 
+
 {-
   * Appendix A
 
-  The following code artifacts *are not* described in the paper, but are used as
-  a comparison point to evaluate the impact on the interpreter of using the
-  scopes and frames model of binding.
+  The following code artifacts *are not* described in the paper, but
+  are used as a comparison point to evaluate the impact on the
+  interpreter of using the scopes and frames model of binding.
 
   This is an intrinsically-typed interpreter for MJ without the use of
-  scope-and-frames. Instead it describes a language-*dependent* classtable
-  construction to deal with object dot-access binding and typing contexts and
-  environments to deal with lexical binding respectively.
+  scope-and-frames. Instead it describes a language-*dependent*
+  classtable construction to deal with object dot-access binding and
+  typing contexts and environments to deal with lexical binding
+  respectively.
 -}
 open import MJ.Syntax.Typed
 
@@ -129,73 +183,62 @@ open import MJ.Examples.DynDispatch
 {-
   * Appendix B
 
-  Additionally we demonstrate briefly how Agda's typeclass mechanism is not
-  sufficiently strong to infer store extension facts for weakening. (Notably
-  rejects equivalent as well because the two instances are overlapping)
+  Additionally we demonstrate briefly how Agda's typeclass mechanism
+  is not sufficiently strong to infer store extension facts for
+  weakening. (Notably rejects equivalent as well because the two
+  instances are overlapping)
 -}
 open import Experiments.Infer
 
 {-
-  We have made use of the operator _^_ defined as follows:
+  Our interpreters make use of the operator `_^_` operator, defined
+  as:
 
-  _^_  :  ∀ {Σ Γ}{p q : List Type → Set} ⦃ w : Weakenable q ⦄ → M Γ p Σ → q Σ → M Γ (p ⊗ q) Σ
+  (1) `_^_ : ∀ {Σ Γ}{p q : List Type → Set} ⦃ w : Weakenable q ⦄ → 
+             M Γ p Σ → q Σ → M Γ (p ⊗ q) Σ`
 
-  Which, as also noted by our anonymous reviewers, is suspiciously similar to
-  the strength operator that characterizes a strong monad, which would be typed:
+  This operator is strikingly similar to the strength operator that
+  characterizes a strong monad:
 
-  _^_  :  ∀ {P Q} → M P → Q → M (P ⊗ Q)
+  (2)  `_^_ : ∀ {p q} → M p → q → M (p ⊗ q)`
 
-  Where P and Q are objects of a category ℂ, and M is a monad for ℂ.
-  In the following development we show formally that we can define a category
-  of monotone predicates such that strength has it's usual type.
+  Here, `p` and `q` are objects in a category ℂ, and M is a monad for
+  ℂ.
 
-  The example interpreter shows that indeed again, we may write an interpreter
-  without explicit weakening; but we have to write the interpreter in
-  pointfree style.
-  The paper focuses on the more pragmatic path to build these interpreters, but
-  we imagine that this development may be the target model for a future
-  specification language for dynamic semantics.
+  In the following development we show how to define a monad that is
+  morally equivalent to ours, but which is defined over the category
+  of monotone predicates.  In this category, the monad is a strong
+  monad, with the usual notion of monadic strength, i.e., (2) above.
+
+  We also show how, in this category, we can write an interpreter
+  without explicit weakening, by writing the interpreter in a
+  point-free style.
 -}
+
 open import Experiments.Category
 open import Experiments.StrongMonad
 open import Experiments.STLCRefPointfree
 
 {-
-  * Footnotes
+  We briefly outline how these experiments relate to our paper.
 
-  There are a few discrepancies with paper:
-
-  - Universe polymorphic definitions in the development are presented in their
-    simplified (monomorphic) form in the paper
-
-  - MJSF: pattern matching lambdas are not useful for pattern matching against,
-    which we need in order to initialize method and field slots. Instead of having
-    the `All` with the pattern matching lambda, we use a tagging predicate; e.g.
-    `#m`. This is morally equivalent to the `All` used in the paper (Section 5.4).
-
-  - The STLC and STLC+Ref implementations in this repository add integers and
-    integer operations in order to write some more interesting example programs.
-
-  Then there are a few notable differences between the original presentation of MJ
-  and our development:
-
-  - MJ distinguishes promotable expressions (method invocation and object
-    creation) and all other expressions. We admit arbitrary expressions to be
-    promoted. This does not change the semantics in any significant way. The
-    expressions that we allow to be promoted are side-effect free.
-
-  - returns are implemented by modeling non-void methods as having an expression
-    as its last statement (like in MJ).
-
-  - MJ only has equality comparison expressions that can be used as conditional
-    expressions. We allow arbitrary expressions, and use `ifz`. It would be
-    straightforward to add booleans.
-
-  - If statements have ordinary statements as their sub-statements. These can
-    either be block statements or any other statement which does not allocate a
-    new frame.
-
-  - We include integers and integer operations.
-
-  - Our syntax admits fields typed by `void`.
+  The interpreters in our paper are defined in terms of ordinary Agda
+  functions and indexed types.  Agda functions and indexed types are
+  not guaranteed to be weakenable, and Agda does not have built-in
+  support for automatically weakening types across monadic binds.  In
+  our paper, we address the weakening problem by making explicit use
+  in our interpreters of the `_^_` operator, which is morally
+  equivalent to the monadic strength operator for monotone predicates
+  over store types, defined in the categorical development above.  Our
+  `_^_` operator explicitly requires `q` to be weakenable, which is a
+  fairly minimal requirement for convincing Agda's type checker that
+  carrying types over monadic binds is safe.
+ 
+  The categorical model enjoy a cleaner treatment of weakening, but it
+  is to write interpreters in Agda using this model, because of the
+  additional level of encoding imposed by constructing and working
+  with objects and morphisms in a category.  However, we imagine that
+  the categorical development is a good target model for a future
+  specification language for dynamic semantics.
 -}
+
