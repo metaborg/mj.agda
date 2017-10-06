@@ -14,7 +14,7 @@ docs/.git/:
 gh-pages: docs/.git/ docs
 
 docs: lib docs/Readme.html
-	cp docs/{Readme.html,index.html}
+	cp docs/Readme.html docs/index.html
 
 ### libraries
 lib: lib/stdlib lib/stdlib++
