@@ -41,7 +41,7 @@ data Ty : Set where
 --
 -- * `Ty` is the type of declarations in the scope graph
 
-open import ScopeGraph.ScopesFrames k Ty
+open import ScopesFrames.ScopesFrames k Ty
 
 -- Our interpreter is parameterized by a scope graph, via the module
 -- below.

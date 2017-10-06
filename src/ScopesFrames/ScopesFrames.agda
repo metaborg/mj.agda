@@ -31,7 +31,7 @@ open import Common.Weakening
 -- parameterized over; and the `Ty` parameter is a language-specific
 -- notion of type.
 
-module ScopeGraph.ScopesFrames (k : ℕ) (Ty : Set) where
+module ScopesFrames.ScopesFrames (k : ℕ) (Ty : Set) where
 
 
 ------------------
@@ -190,12 +190,12 @@ module UsesGraph (g : Graph) where
     -- being initialized.
 
     initFrameι : (s : Scope) → ∀ {Σ ds es}⦃ shape : g s ≡ (ds , es) ⦄ →
-                 (Frame s (Σ ∷ʳ s) → Slots ds (Σ ∷ʳ s)) → Links es Σ → Heap Σ →
+                 (slotsf : Frame s (Σ ∷ʳ s) → Slots ds (Σ ∷ʳ s)) → Links es Σ → Heap Σ →
                  Frame s (Σ ∷ʳ s) × Heap (Σ ∷ʳ s)
-    initFrameι s {Σ} ⦃ refl ⦄ slots links h =
+    initFrameι s {Σ} ⦃ refl ⦄ slotsf links h =
       let ext = ∷ʳ-⊒ s Σ -- heap extension fact
           f'  = ∈-∷ʳ Σ s -- updated frame pointer witness
-          h'  = (wk ext h) all-∷ʳ (slots f' , wk ext links) -- extended heap
+          h'  = (wk ext h) all-∷ʳ (slotsf f' , wk ext links) -- extended heap
       in (f' , h')
 
 

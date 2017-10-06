@@ -19,7 +19,7 @@ k : ℕ
 k = 10
 
 open import MJSF.Syntax k
-open import ScopeGraph.ScopesFrames k Ty
+open import ScopesFrames.ScopesFrames k Ty
 
 {-
   class Int {

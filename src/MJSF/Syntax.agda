@@ -46,7 +46,7 @@ data Ty : Set where
 -- We specialize the scopes-and-frames library to the size of our
 -- scope graph, and the tagged type for declarations above:
 
-open import ScopeGraph.ScopesFrames k Ty hiding (Scope)
+open import ScopesFrames.ScopesFrames k Ty hiding (Scope)
 
 
 -------------

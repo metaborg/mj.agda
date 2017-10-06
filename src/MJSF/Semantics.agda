@@ -15,7 +15,7 @@ module MJSF.Semantics (k : ℕ) where
 open import MJSF.Syntax k
 open import MJSF.Values k
 open import MJSF.Monad k
-open import ScopeGraph.ScopesFrames k Ty
+open import ScopesFrames.ScopesFrames k Ty
 open import Common.Weakening
 
 -- This file contains the definitional interpreter for MJ using scopes

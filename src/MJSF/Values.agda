@@ -10,7 +10,7 @@ open import Data.Product
 module MJSF.Values (k : ℕ) where
 
 open import MJSF.Syntax k
-open import ScopeGraph.ScopesFrames k Ty
+open import ScopesFrames.ScopesFrames k Ty
 
 module ValuesG (g : Graph) where
 
@@ -58,8 +58,8 @@ module ValuesG (g : Graph) where
 
   data Valᵗ : Ty → List Scope → Set where
     vᵗ : ∀ {t Σ} → Val t Σ → Valᵗ (vᵗ t) Σ
-    mᵗ : ∀ {s ts rt Σ} → Frame s Σ → Meth s ts rt → Valᵗ (mᵗ ts rt) Σ
-    cᵗ : ∀ {sʳ s s' Σ} → Class sʳ s → Inherits s s' → Frame sʳ Σ → Valᵗ (cᵗ sʳ s) Σ
+    mᵗ : ∀ {s ts rt Σ} → (self : Frame s Σ) → (body : Meth s ts rt) → Valᵗ (mᵗ ts rt) Σ
+    cᵗ : ∀ {sʳ s s' Σ} → (class-def : Class sʳ s) → (ic : Inherits s s') → Frame sʳ Σ → Valᵗ (cᵗ sʳ s) Σ
 
 
   ---------------
@@ -79,9 +79,9 @@ module ValuesG (g : Graph) where
     val-weakenable = record { wk = val-weaken }
 
   valᵗ-weaken : ∀ {t Σ Σ'} → Σ ⊑ Σ' → Valᵗ t Σ → Valᵗ t Σ'
-  valᵗ-weaken ext (vᵗ v)    =  vᵗ (val-weaken ext v)
-  valᵗ-weaken ext (mᵗ f m)    =  mᵗ (wk ext f) m
-  valᵗ-weaken ext (cᵗ c ic f)  =  cᵗ c ic (wk ext f)
+  valᵗ-weaken ext (vᵗ v)      = vᵗ (val-weaken ext v)
+  valᵗ-weaken ext (mᵗ f m)    = mᵗ (wk ext f) m
+  valᵗ-weaken ext (cᵗ c ic f) = cᵗ c ic (wk ext f)
 
   -- And pass these to the scope graph definition:
 

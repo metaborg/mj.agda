@@ -61,7 +61,7 @@ open import STLCRef.Examples
   We show how we can mechanize the scopes and frames uniform model of binding in
   a language independent manner.
 -}
-open import ScopeGraph.ScopesFrames
+open import ScopesFrames.ScopesFrames
 
 {-
   * Section 4.4 *
@@ -91,6 +91,7 @@ open import MJSF.Semantics
   And demonstrate that it is executable:
 -}
 open import MJSF.Examples.Integer
+open import MJSF.Examples.DynamicDispatch
 
 {-
   * Appendix A

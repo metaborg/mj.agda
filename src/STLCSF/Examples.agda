@@ -10,7 +10,7 @@ open import Relation.Binary.PropositionalEquality hiding ([_])
 module Id where
 
   open import STLCSF.Semantics 2
-  open import ScopeGraph.ScopesFrames 2 Ty
+  open import ScopesFrames.ScopesFrames 2 Ty
   open import Data.Fin
   open import Data.Product
   open import Data.List.Most
@@ -59,7 +59,7 @@ module Id where
 module Curry where
 
   open import STLCSF.Semantics 3
-  open import ScopeGraph.ScopesFrames 3 Ty
+  open import ScopesFrames.ScopesFrames 3 Ty
   open import Data.Fin hiding (_+_)
   open import Data.Product
   open import Data.List.Most
