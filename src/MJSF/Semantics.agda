@@ -261,7 +261,8 @@ module Semantics (g : Graph) where
        ; timeout → timeout
        ; nullpointer → nullpointer }
 
-  -- For testing our programs we introduce some short-hand notation:
+  -- For the purpose of running the interpreter on test programs, we
+  -- introduce some short-hand notation:
 
   -- The program will terminate succesfully in a state where p holds
   _⇓⟨_⟩_ : ∀ {sʳ a} → Program sʳ a → ℕ → (p : ∀ {Σ} → Val a Σ → Set) → Set
