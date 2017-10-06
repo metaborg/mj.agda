@@ -161,10 +161,10 @@ open import MJSF.Examples.DynamicDispatch
 -}
 open import MJ.Syntax.Typed
 
--- lexcial contexts
+-- lexical contexts
 open import MJ.LexicalScope
 
--- classtable
+-- class table
 open import MJ.Classtable.Core
 open import MJ.Classtable.Membership
 open import MJ.Classtable.Code
