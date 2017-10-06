@@ -10,7 +10,7 @@
   A rendered and linked version of this readme can be found here:
   - https://metaborg.github.io/mj.agda/
 
-  This development has been tested against Agda 2.5.3. If you have
+  This development has been tested against Agda 2.5.3.  If you have
   this installed you should be able simply run `make` in the project
   root, which will checkout some libraries in `./lib/` first and then
   build `./Readme.agda` which serves as the main entrypoint to the
@@ -51,7 +51,7 @@ open import STLC.Examples
 
   We demonstrate how naively extending the approach to cover
   imperative state is possible, but requires explicit weakening of
-  bound values in the interpreter:
+  bound values in the interpreter.
 -}
 
 open import STLCRef.SemanticsLB
@@ -86,7 +86,7 @@ open import STLCSF.Semantics
   * Section 5 *
 
   We show how our techniques scale by defining an intrinsically-typed
-  interpreter for Middleweight Java (MJ). A language with:
+  interpreter for Middleweight Java (MJ), a language with:
 
   - Imperative objects
   - Sub-typing
@@ -147,7 +147,7 @@ open import MJSF.Examples.DynamicDispatch
 
 
 {-
-  * Appendix A
+  * Appendix A *
 
   The following code artifacts *are not* described in the paper, but
   are used as a comparison point to evaluate the impact on the
@@ -181,7 +181,7 @@ open import MJ.Examples.While
 open import MJ.Examples.DynDispatch
 
 {-
-  * Appendix B
+  * Appendix B *
 
   Additionally we demonstrate briefly how Agda's typeclass mechanism
   is not sufficiently strong to infer store extension facts for
@@ -191,14 +191,16 @@ open import MJ.Examples.DynDispatch
 open import Experiments.Infer
 
 {-
+  * Appendix C *
+
   Our interpreters make use of the operator `_^_` operator, defined
   as:
 
   (1) `_^_ : ∀ {Σ Γ}{p q : List Type → Set} ⦃ w : Weakenable q ⦄ → 
              M Γ p Σ → q Σ → M Γ (p ⊗ q) Σ`
 
-  This operator is strikingly similar to the strength operator that
-  characterizes a strong monad:
+  This operator is strikingly similar to the strength operator that is
+  characteristic of strong monads:
 
   (2)  `_^_ : ∀ {p q} → M p → q → M (p ⊗ q)`
 
@@ -206,9 +208,10 @@ open import Experiments.Infer
   ℂ.
 
   In the following development we show how to define a monad that is
-  morally equivalent to ours, but which is defined over the category
-  of monotone predicates.  In this category, the monad is a strong
-  monad, with the usual notion of monadic strength, i.e., (2) above.
+  morally equivalent to ours.  The monad in the development below is
+  defined over the category of monotone predicates.  In this category,
+  the store-passing monad is a strong monad, with the usual notion of
+  monadic strength, i.e., (2) above.
 
   We also show how, in this category, we can write an interpreter
   without explicit weakening, by writing the interpreter in a
