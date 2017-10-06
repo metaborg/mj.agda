@@ -60,7 +60,7 @@ StoreTy = List Ty
 
 -- `Val` uses `_∈_` from `Relation.Binary` in the Agda Standard
 -- Library to represent typed locations which witness the existence of
--- an store cell in the store type.
+-- a store location in the store type.
 
 mutual
   data Val : Ty → (Σ : StoreTy) → Set where
