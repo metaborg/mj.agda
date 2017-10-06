@@ -57,7 +57,7 @@ mutual
   Env Γ = All Val Γ
 
 -- The `lookup` function described in Section 2.2 of the paper is also
--- defined in `Data.List.All` Agda Standard Library.
+-- defined in `Data.List.All` in the Agda Standard Library.
 
 
 -----------
