@@ -240,10 +240,10 @@ open import Experiments.STLCRefPointfree
   The categorical model enjoys a cleaner treatment of weakening, but
   it is more cumbersome to write interpreters in Agda using this
   model, because of the additional level of encoding imposed by
-  constructing and working with objects and morphisms in a category.
-  However, we imagine that the categorical development is a good
-  target model for a future specification language for dynamic
-  semantics.
+  constructing and working with objects and morphisms in a category,
+  as encoded in Agda.  However, we imagine that the categorical
+  development is a good target model for a future specification
+  language for dynamic semantics. 
 -}
 
 
