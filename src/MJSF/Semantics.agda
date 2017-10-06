@@ -164,8 +164,8 @@ module Semantics (g : Graph) where
       eval k e >>= λ { null → raise ; (ref f) →
       usingFrame f (getv p) >>= λ{ (mᵗ f' (meth s ⦃ shape ⦄ b)) →  -- f' is the "self"
       (eval-args k args ^ f') >>= λ{ (slots , f') →
-      init s ⦃ shape ⦄ slots (f' ∷ []) >>= λ f' →  -- f' is the static link of the method call frame
-      usingFrame f' (eval-body k b) }}}
+      init s ⦃ shape ⦄ slots (f' ∷ []) >>= λ f'' →  -- f' is the static link of the method call frame
+      usingFrame f'' (eval-body k b) }}}
     eval (suc k) (this p e) =
       getf p >>= λ f →
       usingFrame f (getl e) >>= λ f' →
