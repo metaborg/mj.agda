@@ -184,7 +184,7 @@ module Semantics (g : Graph) where
     -- STATEMENT EVALUATION --
     --------------------------
 
-    -- The following function uses the early returns monadic bind and
+    -- The following functions use the early returns monadic bind and
     -- `continue` operation defined above.
 
     eval-stmt : ℕ → ∀ {s s' r Σ} → Stmt s r s' → M s (λ Σ → Val r Σ ⊎ Frame s' Σ) Σ
