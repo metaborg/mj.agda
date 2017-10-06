@@ -31,7 +31,7 @@ open import ScopesFrames.ScopesFrames k Ty
           return x;
       }
 
-      public int inc(Int y) {
+      public int set(Int y) {
           x = y.x;
           return this.get();
       }
@@ -43,10 +43,10 @@ open import ScopesFrames.ScopesFrames k Ty
           return x + 1;
       }
 
-      public int doinc(Int y) {
+      public int inc(Int y) {
           Int x = new Int();
           x.x = y.x + 1;
-          return inc(x);
+          return set(x);
       }
   }
 
@@ -58,7 +58,7 @@ open import ScopesFrames.ScopesFrames k Ty
           x.x = 0;
 
           // should print 20 because we use the get() of IntInc
-          System.out.println(x.doinc(y));
+          System.out.println(x.inc(y));
       }
   }
 -}
@@ -85,13 +85,13 @@ Int-fields =
   ∷ []
 Int-methods =
   {- Int.get -} mᵗ [] int ∷
-  {- Int.inc -} mᵗ (ref Int ∷ []) int ∷
+  {- Int.set -} mᵗ (ref Int ∷ []) int ∷
   []
 
 IntInc-methods IntInc-fields : List Ty
 IntInc-methods =
   -- {- IntInc.get -} mᵗ [] int ∷
-  {- IntInc.doinc -} mᵗ (ref Int ∷ []) int ∷
+  {- IntInc.inc -} mᵗ (ref Int ∷ []) int ∷
   []
 IntInc-fields = []
 
@@ -110,18 +110,18 @@ g (suc (suc zero)) =
 -- scope of Int.get method; 3
 g (suc (suc (suc zero))) =
   [] , Int ∷ []
--- scope of Int.inc method; 4
+-- scope of Int.set method; 4
 g (suc (suc (suc (suc zero)))) =
   vᵗ (ref Int) ∷ [] , Int ∷ []
 
 -- scope of IntInc.get method; 5
 g (suc (suc (suc (suc (suc zero))))) =
   [] , IntInc ∷ []
--- scope of IntInc.doinc method; 6
+-- scope of IntInc.inc method; 6
 g (suc (suc (suc (suc (suc (suc zero)))))) =
   vᵗ (ref Int) ∷ [] , IntInc ∷ []
 
--- local variable scope of Int.doinc method; 7
+-- local variable scope of Int.inc method; 7
 g (suc (suc (suc (suc (suc (suc (suc zero))))))) =
   vᵗ (ref Int) ∷ [] , # 6 ∷ []
 
@@ -146,9 +146,11 @@ IntImpl =
                (body ε
                      (var (path ((here refl) ∷ []) (there (there (here refl))))))) ∷
     (#m' (meth (# 4)
-               (body (asgn (path ((here refl) ∷ []) (there (there (here refl))))
-                           (get (var (path [] (here refl))) (path [] (there (there (here refl))))) ◅
-                           ε)
+               (body ( asgn (path ((here refl) ∷ [])
+                                  (there (there (here refl))))
+                            (get (var (path [] (here refl)))
+                                 (path [] (there (there (here refl)))))
+                     ◅ ε)
                      (call (this [] (here refl))
                            (path [] (here refl))
                            [])))) ∷ [])
