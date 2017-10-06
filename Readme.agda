@@ -27,7 +27,7 @@
   is that the definitions in the paper are typed in a manner that is
   not universe polymorphic.  However, the development makes extensive
   use of universe polymorphism, by explicitly quantifying over
-  universe levels (e.g., `i` in `{i} → (a : Set i) → a`).
+  universe levels (e.g., `i` in `{i} → Set i`).
 
   Other discrepancies are summarized below in this readme.
 -}
