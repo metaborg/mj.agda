@@ -1,6 +1,6 @@
 {-
-  This is the readme of the Agda mechanization accompanying our POPL
-  2018 paper:
+  This is the readme of the Agda mechanization accompanying our 
+  POPL 2018 paper:
 
     "Intrinsically-Typed Interpreters for Imperative Languages"
 
