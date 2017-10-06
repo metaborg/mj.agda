@@ -1,5 +1,5 @@
 {-
-  This is the readme of the Agda mechanization accompanying our 
+  This is the readme of the Agda mechanization accompanying our
   POPL 2018 paper:
 
     "Intrinsically-Typed Interpreters for Imperative Languages"
@@ -185,8 +185,8 @@ open import MJ.Examples.DynDispatch
 
   Additionally we demonstrate briefly how Agda's typeclass mechanism
   is not sufficiently strong to infer store extension facts for
-  weakening. (Notably rejects equivalent as well because the two
-  instances are overlapping)
+  weakening. (Notably Idris rejects an equivalent program as well
+  because the two instances are overlapping)
 -}
 open import Experiments.Infer
 
@@ -196,7 +196,7 @@ open import Experiments.Infer
   Our interpreters make use of the operator `_^_` operator, defined
   as:
 
-  (1) `_^_ : ∀ {Σ Γ}{p q : List Type → Set} ⦃ w : Weakenable q ⦄ → 
+  (1) `_^_ : ∀ {Σ Γ}{p q : List Type → Set} ⦃ w : Weakenable q ⦄ →
              M Γ p Σ → q Σ → M Γ (p ⊗ q) Σ`
 
   This operator is strikingly similar to the strength operator that is
@@ -236,14 +236,12 @@ open import Experiments.STLCRefPointfree
   `_^_` operator explicitly requires `q` to be weakenable, which is a
   fairly minimal requirement for convincing Agda's type checker that
   carrying types over monadic binds is safe.
- 
+
   The categorical model enjoys a cleaner treatment of weakening, but
   it is more cumbersome to write interpreters in Agda using this
   model, because of the additional level of encoding imposed by
   constructing and working with objects and morphisms in a category,
   as encoded in Agda.  However, we imagine that the categorical
   development is a good target model for a future specification
-  language for dynamic semantics. 
+  language for dynamic semantics.
 -}
-
-
