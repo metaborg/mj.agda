@@ -97,8 +97,9 @@ module Semantics (g : Graph) where
   init-obj (class0 ⦃ shape ⦄ _ _ _) (super ⦃ shape' ⦄ _)
     with (trans (sym shape) shape')
   ...  | () -- absurd case: the scope shapes of `class0` and `super` do not match
-  init-obj (class1 p ⦃ shape ⦄ ms fs oms) (super ⦃ shape' ⦄ x) with (trans (sym shape) shape')
-  ... | refl =
+  init-obj (class1 p ⦃ shape ⦄ ms fs oms) (super ⦃ shape' ⦄ x)
+    with (trans (sym shape) shape')
+  ...  | refl =
     getv p >>= λ{ (cᵗ class' ic f') →
     (usingFrame f' (init-obj class' x) ^ f') >>= λ{ (f , f') →
     initι _ ⦃ shape ⦄ (λ fc → (map-all (λ{ (#m' m) → mᵗ fc m }) ms) ++-all (defaults fs)) (f' ∷ f ∷ []) >>= λ f'' →
