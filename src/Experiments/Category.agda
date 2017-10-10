@@ -1,5 +1,3 @@
-{-# OPTIONS --allow-unsolved-metas #-}
-
 open import Relation.Binary hiding (_⇒_)
 
 module Experiments.Category {ℓ₁ ℓ₂ ℓ₃} (APO : Preorder ℓ₁ ℓ₂ ℓ₃) where
@@ -108,16 +106,16 @@ record _≅_ {ℓ}(P Q : MP ℓ) : Set (ℓ₁ ⊔ ℓ ⊔ ℓ₃) where
     left-inv  : to ∘ from ⇒≡ id Q
     right-inv : from ∘ to ⇒≡ id P
 
-  ∘-assoc : ∀ {p q r s}{P : MP p}{Q : MP q}{R : MP r}{S : MP s}
-              {F : R ⇒ S}{G : Q ⇒ R}{H : P ⇒ Q} →
-              F ∘ (G ∘ H) ⇒≡ (F ∘ G) ∘ H
-  ∘-assoc _ = PEq.refl
+∘-assoc : ∀ {p q r s}{P : MP p}{Q : MP q}{R : MP r}{S : MP s}
+            {F : R ⇒ S}{G : Q ⇒ R}{H : P ⇒ Q} →
+            F ∘ (G ∘ H) ⇒≡ (F ∘ G) ∘ H
+∘-assoc _ = PEq.refl
 
-  ∘-left-id : ∀ {P Q : MP ℓ₁}{F : P ⇒ Q} → (id Q) ∘ F ⇒≡ F
-  ∘-left-id _ = PEq.refl
+∘-left-id : ∀ {P Q : MP ℓ₁}{F : P ⇒ Q} → (id Q) ∘ F ⇒≡ F
+∘-left-id _ = PEq.refl
 
-  ∘-right-id : ∀ {P Q : MP ℓ₁}{F : P ⇒ Q} → F ∘ (id P) ⇒≡ F
-  ∘-right-id p = PEq.refl
+∘-right-id : ∀ {P Q : MP ℓ₁}{F : P ⇒ Q} → F ∘ (id P) ⇒≡ F
+∘-right-id p = PEq.refl
 
 module Product where
   -- within the category
