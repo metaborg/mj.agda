@@ -65,8 +65,16 @@ module UsesGraph (g : Graph) where
     []   :  ∀ {s} → s ⟶ s
     _∷_  :  ∀ {s s' s''} → s' ∈ edgesOf s → s' ⟶ s'' → s ⟶ s''
 
+  -- path concatenation
+  concatₚ : ∀ {s s' s''} → s ⟶ s' → s' ⟶ s'' → s ⟶ s''
+  concatₚ [] p₂ = p₂
+  concatₚ (x ∷ p₁) p₂ = x ∷ (concatₚ p₁ p₂)
+
   data _↦_ (s : Scope) (t : Ty) : Set where
     path : ∀{s'} → s ⟶ s' → t ∈ declsOf s' → s ↦ t
+
+  prepend : ∀ {s s' t} → s ⟶ s' → s' ↦ t → s ↦ t
+  prepend p (path p' d) = path (concatₚ p p') d
 
   -- The definitions above fully define scope graphs.  The remaining
   -- definitions in this file are intrinsically-typed by this notion
