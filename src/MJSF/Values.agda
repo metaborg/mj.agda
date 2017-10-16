@@ -36,7 +36,7 @@ module ValuesG (g : Graph) where
   --   return `void`; we regard `void` as a unit type)
 
   data Val : VTy → List Scope → Set where
-    ref    :  ∀ {s Σ} → Frame s Σ → Val (ref s) Σ
+    ref    :  ∀ {s s' Σ} → s <: s' → Frame s Σ → Val (ref s') Σ
     null   :  ∀ {s Σ} → Val (ref s) Σ
     num    :  ∀ {Σ} → ℤ → Val int Σ
     void   :  ∀ {Σ} → Val void Σ
@@ -70,7 +70,7 @@ module ValuesG (g : Graph) where
 
   val-weaken    :  ∀ {t Σ Σ'} → Σ ⊑ Σ' → Val t Σ → Val t Σ'
   val-weaken ext (num i)  =  num i
-  val-weaken ext (ref f)  =  ref (wk ext f)
+  val-weaken ext (ref i f)  =  ref i (wk ext f)
   val-weaken ext null     =  null
   val-weaken ext void     =  void
 
@@ -87,7 +87,7 @@ module ValuesG (g : Graph) where
 
   open UsesVal Valᵗ valᵗ-weaken renaming (getFrame to getFrame')
 
-  
+
   --------------
   -- COERCION --
   --------------
@@ -97,10 +97,6 @@ module ValuesG (g : Graph) where
   -- inheritance links of the frame hierarchy for an object instance,
   -- as described in the paper.
 
-  coerce<: : ∀ {t t' Σ} → t <: t' → Val t Σ → Heap Σ → Val t' Σ
-  coerce<: refl v h = v
-  coerce<: (super edge σ) null h = coerce<: σ null h
-  coerce<: (super edge σ) (ref f) h
-    with (lookup h f)
-  ...  | (_ , links)  =  coerce<: σ (ref (lookup links edge)) h
-
+  upcastRef : ∀ {t t' Σ} → t <: t' → Val (ref t) Σ → Val (ref t') Σ
+  upcastRef i (ref i' f) = ref (concatₚ i' i) f
+  upcastRef i null = null
