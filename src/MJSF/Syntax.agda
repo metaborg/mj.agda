@@ -84,10 +84,8 @@ module SyntaxG (g : Graph) where
   -- As summarized in the paper, we define sub-typing in terms of
   -- inheritance edges between class scopes in the scope graph:
 
-  data _<:_ : VTy → VTy → Set where
-    refl   :  ∀ {t} → t <: t
-    super  :  ∀ {s1 s2 t} →
-              s2 ∈ edgesOf s1 → (ref s2) <: t → (ref s1) <: t
+  _<:_ : Scope → Scope → Set
+  _<:_ = _⟶_
 
   -- Scope graphs may be cyclic, and there is (in theory) nothing that
   -- prevents classes from mutually extending one another, thereby
@@ -120,7 +118,7 @@ module SyntaxG (g : Graph) where
     null     :  ∀ {s'} → Expr s (ref s')
     num      :  ℤ → Expr s int
     iop      :  (ℤ → ℤ → ℤ) → (l r : Expr s int) → Expr s int
-    upcast   :  ∀ {t' t} → t' <: t → Expr s t' → Expr s t
+    upcast   :  ∀ {t' t} → t' <: t → Expr s (ref t') → Expr s (ref t)
     this     :  ∀ {s' self} → s ⟶ s' → self ∈ edgesOf s' → -- the `self` of objects is given by the lexical parent edge of a method
                 Expr s (ref self)
 
