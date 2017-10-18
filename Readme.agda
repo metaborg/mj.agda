@@ -171,6 +171,8 @@ open import MJ.Classtable.Code
 
 -- semantics
 open import MJ.Semantics.Values
+open import MJ.Semantics.Environments
+open import MJ.Semantics.Objects
 open import MJ.Semantics.Objects.Flat
 open import MJ.Semantics.Monadic
 
