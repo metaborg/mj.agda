@@ -19,7 +19,7 @@ import Data.Vec.All as Vec∀
 open Core c
 open Classtable Ct
 open import MJ.Classtable.Membership Ct
-open import MJ.LexicalScope Ct
+open import MJ.LexicalScope c
 
 NativeBinOp = ℕ → ℕ → ℕ
 

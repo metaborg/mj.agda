@@ -93,7 +93,8 @@ module Semantics (g : Graph) where
   init-obj (class0 ⦃ shape ⦄ ms fs oms) (obj _)
     = getFrame >>= λ f →
       initι _ ⦃ shape ⦄ (λ fc → (map-all (λ{ (#m' m) → mᵗ fc m }) ms) ++-all (defaults fs)) (f ∷ []) >>= λ f' →
-      (usingFrame f' (override oms) ^ f') >>= λ{ (_ , f') → return f' }
+      (usingFrame f' (override oms) ^ f') >>= λ{ (_ , f') →
+      return f' }
   init-obj (class0 ⦃ shape ⦄ _ _ _) (super ⦃ shape' ⦄ _)
     with (trans (sym shape) shape')
   ...  | () -- absurd case: the scope shapes of `class0` and `super` do not match
@@ -140,7 +141,8 @@ module Semantics (g : Graph) where
     eval    :  ℕ → ∀ {t s Σ} → Expr s t → M s (Val t) Σ
     eval zero _ =
       timeoutᴹ
-    eval (suc k) (upcast σ e) = eval k e >>= λ v →
+    eval (suc k) (upcast σ e) =
+      eval k e >>= λ v →
       return (upcastRef σ v)
     eval (suc k) (num x) =
       return (num x)
@@ -158,15 +160,19 @@ module Semantics (g : Graph) where
       usingFrame f (init-obj class ic) >>= λ{ f' →
       return (ref [] f') }}
     eval (suc k) (get e p) =
-      eval k e >>= λ{ null → raise ; (ref p' f) →
-      usingFrame f (getv (prepend p' p)) >>= λ{ (vᵗ v) →
-      return v }}
+      eval k e >>= λ{
+        null → raise ;
+        (ref p' f) →
+          usingFrame f (getv (prepend p' p)) >>= λ{ (vᵗ v) →
+          return v }}
     eval (suc k) (call e p args) =
-      eval k e >>= λ { null → raise ; (ref p' f) →
-      usingFrame f (getv (prepend p' p)) >>= λ{ (mᵗ f' (meth s ⦃ shape ⦄ b)) →  -- f' is the "self"
-      (eval-args k args ^ f') >>= λ{ (slots , f') →
-      init s ⦃ shape ⦄ slots (f' ∷ []) >>= λ f'' →  -- f' is the static link of the method call frame
-      usingFrame f'' (eval-body k b) }}}
+      eval k e >>= λ {
+        null → raise ;
+        (ref p' f) →
+          usingFrame f (getv (prepend p' p)) >>= λ{ (mᵗ f' (meth s ⦃ shape ⦄ b)) →  -- f' is the "self"
+          (eval-args k args ^ f') >>= λ{ (slots , f') →
+          init s ⦃ shape ⦄ slots (f' ∷ []) >>= λ f'' →  -- f' is the static link of the method call frame
+          usingFrame f'' (eval-body k b) }}}
     eval (suc k) (this p e) =
       getf p >>= λ f →
       usingFrame f (getl e) >>= λ f' →
@@ -190,15 +196,19 @@ module Semantics (g : Graph) where
 
     eval-stmt : ℕ → ∀ {s s' r Σ} → Stmt s r s' → M s (λ Σ → Val r Σ ⊎ Frame s' Σ) Σ
     eval-stmt zero _ = timeoutᴹ
-    eval-stmt (suc k) (do e) = eval k e >>= λ _ → continue
+    eval-stmt (suc k) (do e) =
+      eval k e >>= λ _ →
+      continue
     eval-stmt (suc k) (ifz c t e) =
       eval k c >>= λ{
         (num (+ zero)) → eval-stmt k t
       ; (num i) → eval-stmt k e }
     eval-stmt (suc k) (set e p e') =
-      eval k e >>= λ{ null → raise ; (ref p' f) →
-      (eval k e' ^ f) >>= λ{ (v , f) →
-      usingFrame f (setv (prepend p' p) (vᵗ v)) >>= λ _ → continue }}
+      eval k e >>= λ{
+        null → raise ;
+        (ref p' f) →
+          (eval k e' ^ f) >>= λ{ (v , f) →
+          usingFrame f (setv (prepend p' p) (vᵗ v)) >>= λ _ → continue }}
     eval-stmt (suc k) (loc s t) =
       getFrame >>= λ f →
       fmap inj₂ (init s (vᵗ (default t) ∷ []) (f ∷ [])) -- initializes a new local variable frame

@@ -1,4 +1,5 @@
 open import Agda.Primitive
+import Data.List as List
 open import Data.List.Most
 open import Data.List.All as List∀
 open import Function
@@ -53,6 +54,10 @@ instance
 
   const-weakenable : ∀ {j i}{I : Set i}{A : Set j} → Weakenable {A = I} (λ _ → A)
   const-weakenable = record { wk = λ ext c → c }
+
+  list-weakenable : ∀ {i b}{A : Set i}{B : List A → Set b}
+                    ⦃ wb : Weakenable B ⦄ → Weakenable (λ W → List (B W))
+  list-weakenable ⦃ wₐ ⦄ = record {wk = λ ext v → List.map (wk ext) v }
 
 -- Nicer syntax for transitivity of prefixes:
 infixl 30 _⊚_

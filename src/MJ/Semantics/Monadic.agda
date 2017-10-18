@@ -28,7 +28,9 @@ open Classtable Ct
 open import MJ.Syntax.Program Ct
 open import MJ.Classtable.Membership Ct
 open import MJ.Types
-open import MJ.LexicalScope Ct
+open import MJ.LexicalScope c
+open import MJ.Semantics.Environments Ct
+open import MJ.Semantics.Objects Ct
 open import MJ.Semantics.Objects.Flat Ct ℂ using (encoding)
 open import Common.Weakening
 
@@ -302,8 +304,8 @@ mutual
     evalₑ k e >>= λ{
       null → raiseM nullderef ;
       (ref o s) →
-      deref o >>= λ{ (obj c O) →
-      return (getter _ O $ inherit' s (sound fld)) }}
+        deref o >>= λ{ (obj c O) →
+        return (getter _ O $ inherit' s (sound fld)) }}
 
   -- object allocation
   evalₑ (suc k) (new C args) =
@@ -342,10 +344,12 @@ mutual
 
   -- setting a field
   evalc (suc k) (set r _ {_}{fld} e) =
-    evalₑ k r >>= λ{ null → raiseM nullderef ; r'@(ref _ _) →
-    evalₑ k e ^ r' >>= λ{ (v , r') →
-    write-field (sound fld) r' v >>= λ _ →
-    continue }}
+    evalₑ k r >>= λ{
+    null → raiseM nullderef ;
+    r'@(ref _ _) →
+      evalₑ k e ^ r' >>= λ{ (v , r') →
+      write-field (sound fld) r' v >>= λ _ →
+      continue }}
 
   -- side-effectful expressions
   evalc (suc k) (do e) =
