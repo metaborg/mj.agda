@@ -20,10 +20,3 @@ and keeps the representation lightweight, even though we support block scopes.
 -}
 Env : ∀ (Γ : Ctx)(W : World c) → Set
 Env Γ W = All (λ a → vty a ∈ W) Γ
-
-_⊕_ : ∀ {Γ W a} → Env Γ W → (vty a) ∈ W → Env (Γ +local a) W
-_⊕_ E v = v ∷ E
-
-open import Data.List.Any
-getvar : ∀ {Γ W a} → Var Γ a → Env Γ W → vty a ∈ W
-getvar px E = ∈-all px E
