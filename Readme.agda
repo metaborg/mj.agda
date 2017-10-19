@@ -10,10 +10,10 @@
   A rendered and linked version of this readme can be found here:
   - https://metaborg.github.io/mj.agda/
 
-  This development has been tested against Agda 2.5.3.  If you have
-  this installed, you should simply be able to run `make` in the project
-  root. This will checkout the two dependencies in `./lib/` first and
-  then build this `./Readme.agda` which serves as the main
+  This development has been tested against Agda 2.5.3 (and should also compile
+  with 2.6.0). If you have this installed, you should simply be able to run
+  `make` in the project root. This will checkout the two dependencies in
+  `./lib/` first and then build this `./Readme.agda` which serves as the main
   entrypoint to the development.
 
   Alternatively you can run `make docs` to build the html version of
