@@ -196,7 +196,7 @@ module Semantics (g : Graph) where
 
     eval-stmt : ℕ → ∀ {s s' r Σ} → Stmt s r s' → M s (λ Σ → Val r Σ ⊎ Frame s' Σ) Σ
     eval-stmt zero _ = timeoutᴹ
-    eval-stmt (suc k) (do e) =
+    eval-stmt (suc k) (run e) =
       eval k e >>= λ _ →
       continue
     eval-stmt (suc k) (ifz c t e) =

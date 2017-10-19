@@ -24,7 +24,7 @@ p₁ = Lib ,
     (
         loc int
       ◅ asgn x (num 1)
-      ◅ while iop (λ x y → Bools.if ⌊ suc x ≤? y ⌋ then 0 else 1) (var x) (num 10) do (
+      ◅ while iop (λ x y → Bools.if ⌊ suc x ≤? y ⌋ then 0 else 1) (var x) (num 10) run (
         asgn x (iop (λ x y → x + y) (var x) (num 1))
       )
       -- test simplest if-then-else and early return from statement

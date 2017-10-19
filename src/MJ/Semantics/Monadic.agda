@@ -352,7 +352,7 @@ mutual
       continue }}
 
   -- side-effectful expressions
-  evalc (suc k) (do e) =
+  evalc (suc k) (run e) =
     evalₑ k e >>= λ _ →
     continue
 
@@ -369,9 +369,9 @@ mutual
     }
 
   -- while loops
-  evalc (suc k) (while e do b) =
+  evalc (suc k) (while e run b) =
     evalₑ (suc k) e >>= λ{
-      (num zero)    → evalc k b >>= λ _ → evalc k (while e do b) ;
+      (num zero)    → evalc k b >>= λ _ → evalc k (while e run b) ;
       (num (suc _)) → continue
     }
 

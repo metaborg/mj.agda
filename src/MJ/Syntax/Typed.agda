@@ -69,11 +69,11 @@ mutual
     loc        : ∀ a → Stmt I r (I +local a)
     asgn       : ∀ {a} → Var I a → Expr I a → Stmt I r I
     set        : ∀ {C} → Expr I (ref C) → ∀ f {a}{acc : AccMember C FIELD f a} → Expr I a → Stmt I r I
-    do         : ∀ {a} → Expr I a → Stmt I r I
+    run        : ∀ {a} → Expr I a → Stmt I r I
     ret        : Expr I r → Stmt I r I
     raise      : Stmt I r I
     try_catch_ : ∀ {O O'} → Stmt I r O → Stmt I r O' → Stmt I r I
-    while_do_  : ∀ {O} → Expr I int → Stmt I r O → Stmt I r I
+    while_run_ : ∀ {O} → Expr I int → Stmt I r O → Stmt I r I
     block      : ∀ {O} → Stmts I r O → Stmt I r I
     if_then_else_ : ∀ {a} → Expr I int → Stmt I r a → Stmt I r a → Stmt I r a
 

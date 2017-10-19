@@ -94,7 +94,7 @@ main = body
       ◅ asgn (path [] (here refl)) (new (path (here refl ∷ here refl ∷ []) (here refl)))
       ◅ set (var (path (here refl ∷ []) (here refl))) (path [] (there (here refl))) (num (+ 9))
       ◅ set (var (path [] (here refl))) (path [] (there (here refl))) (num (+ 18))
-      ◅ do (call (var (path [] (here refl))) (path [] (here refl)) (var (path (here refl ∷ []) (here refl)) ∷ []))
+      ◅ run (call (var (path [] (here refl))) (path [] (here refl)) (var (path (here refl ∷ []) (here refl)) ∷ []))
       ◅ ε
     )
     (get (var (path [] (here refl))) (path [] (there (here refl))))
