@@ -136,17 +136,16 @@ product products {A} {B} = record {
       ; F-resp-≡ = F-resp-≡′ }
 
     π₁ : MP [ A×B , A ]
-    π₁ = record {
-        η = λ c → record { _⟨$⟩_ = proj₁ ; cong = proj₁ }
-      ; commute = {!!} }
+    η π₁ c = record { _⟨$⟩_ = proj₁ ; cong = proj₁ }
+    commute π₁ f (x≡x' , _) = cong (A.F₁ f) x≡x'
 
     π₂ : MP [ A×B , B ]
-    π₂ = record {
-        η = λ c → record { _⟨$⟩_ = proj₂ ; cong = proj₂ }
-      ; commute = {!!} }
+    η π₂ c = record { _⟨$⟩_ = proj₂ ; cong = proj₂ }
+    commute π₂ f (_ , y≡y') = cong (B.F₁ f) y≡y'
 
     ⟨_,_⟩ : ∀ {C} → MP [ C , A ] → MP [ C , B ] → MP [ C , A×B ]
-    ⟨_,_⟩ C⇒A C⇒B = record {η = λ X → ⟪ η C⇒A X , η C⇒B X ⟫ ; commute = λ f x₁ → {!!} , {!!} }
+    η ⟨ C⇒A , C⇒B ⟩ X = ⟪ η C⇒A X , η C⇒B X ⟫
+    commute (⟨_,_⟩ {C} C⇒A C⇒B) f x≡y = commute C⇒A f x≡y , commute C⇒B f x≡y
 
 has-products : Products MP
 has-products = record {
