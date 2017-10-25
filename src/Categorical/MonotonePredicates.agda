@@ -55,86 +55,98 @@ terminal = record {
 
 -- TODO is this construction general for all presheaves-categories?
 -- i.e. is it domain independent
-module MP-Products (A B : Obj MP) where
-  private
-    module A = Functor A
-    module B = Functor B
-    module Po = Category (Preorder po)
-    module Is = Category (ISetoids ℓ₃ ℓ₃)
-
-  -- pointwise product
-  omap = λ c → (A.F₀ c) ×-setoid (B.F₀ c)
-
-  -- pointwise lifting of a morphisms
-  hmap : ∀ {c c'} → Po.op [ c , c' ] → ISetoids _ _ [ omap c , omap c' ]
-  hmap c≤c' = record {
-      _⟨$⟩_ = λ{ (l , r) → A.F₁ c≤c' ⟨$⟩ l , B.F₁ c≤c' ⟨$⟩ r  }
-    ; cong  = λ{ (l , r) → cong (A.F₁ c≤c') l , cong (B.F₁ c≤c') r }}
-
-  .identity′ : ∀ {c} → ISetoids _ _ [ hmap {c} Po.id ≡ Is.id ]
-  identity′ {c} {x = x}{y , y'}(p , q) = left , right
-    where
-      left = begin
-           A.F₁ Po.id ⟨$⟩ (proj₁ x)
-             ≈⟨ identity A (refl (A.F₀ c)) ⟩
-           proj₁ x
-             ≈⟨ p ⟩
-           y ∎
-        where open SetoidReasoning (A.F₀ c)
-      right = begin
-           B.F₁ Po.id ⟨$⟩ (proj₂ x)
-             ≈⟨ identity B (refl (B.F₀ c)) ⟩
-           proj₂ x
-             ≈⟨ q ⟩
-           y' ∎
-        where open SetoidReasoning (B.F₀ c)
-
-  .F-resp-≡′ : ∀ {a b : Po.Obj}{F G : Po.op [ a , b ]} → Po.op [ F ≡ G ] → ISetoids _ _ [ hmap F ≡ hmap G ]
-  F-resp-≡′ {b = b}{F}{G} F≡G {x = x}{y} x≡y =
-    begin
-      hmap F ⟨$⟩ x
-        ≈⟨ cong (hmap F) x≡y ⟩
-      hmap F ⟨$⟩ y
-        ↓≣⟨ PEq.cong (λ u → hmap u ⟨$⟩ y) F≡G ⟩
-      hmap G ⟨$⟩ y ∎
-    where open SetoidReasoning (omap b)
-
-  .homomorphism′ : ∀ {a b c : Po.Obj}{f : Po.op [ a , b ]}{g : Po.op [ b , c ]} →
-                   ISetoids _ _ [ hmap (Po.op [ g ∘ f ]) ≡ ISetoids _ _ [ hmap g ∘ hmap f ] ]
-  homomorphism′ {a}{c = c}{f}{g}{x}{y} x≡y =
-    begin
-      hmap (Po.op [ g ∘ f ]) ⟨$⟩ x
-        ≈⟨ cong (hmap (Po.op [ g ∘ f ])) x≡y ⟩
-      hmap (Po.op [ g ∘ f ]) ⟨$⟩ y
-        ↓≣⟨ PEq.refl ⟩
-      let h = (Po.op [ g ∘ f ]) in ((A.F₁ h) ⟨$⟩ (proj₁ y) , (B.F₁ h) ⟨$⟩ (proj₂ y))
-        ≈⟨ homomorphism A (refl (A.F₀ a)) , homomorphism B (refl (B.F₀ a)) ⟩
-      (A.F₁ g) ⟨$⟩ ((A.F₁ f) ⟨$⟩ (proj₁ y)) , (B.F₁ g) ⟨$⟩ ((B.F₁ f) ⟨$⟩ (proj₂ y))
-        ↓≣⟨ PEq.refl ⟩
-      (hmap g) ∙ (hmap f) ⟨$⟩ y
-        ↓≣⟨ PEq.refl ⟩
-      ISetoids _ _ [ hmap g ∘ hmap f ] ⟨$⟩ y ∎
-    where open SetoidReasoning (omap c)
-
-  A×B : Obj MP
-  A×B = record {
-      F₀ = omap
-    ; F₁ = hmap
-    ; identity = identity′
-    ; homomorphism = homomorphism′
-    ; F-resp-≡ = F-resp-≡′ }
-
+open BinaryProducts using (product)
 products : BinaryProducts MP
-products = record {
-  product = λ {A} {B} → record
-              { A×B = MP-Products.A×B A B
-              ; π₁ = record { η = λ c → record { _⟨$⟩_ = proj₁ ; cong = proj₁ } ; commute = {!!} }
-              ; π₂ = record { η = λ c → record { _⟨$⟩_ = proj₂ ; cong = proj₂ } ; commute = {!!} }
-              ; ⟨_,_⟩ = λ C⇒A  C⇒B → record {η = λ X → ⟪ η C⇒A X , η C⇒B X ⟫ ; commute = λ f x₁ → {!!} , {!!} }
-              ; commute₁ = {!!}
-              ; commute₂ = {!!}
-              ; universal = {!!}
-              } }
+product products {A} {B} = record {
+  A×B = A×B
+  ; π₁ = π₁
+  ; π₂ = π₂
+  ; ⟨_,_⟩ = ⟨_,_⟩
+  ; commute₁ = {!!}
+  ; commute₂ = {!!}
+  ; universal = {!!} }
+
+  where
+    private
+      module A = Functor A
+      module B = Functor B
+      module Po = Category (Preorder po)
+      module Is = Category (ISetoids ℓ₃ ℓ₃)
+
+    -- pointwise product
+    omap = λ c → (A.F₀ c) ×-setoid (B.F₀ c)
+
+    -- pointwise lifting of a morphisms
+    hmap : ∀ {c c'} → Po.op [ c , c' ] → ISetoids _ _ [ omap c , omap c' ]
+    hmap c≤c' = record {
+        _⟨$⟩_ = λ{ (l , r) → A.F₁ c≤c' ⟨$⟩ l , B.F₁ c≤c' ⟨$⟩ r  }
+      ; cong  = λ{ (l , r) → cong (A.F₁ c≤c') l , cong (B.F₁ c≤c') r }}
+
+    .identity′ : ∀ {c} → ISetoids _ _ [ hmap {c} Po.id ≡ Is.id ]
+    identity′ {c} {x = x}{y , y'}(p , q) = left , right
+      where
+        left = begin
+            A.F₁ Po.id ⟨$⟩ (proj₁ x)
+              ≈⟨ identity A (refl (A.F₀ c)) ⟩
+            proj₁ x
+              ≈⟨ p ⟩
+            y ∎
+          where open SetoidReasoning (A.F₀ c)
+        right = begin
+            B.F₁ Po.id ⟨$⟩ (proj₂ x)
+              ≈⟨ identity B (refl (B.F₀ c)) ⟩
+            proj₂ x
+              ≈⟨ q ⟩
+            y' ∎
+          where open SetoidReasoning (B.F₀ c)
+
+    .F-resp-≡′ : ∀ {a b : Po.Obj}{F G : Po.op [ a , b ]} → Po.op [ F ≡ G ] → ISetoids _ _ [ hmap F ≡ hmap G ]
+    F-resp-≡′ {b = b}{F}{G} F≡G {x = x}{y} x≡y =
+      begin
+        hmap F ⟨$⟩ x
+          ≈⟨ cong (hmap F) x≡y ⟩
+        hmap F ⟨$⟩ y
+          ↓≣⟨ PEq.cong (λ u → hmap u ⟨$⟩ y) F≡G ⟩
+        hmap G ⟨$⟩ y ∎
+      where open SetoidReasoning (omap b)
+
+    .homomorphism′ : ∀ {a b c : Po.Obj}{f : Po.op [ a , b ]}{g : Po.op [ b , c ]} →
+                    ISetoids _ _ [ hmap (Po.op [ g ∘ f ]) ≡ ISetoids _ _ [ hmap g ∘ hmap f ] ]
+    homomorphism′ {a}{c = c}{f}{g}{x}{y} x≡y =
+      begin
+        hmap (Po.op [ g ∘ f ]) ⟨$⟩ x
+          ≈⟨ cong (hmap (Po.op [ g ∘ f ])) x≡y ⟩
+        hmap (Po.op [ g ∘ f ]) ⟨$⟩ y
+          ↓≣⟨ PEq.refl ⟩
+        let h = (Po.op [ g ∘ f ]) in ((A.F₁ h) ⟨$⟩ (proj₁ y) , (B.F₁ h) ⟨$⟩ (proj₂ y))
+          ≈⟨ homomorphism A (refl (A.F₀ a)) , homomorphism B (refl (B.F₀ a)) ⟩
+        (A.F₁ g) ⟨$⟩ ((A.F₁ f) ⟨$⟩ (proj₁ y)) , (B.F₁ g) ⟨$⟩ ((B.F₁ f) ⟨$⟩ (proj₂ y))
+          ↓≣⟨ PEq.refl ⟩
+        (hmap g) ∙ (hmap f) ⟨$⟩ y
+          ↓≣⟨ PEq.refl ⟩
+        ISetoids _ _ [ hmap g ∘ hmap f ] ⟨$⟩ y ∎
+      where open SetoidReasoning (omap c)
+
+    A×B : Obj MP
+    A×B = record {
+        F₀ = omap
+      ; F₁ = hmap
+      ; identity = identity′
+      ; homomorphism = homomorphism′
+      ; F-resp-≡ = F-resp-≡′ }
+
+    π₁ : MP [ A×B , A ]
+    π₁ = record {
+        η = λ c → record { _⟨$⟩_ = proj₁ ; cong = proj₁ }
+      ; commute = {!!} }
+
+    π₂ : MP [ A×B , B ]
+    π₂ = record {
+        η = λ c → record { _⟨$⟩_ = proj₂ ; cong = proj₂ }
+      ; commute = {!!} }
+
+    ⟨_,_⟩ : ∀ {C} → MP [ C , A ] → MP [ C , B ] → MP [ C , A×B ]
+    ⟨_,_⟩ C⇒A C⇒B = record {η = λ X → ⟪ η C⇒A X , η C⇒B X ⟫ ; commute = λ f x₁ → {!!} , {!!} }
 
 has-products : Products MP
 has-products = record {
@@ -142,4 +154,6 @@ has-products = record {
   binary = products }
 
 cartesian : Monoidal MP
-cartesian = Cartesian MP has-products
+cartesian = Cartesian MP record {
+  terminal = terminal ;
+  binary = products }
