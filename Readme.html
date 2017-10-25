@@ -11,11 +11,11 @@
   A rendered and linked version of this readme can be found here:
   - https://metaborg.github.io/mj.agda/
 
-  This development has been tested against Agda 2.5.3.  If you have
-  this installed you should be able simply run `make` in the project
-  root, which will checkout some libraries in `./lib/` first and then
-  build `./Readme.agda` which serves as the main entrypoint to the
-  development.
+  This development has been tested against Agda 2.5.3 (and should also compile
+  with 2.6.0). If you have this installed, you should simply be able to run
+  `make` in the project root. This will checkout the two dependencies in
+  `./lib/` first and then build this `./Readme.agda` which serves as the main
+  entrypoint to the development.
 
   Alternatively you can run `make docs` to build the html version of
   the development which is useful if you want to navigate the code
@@ -33,9 +33,9 @@
   Other discrepancies are summarized below in this readme.
 -}</a>
 
-<a id="1395" class="Keyword">module</a> <a id="1402" href="Readme.html" class="Module">Readme</a> <a id="1409" class="Keyword">where</a>
+<a id="1445" class="Keyword">module</a> <a id="1452" href="Readme.html" class="Module">Readme</a> <a id="1459" class="Keyword">where</a>
 
-<a id="1416" class="Comment">{-
+<a id="1466" class="Comment">{-
   * Section 2 *
 
   We develop a monadic, well-typed interpreter for STLC and interpret
@@ -44,10 +44,10 @@
   Unlike the interpreter summarized in the paper, the STLC semantics
   in the development makes use of integers and integer operations.
 -}</a>
-<a id="1672" class="Keyword">open</a> <a id="1677" class="Keyword">import</a> <a id="1684" href="STLC.Semantics.html" class="Module">STLC.Semantics</a>
-<a id="1699" class="Keyword">open</a> <a id="1704" class="Keyword">import</a> <a id="1711" href="STLC.Examples.html" class="Module">STLC.Examples</a>
+<a id="1722" class="Keyword">open</a> <a id="1727" class="Keyword">import</a> <a id="1734" href="STLC.Semantics.html" class="Module">STLC.Semantics</a>
+<a id="1749" class="Keyword">open</a> <a id="1754" class="Keyword">import</a> <a id="1761" href="STLC.Examples.html" class="Module">STLC.Examples</a>
 
-<a id="1726" class="Comment">{-
+<a id="1776" class="Comment">{-
   * Section 3.1 - 3.3 *
 
   We demonstrate how naively extending the approach to cover
@@ -55,35 +55,35 @@
   bound values in the interpreter.
 -}</a>
 
-<a id="1921" class="Keyword">open</a> <a id="1926" class="Keyword">import</a> <a id="1933" href="STLCRef.SemanticsLB.html" class="Module">STLCRef.SemanticsLB</a>
+<a id="1971" class="Keyword">open</a> <a id="1976" class="Keyword">import</a> <a id="1983" href="STLCRef.SemanticsLB.html" class="Module">STLCRef.SemanticsLB</a>
 
-<a id="1954" class="Comment">{-
+<a id="2004" class="Comment">{-
   * Section 3.4 : dependent passing style *
 
   We can improve the semantics with a form of monadic strength to get
   rid of explicit weakening.
 -}</a>
-<a id="2104" class="Keyword">open</a> <a id="2109" class="Keyword">import</a> <a id="2116" href="STLCRef.Semantics.html" class="Module">STLCRef.Semantics</a>
-<a id="2134" class="Keyword">open</a> <a id="2139" class="Keyword">import</a> <a id="2146" href="STLCRef.Examples.html" class="Module">STLCRef.Examples</a>
+<a id="2154" class="Keyword">open</a> <a id="2159" class="Keyword">import</a> <a id="2166" href="STLCRef.Semantics.html" class="Module">STLCRef.Semantics</a>
+<a id="2184" class="Keyword">open</a> <a id="2189" class="Keyword">import</a> <a id="2196" href="STLCRef.Examples.html" class="Module">STLCRef.Examples</a>
 
-<a id="2164" class="Comment">{-
+<a id="2214" class="Comment">{-
   * Section 4 until 4.3 *
 
   We implement the scopes and frames approach in the following small
   Agda library.
 -}</a>
 
-<a id="2283" class="Keyword">open</a> <a id="2288" class="Keyword">import</a> <a id="2295" href="ScopesFrames.ScopesFrames.html" class="Module">ScopesFrames.ScopesFrames</a>
+<a id="2333" class="Keyword">open</a> <a id="2338" class="Keyword">import</a> <a id="2345" href="ScopesFrames.ScopesFrames.html" class="Module">ScopesFrames.ScopesFrames</a>
 
-<a id="2322" class="Comment">{-
+<a id="2372" class="Comment">{-
   * Section 4.4 *
 
   We demonstrate the basic usage of this library on an interpreter for
   STLC using scopes and frames.
 -}</a>
-<a id="2450" class="Keyword">open</a> <a id="2455" class="Keyword">import</a> <a id="2462" href="STLCSF.Semantics.html" class="Module">STLCSF.Semantics</a>
+<a id="2500" class="Keyword">open</a> <a id="2505" class="Keyword">import</a> <a id="2512" href="STLCSF.Semantics.html" class="Module">STLCSF.Semantics</a>
 
-<a id="2480" class="Comment">{-
+<a id="2530" class="Comment">{-
   * Section 5 *
 
   We show how our techniques scale by defining an intrinsically-typed
@@ -102,7 +102,7 @@
     lambdas (Section 5.3 and 5.4), we use tagging predicates in
     `MJSF.Syntax`.
 
-  Then there are a few notable differences between the original
+  Then there are some notable differences between the original
   presentation of MJ and our development:
 
   - Original MJ distinguishes promotable expressions (method
@@ -133,21 +133,24 @@
   - Our MJ syntax admits fields typed by `void`, which Original MJ
     does not.
 
+  - Our MJ syntax incorporates a dedicated `this` expression for
+    referencing the &quot;self&quot; of an object.
+
 -}</a>
 
-<a id="4427" class="Keyword">open</a> <a id="4432" class="Keyword">import</a> <a id="4439" href="MJSF.Syntax.html" class="Module">MJSF.Syntax</a>
-<a id="4451" class="Keyword">open</a> <a id="4456" class="Keyword">import</a> <a id="4463" href="MJSF.Values.html" class="Module">MJSF.Values</a>
-<a id="4475" class="Keyword">open</a> <a id="4480" class="Keyword">import</a> <a id="4487" href="MJSF.Monad.html" class="Module">MJSF.Monad</a>
-<a id="4498" class="Keyword">open</a> <a id="4503" class="Keyword">import</a> <a id="4510" href="MJSF.Semantics.html" class="Module">MJSF.Semantics</a>
+<a id="4583" class="Keyword">open</a> <a id="4588" class="Keyword">import</a> <a id="4595" href="MJSF.Syntax.html" class="Module">MJSF.Syntax</a>
+<a id="4607" class="Keyword">open</a> <a id="4612" class="Keyword">import</a> <a id="4619" href="MJSF.Values.html" class="Module">MJSF.Values</a>
+<a id="4631" class="Keyword">open</a> <a id="4636" class="Keyword">import</a> <a id="4643" href="MJSF.Monad.html" class="Module">MJSF.Monad</a>
+<a id="4654" class="Keyword">open</a> <a id="4659" class="Keyword">import</a> <a id="4666" href="MJSF.Semantics.html" class="Module">MJSF.Semantics</a>
 
-<a id="4526" class="Comment">{-
+<a id="4682" class="Comment">{-
   We demonstrate that our interpreter is executable:
 -}</a>
-<a id="4585" class="Keyword">open</a> <a id="4590" class="Keyword">import</a> <a id="4597" href="MJSF.Examples.Integer.html" class="Module">MJSF.Examples.Integer</a>
-<a id="4619" class="Keyword">open</a> <a id="4624" class="Keyword">import</a> <a id="4631" href="MJSF.Examples.DynamicDispatch.html" class="Module">MJSF.Examples.DynamicDispatch</a>
+<a id="4741" class="Keyword">open</a> <a id="4746" class="Keyword">import</a> <a id="4753" href="MJSF.Examples.Integer.html" class="Module">MJSF.Examples.Integer</a>
+<a id="4775" class="Keyword">open</a> <a id="4780" class="Keyword">import</a> <a id="4787" href="MJSF.Examples.DynamicDispatch.html" class="Module">MJSF.Examples.DynamicDispatch</a>
 
 
-<a id="4663" class="Comment">{-
+<a id="4819" class="Comment">{-
   * Appendix A *
 
   The following code artifacts *are not* described in the paper, but
@@ -160,28 +163,30 @@
   typing contexts and environments to deal with lexical binding
   respectively.
 -}</a>
-<a id="5167" class="Keyword">open</a> <a id="5172" class="Keyword">import</a> <a id="5179" href="MJ.Syntax.Typed.html" class="Module">MJ.Syntax.Typed</a>
+<a id="5323" class="Keyword">open</a> <a id="5328" class="Keyword">import</a> <a id="5335" href="MJ.Syntax.Typed.html" class="Module">MJ.Syntax.Typed</a>
 
-<a id="5196" class="Comment">-- lexical contexts</a>
-<a id="5216" class="Keyword">open</a> <a id="5221" class="Keyword">import</a> <a id="5228" href="MJ.LexicalScope.html" class="Module">MJ.LexicalScope</a>
+<a id="5352" class="Comment">-- lexical contexts</a>
+<a id="5372" class="Keyword">open</a> <a id="5377" class="Keyword">import</a> <a id="5384" href="MJ.LexicalScope.html" class="Module">MJ.LexicalScope</a>
 
-<a id="5245" class="Comment">-- class table</a>
-<a id="5260" class="Keyword">open</a> <a id="5265" class="Keyword">import</a> <a id="5272" href="MJ.Classtable.Core.html" class="Module">MJ.Classtable.Core</a>
-<a id="5291" class="Keyword">open</a> <a id="5296" class="Keyword">import</a> <a id="5303" href="MJ.Classtable.Membership.html" class="Module">MJ.Classtable.Membership</a>
-<a id="5328" class="Keyword">open</a> <a id="5333" class="Keyword">import</a> <a id="5340" href="MJ.Classtable.Code.html" class="Module">MJ.Classtable.Code</a>
+<a id="5401" class="Comment">-- class table</a>
+<a id="5416" class="Keyword">open</a> <a id="5421" class="Keyword">import</a> <a id="5428" href="MJ.Classtable.Core.html" class="Module">MJ.Classtable.Core</a>
+<a id="5447" class="Keyword">open</a> <a id="5452" class="Keyword">import</a> <a id="5459" href="MJ.Classtable.Membership.html" class="Module">MJ.Classtable.Membership</a>
+<a id="5484" class="Keyword">open</a> <a id="5489" class="Keyword">import</a> <a id="5496" href="MJ.Classtable.Code.html" class="Module">MJ.Classtable.Code</a>
 
-<a id="5360" class="Comment">-- semantics</a>
-<a id="5373" class="Keyword">open</a> <a id="5378" class="Keyword">import</a> <a id="5385" href="MJ.Semantics.Values.html" class="Module">MJ.Semantics.Values</a>
-<a id="5405" class="Keyword">open</a> <a id="5410" class="Keyword">import</a> <a id="5417" href="MJ.Semantics.Objects.Flat.html" class="Module">MJ.Semantics.Objects.Flat</a>
-<a id="5443" class="Keyword">open</a> <a id="5448" class="Keyword">import</a> <a id="5455" href="MJ.Semantics.Monadic.html" class="Module">MJ.Semantics.Monadic</a>
+<a id="5516" class="Comment">-- semantics</a>
+<a id="5529" class="Keyword">open</a> <a id="5534" class="Keyword">import</a> <a id="5541" href="MJ.Semantics.Values.html" class="Module">MJ.Semantics.Values</a>
+<a id="5561" class="Keyword">open</a> <a id="5566" class="Keyword">import</a> <a id="5573" href="MJ.Semantics.Environments.html" class="Module">MJ.Semantics.Environments</a>
+<a id="5599" class="Keyword">open</a> <a id="5604" class="Keyword">import</a> <a id="5611" href="MJ.Semantics.Objects.html" class="Module">MJ.Semantics.Objects</a>
+<a id="5632" class="Keyword">open</a> <a id="5637" class="Keyword">import</a> <a id="5644" href="MJ.Semantics.Objects.Flat.html" class="Module">MJ.Semantics.Objects.Flat</a>
+<a id="5670" class="Keyword">open</a> <a id="5675" class="Keyword">import</a> <a id="5682" href="MJ.Semantics.Monadic.html" class="Module">MJ.Semantics.Monadic</a>
 
-<a id="5477" class="Comment">-- examples</a>
-<a id="5489" class="Keyword">open</a> <a id="5494" class="Keyword">import</a> <a id="5501" href="MJ.Examples.Integer.html" class="Module">MJ.Examples.Integer</a>
-<a id="5521" class="Keyword">open</a> <a id="5526" class="Keyword">import</a> <a id="5533" href="MJ.Examples.Exceptions.html" class="Module">MJ.Examples.Exceptions</a>
-<a id="5556" class="Keyword">open</a> <a id="5561" class="Keyword">import</a> <a id="5568" href="MJ.Examples.While.html" class="Module">MJ.Examples.While</a>
-<a id="5586" class="Keyword">open</a> <a id="5591" class="Keyword">import</a> <a id="5598" href="MJ.Examples.DynDispatch.html" class="Module">MJ.Examples.DynDispatch</a>
+<a id="5704" class="Comment">-- examples</a>
+<a id="5716" class="Keyword">open</a> <a id="5721" class="Keyword">import</a> <a id="5728" href="MJ.Examples.Integer.html" class="Module">MJ.Examples.Integer</a>
+<a id="5748" class="Keyword">open</a> <a id="5753" class="Keyword">import</a> <a id="5760" href="MJ.Examples.Exceptions.html" class="Module">MJ.Examples.Exceptions</a>
+<a id="5783" class="Keyword">open</a> <a id="5788" class="Keyword">import</a> <a id="5795" href="MJ.Examples.While.html" class="Module">MJ.Examples.While</a>
+<a id="5813" class="Keyword">open</a> <a id="5818" class="Keyword">import</a> <a id="5825" href="MJ.Examples.DynDispatch.html" class="Module">MJ.Examples.DynDispatch</a>
 
-<a id="5623" class="Comment">{-
+<a id="5850" class="Comment">{-
   * Appendix B *
 
   Additionally we demonstrate briefly how Agda&#39;s typeclass mechanism
@@ -189,9 +194,9 @@
   weakening. (Notably Idris rejects an equivalent program as well
   because the two instances are overlapping)
 -}</a>
-<a id="5891" class="Keyword">open</a> <a id="5896" class="Keyword">import</a> <a id="5903" href="Experiments.Infer.html" class="Module">Experiments.Infer</a>
+<a id="6118" class="Keyword">open</a> <a id="6123" class="Keyword">import</a> <a id="6130" href="Experiments.Infer.html" class="Module">Experiments.Infer</a>
 
-<a id="5922" class="Comment">{-
+<a id="6149" class="Comment">{-
   * Appendix C *
 
   Our interpreters make use of the operator `_^_` operator, defined
@@ -219,11 +224,11 @@
   point-free style.
 -}</a>
 
-<a id="6828" class="Keyword">open</a> <a id="6833" class="Keyword">import</a> <a id="6840" href="Experiments.Category.html" class="Module">Experiments.Category</a>
-<a id="6861" class="Keyword">open</a> <a id="6866" class="Keyword">import</a> <a id="6873" href="Experiments.StrongMonad.html" class="Module">Experiments.StrongMonad</a>
-<a id="6897" class="Keyword">open</a> <a id="6902" class="Keyword">import</a> <a id="6909" href="Experiments.STLCRefPointfree.html" class="Module">Experiments.STLCRefPointfree</a>
+<a id="7055" class="Keyword">open</a> <a id="7060" class="Keyword">import</a> <a id="7067" href="Experiments.Category.html" class="Module">Experiments.Category</a>
+<a id="7088" class="Keyword">open</a> <a id="7093" class="Keyword">import</a> <a id="7100" href="Experiments.StrongMonad.html" class="Module">Experiments.StrongMonad</a>
+<a id="7124" class="Keyword">open</a> <a id="7129" class="Keyword">import</a> <a id="7136" href="Experiments.STLCRefPointfree.html" class="Module">Experiments.STLCRefPointfree</a>
 
-<a id="6939" class="Comment">{-
+<a id="7166" class="Comment">{-
   We briefly outline how these experiments relate to our paper.
 
   The interpreters in our paper are defined in terms of ordinary Agda
