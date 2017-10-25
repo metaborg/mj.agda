@@ -12,8 +12,7 @@ open import Categories.Agda
 open import Categories.Category
 open import Categories.Presheaf
 open import Categories.Presheaves
-open import Categories.Functor
-open import Categories.Bifunctor
+open import Categories.Functor using (Functor)
 open import Categories.Monoidal
 open import Categories.Support.Equivalence
 open import Categories.Support.SetoidFunctions as SF
@@ -21,13 +20,13 @@ open import Categories.Support.EqReasoning
 open import Categories.Object.BinaryProducts
 open import Categories.Object.Products
 open import Categories.Monoidal.Cartesian
-open import Categories.NaturalTransformation
+open import Categories.NaturalTransformation using (NaturalTransformation)
 open import Relation.Binary.Product.Pointwise hiding (_×-setoid_)
 
 open Category
 open Functor
 open _⟶_
-open NaturalTransformation
+open NaturalTransformation using (η; commute)
 open Setoid
 
 MP : Category _ _ _
@@ -64,7 +63,7 @@ product products {A} {B} = record {
   ; ⟨_,_⟩ = ⟨_,_⟩
   ; commute₁ = {!!}
   ; commute₂ = {!!}
-  ; universal = {!!} }
+  ; universal = λ{ {f = f}{g}{i} → universal {f = f} {g = g} {i} }}
 
   where
     private
@@ -146,6 +145,10 @@ product products {A} {B} = record {
     ⟨_,_⟩ : ∀ {C} → MP [ C , A ] → MP [ C , B ] → MP [ C , A×B ]
     η ⟨ C⇒A , C⇒B ⟩ X = ⟪ η C⇒A X , η C⇒B X ⟫
     commute (⟨_,_⟩ {C} C⇒A C⇒B) f x≡y = commute C⇒A f x≡y , commute C⇒B f x≡y
+
+    .universal : ∀ {C} {f : MP [ C , A ]} {g : MP [ C , B ]} {i : MP [ C , A×B ]}
+                 → MP [ MP [ π₁ ∘ i ] ≡ f ] → MP [ MP [ π₂ ∘ i ] ≡ g ] → MP [ ⟨ f , g ⟩ ≡ i ]
+    universal {C} l r {x} p = sym (A.F₀ x) (l (sym (F₀ C x) p)) , sym (B.F₀ x) (r (sym (F₀ C x) p))
 
 has-products : Products MP
 has-products = record {
