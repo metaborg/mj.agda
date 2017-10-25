@@ -4,3 +4,6 @@
 [submodule "lib/stdlib"]
 	path = lib/stdlib
 	url = https://github.com/agda/agda-stdlib
+[submodule "lib/categories"]
+	path = lib/categories
+	url = https://github.com/copumpkin/categories.git
