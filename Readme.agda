@@ -133,7 +133,7 @@ open import STLCSF.Semantics
     does not.
 
   - Our MJ syntax incorporates a dedicated `this` expression for
-    referencing the "self" object.
+    referencing the "self" of an object.
 
 -}
 
