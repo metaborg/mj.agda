@@ -53,6 +53,8 @@ terminal = record {
     ; commute = λ _ _ → PEq.refl }
   ; !-unique = λ _ _ → PEq.refl }
 
+-- TODO is this construction general for all presheaves-categories?
+-- i.e. is it domain independent
 module MP-Products (A B : Obj MP) where
   private
     module A = Functor A
@@ -87,12 +89,32 @@ module MP-Products (A B : Obj MP) where
            y' ∎
         where open SetoidReasoning (B.F₀ c)
 
-  .F-resp-≡′ : ∀ {A B : Po.Obj}{F G : Po.op [ A , B ]} → Po.op [ F ≡ G ] → ISetoids _ _ [ hmap F ≡ hmap G ]
-  F-resp-≡′ = {!!}
+  .F-resp-≡′ : ∀ {a b : Po.Obj}{F G : Po.op [ a , b ]} → Po.op [ F ≡ G ] → ISetoids _ _ [ hmap F ≡ hmap G ]
+  F-resp-≡′ {b = b}{F}{G} F≡G {x = x}{y} x≡y =
+    begin
+      hmap F ⟨$⟩ x
+        ≈⟨ cong (hmap F) x≡y ⟩
+      hmap F ⟨$⟩ y
+        ↓≣⟨ PEq.cong (λ u → hmap u ⟨$⟩ y) F≡G ⟩
+      hmap G ⟨$⟩ y ∎
+    where open SetoidReasoning (omap b)
 
-  .homomorphism′ : ∀ {X Y Z : Po.Obj}{f : Po.op [ X , Y ]}{g : Po.op [ Y , Z ]} →
+  .homomorphism′ : ∀ {a b c : Po.Obj}{f : Po.op [ a , b ]}{g : Po.op [ b , c ]} →
                    ISetoids _ _ [ hmap (Po.op [ g ∘ f ]) ≡ ISetoids _ _ [ hmap g ∘ hmap f ] ]
-  homomorphism′ = {!!}
+  homomorphism′ {a}{c = c}{f}{g}{x}{y} x≡y =
+    begin
+      hmap (Po.op [ g ∘ f ]) ⟨$⟩ x
+        ≈⟨ cong (hmap (Po.op [ g ∘ f ])) x≡y ⟩
+      hmap (Po.op [ g ∘ f ]) ⟨$⟩ y
+        ↓≣⟨ PEq.refl ⟩
+      let h = (Po.op [ g ∘ f ]) in ((A.F₁ h) ⟨$⟩ (proj₁ y) , (B.F₁ h) ⟨$⟩ (proj₂ y))
+        ≈⟨ homomorphism A (refl (A.F₀ a)) , homomorphism B (refl (B.F₀ a)) ⟩
+      (A.F₁ g) ⟨$⟩ ((A.F₁ f) ⟨$⟩ (proj₁ y)) , (B.F₁ g) ⟨$⟩ ((B.F₁ f) ⟨$⟩ (proj₂ y))
+        ↓≣⟨ PEq.refl ⟩
+      (hmap g) ∙ (hmap f) ⟨$⟩ y
+        ↓≣⟨ PEq.refl ⟩
+      ISetoids _ _ [ hmap g ∘ hmap f ] ⟨$⟩ y ∎
+    where open SetoidReasoning (omap c)
 
   A×B : Obj MP
   A×B = record {
