@@ -207,3 +207,5 @@ module Forall≥ (P : PreorderPlus.Carrier po → Setoid ℓ₁ ℓ₁) where
       ≈⟨ f≡g X _ ⟩
     g X (C [ B⇒A ∘ G ]) ∎
     where open SetoidReasoning (P X)
+
+open Forall≥ using () renaming (obj to ∀[_]) public
