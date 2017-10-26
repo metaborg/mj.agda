@@ -1,6 +1,6 @@
 open import Categorical.Preorder
 
-module Categorical.MonotonePredicates {ℓ₁ ℓ₂ ℓ₃} (po : PreorderPlus ℓ₁ ℓ₂ ℓ₃) where
+module Categorical.MonotonePredicates {ℓ₁ ℓ₂} (po : PreorderPlus ℓ₁ ℓ₂ ℓ₁) where
 
 import Function as Fun
 import Relation.Binary.PropositionalEquality as PEq
@@ -70,7 +70,7 @@ product products {A} {B} = record {
       module A = Functor A
       module B = Functor B
       module Po = Category (Preorder po)
-      module Is = Category (ISetoids ℓ₃ ℓ₃)
+      module Is = Category (ISetoids ℓ₁ ℓ₁)
 
     -- pointwise product
     omap = λ c → (A.F₀ c) ×-setoid (B.F₀ c)
@@ -165,3 +165,45 @@ cartesian : Monoidal MP
 cartesian = Cartesian MP record {
   terminal = terminal ;
   binary = products }
+
+-- TODO this seems a construction that should work for any presheaf category
+-- forall quantification lower-bounded by an object from our preorder
+module Forall≥ (P : PreorderPlus.Carrier po → Setoid ℓ₁ ℓ₁) where
+
+  open PreorderPlus po hiding (po; Carrier)
+  C = Category.op (Preorder po)
+
+  -- morally we have: omap x ≔ ∀ x' → x ⇒ x' → P x'
+  omap = λ x → ∀[ PreorderPlus.Carrier po ]-setoid λ x' → ∀[ C [ x , x' ] ]-setoid λ _ → P x'
+
+  hmap : ∀ {A B} → C [ A , B ] → ISetoids ℓ₁ ℓ₁ [ omap A , omap B ]
+  _⟨$⟩_ (hmap A⇒B) f X B⇒X = f X (C [ B⇒X ∘ A⇒B ])
+  cong (hmap A⇒B) f≡g X B⇒Y = f≡g X (C [ B⇒Y ∘ A⇒B ])
+
+  obj : Obj MP
+  F₀ obj X = omap X
+  F₁ obj A⇒B = hmap A⇒B
+  identity obj {x = f}{g} f≡g X A⇒X =
+    begin
+       f X (C [ A⇒X ∘ Category.id C ])
+         ↓≣⟨ PEq.cong (f X) (Category.identityʳ C) ⟩
+       f X A⇒X
+         ≈⟨ f≡g X A⇒X ⟩
+       g X A⇒X ∎
+    where open SetoidReasoning (P X)
+  homomorphism obj {f = X⇒Y} {Y⇒Z} {x = f} {g} f≡g X Z⇒X = begin
+      f X (C [ Z⇒X ∘ C [ Y⇒Z ∘ X⇒Y ] ])
+        ≈⟨ f≡g X _ ⟩
+      g X (C [ Z⇒X ∘ C [ Y⇒Z ∘ X⇒Y ] ])
+        ↑≣⟨ PEq.cong (g X) (Category.assoc C) ⟩
+      g X (C [ C [ Z⇒X ∘ Y⇒Z ] ∘ X⇒Y ])
+        ↓≣⟨ PEq.refl ⟩
+      (ISetoids ℓ₁ ℓ₁ [ hmap Y⇒Z ∘ hmap X⇒Y ] ⟨$⟩ g) X Z⇒X ∎
+    where open SetoidReasoning (P X)
+  F-resp-≡ obj {F = F}{G} F≡G {x = f}{g} f≡g X B⇒A = begin
+    f X (C [ B⇒A ∘ F ])
+      ↓≣⟨ PEq.cong (f X) (∘-resp-≡ C PEq.refl F≡G) ⟩
+    f X (C [ B⇒A ∘ G ])
+      ≈⟨ f≡g X _ ⟩
+    g X (C [ B⇒A ∘ G ]) ∎
+    where open SetoidReasoning (P X)
