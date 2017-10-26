@@ -61,9 +61,9 @@ product products {A} {B} = record {
   ; π₁ = π₁
   ; π₂ = π₂
   ; ⟨_,_⟩ = ⟨_,_⟩
-  ; commute₁ = {!!}
-  ; commute₂ = {!!}
-  ; universal = λ{ {f = f}{g}{i} → universal {f = f} {g = g} {i} }}
+  ; commute₁ = λ{ {f = f}{g} → commute₁ {f = f}{g} }
+  ; commute₂ = λ{ {f = f}{g} → commute₂ {f = f}{g} }
+  ; universal = λ{ {f = f}{g}{i} → universal {f = f}{g}{i} }}
 
   where
     private
@@ -146,8 +146,14 @@ product products {A} {B} = record {
     η ⟨ C⇒A , C⇒B ⟩ X = ⟪ η C⇒A X , η C⇒B X ⟫
     commute (⟨_,_⟩ {C} C⇒A C⇒B) f x≡y = commute C⇒A f x≡y , commute C⇒B f x≡y
 
-    .universal : ∀ {C} {f : MP [ C , A ]} {g : MP [ C , B ]} {i : MP [ C , A×B ]}
-                 → MP [ MP [ π₁ ∘ i ] ≡ f ] → MP [ MP [ π₂ ∘ i ] ≡ g ] → MP [ ⟨ f , g ⟩ ≡ i ]
+    .commute₁ : ∀ {C} {f : (MP ⇒ C) A} {g : (MP ⇒ C) B} → (MP ≡ (MP ∘ π₁) ⟨ f , g ⟩) f
+    commute₁ {f = f}{x = x} p = cong (η f x) p
+
+    .commute₂ : ∀ {C} {f : (MP ⇒ C) A} {g : (MP ⇒ C) B} → (MP ≡ (MP ∘ π₂) ⟨ f , g ⟩) g
+    commute₂ {g = g}{x = x} p = cong (η g x) p
+
+    .universal : ∀ {C} {f : MP [ C , A ]} {g : MP [ C , B ]} {i : MP [ C , A×B ]} →
+                 MP [ MP [ π₁ ∘ i ] ≡ f ] → MP [ MP [ π₂ ∘ i ] ≡ g ] → MP [ ⟨ f , g ⟩ ≡ i ]
     universal {C} l r {x} p = sym (A.F₀ x) (l (sym (F₀ C x) p)) , sym (B.F₀ x) (r (sym (F₀ C x) p))
 
 has-products : Products MP
