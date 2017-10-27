@@ -29,6 +29,9 @@ open _⟶_
 open NaturalTransformation using (η; commute)
 open Setoid
 
+private
+  C = Category.op (Preorder po)
+
 MP : Category _ _ _
 MP = Presheaves (Preorder po)
 
@@ -171,7 +174,6 @@ cartesian = Cartesian MP record {
 module Forall≥ (P : PreorderPlus.Carrier po → Setoid ℓ₁ ℓ₁) where
 
   open PreorderPlus po hiding (po; Carrier)
-  C = Category.op (Preorder po)
 
   -- morally we have: omap x ≔ ∀ x' → x ⇒ x' → P x'
   omap = λ x → ∀[ PreorderPlus.Carrier po ]-setoid λ x' → ∀[ C [ x , x' ] ]-setoid λ _ → P x'
