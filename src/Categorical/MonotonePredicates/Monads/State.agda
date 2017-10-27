@@ -16,13 +16,14 @@ open import Relation.Binary.HeterogeneousEquality as HEq using () renaming (_≅
 
 open import Categories.Category
 open import Categories.Agda
-open import Categories.Functor hiding (_≡_; assoc; identityˡ; identityʳ)
+open import Categories.Functor hiding (_≡_; assoc; identityˡ; identityʳ; _∘_)
 open import Categories.NaturalTransformation renaming (id to idN)
 open import Categories.Monad
 open import Categories.Monad.Strong
 open import Categories.Support.Equivalence
 open import Categories.NaturalTransformation using (NaturalTransformation)
 open import Categories.Support.SetoidFunctions
+open import Categories.Support.EqReasoning
 
 open NaturalTransformation using (η; commute)
 open Category
@@ -31,22 +32,23 @@ private
   module MP = Category MP
 
 -- lift equality from a set-indexed setoid into a heterogeneous equality type
-data _[_∼_∼_] {a s₁ s₂}{A : Set a}(I : A → Setoid s₁ s₂){c} :
-  ∀ {c'} → Setoid.Carrier (I c) → c ≣ c' → Setoid.Carrier (I c') → Set (a ⊔ s₁ ⊔ s₂) where
-  hrefl : ∀ {l r} → Setoid._≈_ (I c) l r → I [ l ∼ PEq.refl ∼ r ]
+-- looks like https://coq.inria.fr/distrib/current/stdlib/Coq.Logic.EqdepFacts.html -- Robbert
+data _[_∼_]' {a s₁ s₂}{A : Set a}(I : A → Setoid s₁ s₂){c} :
+  ∀ {c'} → Setoid.Carrier (I c) → Setoid.Carrier (I c') → Set (a ⊔ s₁ ⊔ s₂) where
+  hrefl : ∀ {l r} → Setoid._≈_ (I c) l r → I [ l ∼ r ]'
 
 .cong-∃ : ∀
           {a s₁ s₂}{A : Set a}{I : A → Setoid s₁ s₂}{J : A → Setoid s₁ s₂}
           {l l'}{r : Setoid.Carrier (I l)}{r' : Setoid.Carrier (I l')} →
           (f : ∀ {l} → (I l) ⟶ (J l)) →
-          (∃ λ (p : l ≣ l') → I [ r ∼ p ∼ r' ]) →
-          ∃ λ (p : l ≣ l') → J [ (f ⟨$⟩ r) ∼ p ∼ (f ⟨$⟩ r') ]
+          (∃ λ (p : l ≣ l') → I [ r ∼ r' ]') →
+          ∃ λ (p : l ≣ l') → J [ (f ⟨$⟩ r) ∼ (f ⟨$⟩ r') ]'
 cong-∃ f (PEq.refl , hrefl x) = PEq.refl , (hrefl (cong f x))
 
 ∃[_]-setoid_ : ∀ {ℓ s₁ s₂} → (A : Set ℓ) → (A → Setoid s₁ s₂) → Setoid _ _
 ∃[ A ]-setoid B = record
    { Carrier = ∃ λ a → B.Carrier a
-   ; _≈_ = λ p q → ∃ λ (eq : (proj₁ p) ≣ (proj₁ q)) → B [ (proj₂ p) ∼ eq ∼ (proj₂ q) ]
+   ; _≈_ = λ p q → ∃ λ (eq : (proj₁ p) ≣ (proj₁ q)) → B [ (proj₂ p) ∼ (proj₂ q) ]'
    ; isEquivalence = record {
      refl = λ {x} → PEq.refl , hrefl (Setoid.refl (B (proj₁ x))) ;
      sym = λ{ {i}{j}(PEq.refl , hrefl p) → PEq.refl , hrefl (Setoid.sym (B (proj₁ j)) p) };
@@ -65,12 +67,12 @@ module State where
   Result X P Y = (set→setoid (C [ X , Y ] × Store Y)) ×-setoid (P Y)
 
   -- But it should be an endofunctor of carrier indexed setoids.
-  -- It suffices for now that we can map over the inner setoid carrier with a setoid function.
+  -- It suffices for now that we can map over the result with a ≈-preserving function.
   result-map : ∀ {s₁ s₂}{X Y : Carrier}(P : Carrier → Setoid s₁ s₂)(Q : Carrier → Setoid s₁ s₂) →
                (f : ∀ Y → (P Y) ⟶ (Q Y)) → Result X P Y ⟶ Result X Q Y
   result-map {X}{Y} P Q f = record
     { _⟨$⟩_ = λ x → proj₁ x , (f _) ⟨$⟩ (proj₂ x)
-    ; cong = λ x → (proj₁ x) , cong (f _) (proj₂ x) }
+    ; cong  = λ x → proj₁ x , cong (f _) (proj₂ x) }
 
   omap : (P : MP.Obj) → MP.Obj
   omap P = ∀[ StateFun ]
@@ -83,22 +85,73 @@ module State where
         ∀[ Store X ]-setoid λ μ →
         ∃[ Carrier ]-setoid (Result X P.F₀)
 
+  open Functor
+  open Category
   hmap : ∀ {A B : MP.Obj} → MP [ A , B ] → MP [ omap A , omap B ]
   _⟨$⟩_ (η (hmap A⇒B) X) φ C X⇒C μ =
     let v = φ _ X⇒C μ ; C' = proj₁ v in C' , proj₁ (proj₂ v) , (η A⇒B C') ⟨$⟩ (proj₂ (proj₂ v))
-  cong (η (hmap {A}{B} A⇒B) X) φ≡φ' C X⇒C μ = cong-∃ (result-map (Functor.F₀ A) (Functor.F₀ B) (η A⇒B)) (φ≡φ' C X⇒C μ)
-  commute (hmap A⇒B) = {!!}
+  cong (η (hmap {A}{B} A⇒B) X) φ≡φ' C X⇒C μ =
+    cong-∃ (result-map (F₀ A) (F₀ B) (η A⇒B)) (φ≡φ' C X⇒C μ)
+  commute (hmap {A} {B} A⇒B) X⇒Y {x} {y} = lemma
+    where
+      lemma : ISetoids _ _ [((ISetoids ℓ ℓ [ (η (hmap A⇒B) _) ∘ (F₁ (omap A) X⇒Y) ])) ≡ ((ISetoids ℓ ℓ [ (F₁ (omap B) X⇒Y) ∘ (η (hmap A⇒B) _) ])) ]
+      lemma = {!!} -- commute ({!hmap A⇒B!} ∘₁ {!F₁ (omap A) X⇒Y!})
+
+  return : ∀ (P : Obj MP) → MP [ P , omap P ]
+  η (return P) X = record
+      { _⟨$⟩_ = λ x Y X⇒Y μ → Y , (Category.id C , μ) , (Functor.F₁ P X⇒Y) ⟨$⟩ x
+      ; cong = λ i≡j Y X⇒Y μ → PEq.refl , (hrefl (PEq.refl , cong (Functor.F₁ P X⇒Y) i≡j )) }
+  commute (return P) X⇒Y x≡y Z Y⇒Z μZ = PEq.refl , (hrefl (PEq.refl , {!!}))
+
+  join : ∀ (P : Obj MP) → MP [ omap (omap P) , omap P ]
+  η (join P) X = record
+    { _⟨$⟩_ = λ M²P Y X⇒Y μY → case M²P Y X⇒Y μY of λ{
+        (Z , (Y⇒Z , μZ) , MP) → case MP Z (Category.id C) μZ of λ{
+        (U , (Z⇒U , μU) , P)  → U , (C [ Z⇒U ∘ Y⇒Z ] , μU) , P }}
+    ; cong = λ i≡j Y X⇒Y μY → {!!} }
+  commute (join P) X⇒Y x≡y Z Y⇒Z μZ = {!!}
+
+  .identity' : ∀ (P : Obj MP) → MP [ hmap {P} MP.id ≡ MP.id ]
+  identity' P {x = x} {x₁} {y} x₁≡y = x₁≡y
+
+  .homomorphism' : ∀ {X Y Z : Obj MP}(f : MP [ X , Y ])(g : MP [ Y , Z ]) →
+                   MP [ hmap (MP [ g ∘ f ]) ≡ MP [ hmap g ∘ hmap f ] ]
+  homomorphism' {P}{Q}{R} f g {x = X}{x₁}{y} x₁≡y Y X⇒Y μY =
+    let resy = (y Y X⇒Y μY) ; res = (x₁ Y X⇒Y μY) in begin
+      proj₁ res , proj₁ (proj₂ res) , η (MP [ g ∘ f ]) (proj₁ res) ⟨$⟩ proj₂ (proj₂ res)
+        ≈⟨ cong-∃ (result-map (F₀ P) (F₀ R) (η (MP [ g ∘ f ]))) (x₁≡y Y X⇒Y μY) ⟩
+      proj₁ resy , proj₁ (proj₂ resy) , η (MP [ g ∘ f ]) (proj₁ resy) ⟨$⟩ proj₂ (proj₂ resy)
+        ↓≣⟨ PEq.refl ⟩
+      (η (MP [ hmap g ∘ hmap f ]) X ⟨$⟩ y) Y X⇒Y μY ∎
+    where open SetoidReasoning (∃[ Carrier ]-setoid Result Y (F₀ R))
+
+  .resp-≡ : {P Q : Obj MP}(F G : MP [ P , Q ]) → MP [ F ≡ G ] → MP [ hmap F ≡ hmap G ]
+  resp-≡ {P} {Q} F G F≡G {x} {f} {g} f≡g Y X⇒Y μY =
+    begin
+      (proj₁ (f Y X⇒Y μY) , proj₁ (proj₂ (f Y X⇒Y μY)) , η F (proj₁ (f Y X⇒Y μY)) ⟨$⟩ proj₂ (proj₂ (f Y X⇒Y μY)))
+        ≈⟨ cong-∃ (result-map (F₀ P) (F₀ Q) (η F)) (f≡g Y X⇒Y μY) ⟩
+      (proj₁ (g Y X⇒Y μY) , proj₁ (proj₂ (g Y X⇒Y μY)) , η F (proj₁ (g Y X⇒Y μY)) ⟨$⟩ proj₂ (proj₂ (g Y X⇒Y μY)))
+        ≈⟨ {!!} ⟩
+      (proj₁ (g Y X⇒Y μY) , proj₁ (proj₂ (g Y X⇒Y μY)) , η G (proj₁ (g Y X⇒Y μY)) ⟨$⟩ proj₂ (proj₂ (g Y X⇒Y μY))) ∎
+    where open SetoidReasoning (∃[ Carrier ]-setoid Result Y (F₀ Q))
 
 open Monad
+open Functor
+
 St : Monad MP
 F St = record {
     F₀ = State.omap
   ; F₁ = State.hmap
-  ; identity = {!!}
-  ; homomorphism = {!!}
-  ; F-resp-≡ = {!!} }
-η St = {!!}
-μ St = {!!}
+  ; identity = λ {P} → State.identity' P
+  ; homomorphism = λ{ {f = f}{g} → State.homomorphism' f g }
+  ; F-resp-≡ = λ{ {F = F}{G} → State.resp-≡ F G }}
+η St = record
+  { η = State.return
+  ; commute = λ f x₂ a a₁ a₂ → PEq.refl , (hrefl (PEq.refl , {!!}))
+  }
+μ St = record
+  { η = State.join
+  ; commute = {!!} }
 assoc St = {!!}
-identityˡ St = {!!}
+identityˡ St = λ x a a₁ a₂ → {!!} , {!!}
 identityʳ St = {!!}

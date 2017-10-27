@@ -190,12 +190,12 @@ module Forall≥ (P : PreorderPlus.Carrier po → Setoid ℓ₁ ℓ₁) where
        f X (C [ A⇒X ∘ Category.id C ])
          ↓≣⟨ PEq.cong (f X) (Category.identityʳ C) ⟩
        f X A⇒X
-         ≈⟨ f≡g X A⇒X ⟩
+         ↓⟨ f≡g X A⇒X ⟩
        g X A⇒X ∎
     where open SetoidReasoning (P X)
   homomorphism obj {f = X⇒Y} {Y⇒Z} {x = f} {g} f≡g X Z⇒X = begin
       f X (C [ Z⇒X ∘ C [ Y⇒Z ∘ X⇒Y ] ])
-        ≈⟨ f≡g X _ ⟩
+        ↓⟨ f≡g X _ ⟩
       g X (C [ Z⇒X ∘ C [ Y⇒Z ∘ X⇒Y ] ])
         ↑≣⟨ PEq.cong (g X) (Category.assoc C) ⟩
       g X (C [ C [ Z⇒X ∘ Y⇒Z ] ∘ X⇒Y ])
@@ -206,7 +206,7 @@ module Forall≥ (P : PreorderPlus.Carrier po → Setoid ℓ₁ ℓ₁) where
     f X (C [ B⇒A ∘ F ])
       ↓≣⟨ PEq.cong (f X) (∘-resp-≡ C PEq.refl F≡G) ⟩
     f X (C [ B⇒A ∘ G ])
-      ≈⟨ f≡g X _ ⟩
+      ↓⟨ f≡g X _ ⟩
     g X (C [ B⇒A ∘ G ]) ∎
     where open SetoidReasoning (P X)
 
