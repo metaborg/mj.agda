@@ -10,7 +10,7 @@ open PreorderPlus po hiding (po)
 open import Level
 
 open import Data.Product
-open import Function using (case_of_;_∋_)
+open import Function as Fun using (case_of_;_∋_)
 open import Relation.Binary.PropositionalEquality as PEq using () renaming (_≡_ to _≣_)
 open import Relation.Binary.HeterogeneousEquality as HEq using () renaming (_≅_ to _≡~_)
 
@@ -102,11 +102,15 @@ module State where
   cong (η (hmap {A}{B} A⇒B) X) φ≡φ' C X⇒C μ =
     cong-∃ (result-map (F₀ A) (F₀ B) (η A⇒B)) (φ≡φ' C X⇒C μ)
   commute (hmap {A} {B} A⇒B) X⇒Y {x} {y} x≡y Z Y⇒Z μZ =
-    let X⇒Z = C [ Y⇒Z ∘ X⇒Y ] ; v = x _ X⇒Z μZ; w = y _ X⇒Z μZ in
-    begin
-      proj₁ v , proj₁ (proj₂ v) , (η A⇒B _) ⟨$⟩ (proj₂ (proj₂ v))
-        ≈⟨ cong-∃ (result-map (F₀ A) (F₀ B) (η A⇒B)) (x≡y Z X⇒Z μZ) ⟩
-      proj₁ w , proj₁ (proj₂ w) , (η A⇒B _) ⟨$⟩ (proj₂ (proj₂ w)) ∎
+    let
+      X⇒Z = C [ Y⇒Z ∘ X⇒Y ]
+      (Z₁ , S , v) = x _ X⇒Z μZ
+      (Z₂ , S' , w) = y _ X⇒Z μZ
+    in
+      begin
+        Z₁ , S , (η A⇒B _) ⟨$⟩ v
+          ≈⟨ cong-∃ (result-map (F₀ A) (F₀ B) (η A⇒B)) (x≡y Z X⇒Z μZ) ⟩
+        Z₂ , S' , (η A⇒B _) ⟨$⟩ w ∎
     where open SetoidReasoning (∃[ Carrier ]-setoid Result Z (F₀ B))
 
 
@@ -172,27 +176,31 @@ module State where
   commute (join P) X⇒Y x≡y Z Y⇒Z μZ = {!!}
 
   .identity' : ∀ (P : Obj MP) → MP [ hmap {P} MP.id ≡ MP.id ]
-  identity' P {x = x} {x₁} {y} x₁≡y = x₁≡y
+  identity' P = Fun.id
 
   .homomorphism' : ∀ {X Y Z : Obj MP}(f : MP [ X , Y ])(g : MP [ Y , Z ]) →
                    MP [ hmap (MP [ g ∘ f ]) ≡ MP [ hmap g ∘ hmap f ] ]
-  homomorphism' {P}{Q}{R} f g {x = X}{x₁}{y} x₁≡y Y X⇒Y μY =
-    let resy = (y Y X⇒Y μY) ; res = (x₁ Y X⇒Y μY) in begin
-      proj₁ res , proj₁ (proj₂ res) , η (MP [ g ∘ f ]) (proj₁ res) ⟨$⟩ proj₂ (proj₂ res)
-        ≈⟨ {!!} ⟩ -- cong-∃ (result-map (F₀ P) (F₀ R) (η (MP [ g ∘ f ]))) (x₁≡y Y X⇒Y μY) ⟩
-      proj₁ resy , proj₁ (proj₂ resy) , η (MP [ g ∘ f ]) (proj₁ resy) ⟨$⟩ proj₂ (proj₂ resy)
-        ↓≣⟨ PEq.refl ⟩
-      (η (MP [ hmap g ∘ hmap f ]) X ⟨$⟩ y) Y X⇒Y μY ∎
+  homomorphism' {P}{Q}{R} F G {x = X}{f}{g} f≡g Y X⇒Y μY =
+    let
+      (Z , S , v) = f Y X⇒Y μY
+      (U , T , w) = g Y X⇒Y μY
+    in begin
+      Z , S , η (MP [ G ∘ F ]) Z ⟨$⟩ v
+        ≈⟨ cong-∃ (result-map (F₀ P) (F₀ R) (η (MP [ G ∘ F ]))) (f≡g Y X⇒Y μY) ⟩
+      U , T , η (MP [ G ∘ F ]) U ⟨$⟩ w ∎
     where open SetoidReasoning (∃[ Carrier ]-setoid Result Y (F₀ R))
 
   .resp-≡ : {P Q : Obj MP}(F G : MP [ P , Q ]) → MP [ F ≡ G ] → MP [ hmap F ≡ hmap G ]
   resp-≡ {P} {Q} F G F≡G {x} {f} {g} f≡g Y X⇒Y μY =
-    begin
-      (proj₁ (f Y X⇒Y μY) , proj₁ (proj₂ (f Y X⇒Y μY)) , η F (proj₁ (f Y X⇒Y μY)) ⟨$⟩ proj₂ (proj₂ (f Y X⇒Y μY)))
+    let
+      (Z , S , v) = f Y X⇒Y μY
+      (U , T , w) = g Y X⇒Y μY
+    in begin
+      (Z , S , η F Z ⟨$⟩ v)
         ≈⟨ cong-∃ (result-map (F₀ P) (F₀ Q) (η F)) (f≡g Y X⇒Y μY) ⟩
-      (proj₁ (g Y X⇒Y μY) , proj₁ (proj₂ (g Y X⇒Y μY)) , η F (proj₁ (g Y X⇒Y μY)) ⟨$⟩ proj₂ (proj₂ (g Y X⇒Y μY)))
+      (U , T , η F U ⟨$⟩ w)
         ≈⟨ hrefl (PEq.refl , F≡G (Setoid.refl (F₀ P (proj₁ (g Y X⇒Y μY))))) ⟩
-      (proj₁ (g Y X⇒Y μY) , proj₁ (proj₂ (g Y X⇒Y μY)) , η G (proj₁ (g Y X⇒Y μY)) ⟨$⟩ proj₂ (proj₂ (g Y X⇒Y μY))) ∎
+      (U , T , η G U ⟨$⟩ w) ∎
     where open SetoidReasoning (∃[ Carrier ]-setoid Result Y (F₀ Q))
 
 open Monad
