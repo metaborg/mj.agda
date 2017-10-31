@@ -1,6 +1,6 @@
 open import Categorical.Preorder
 
-module Categorical.MonotonePredicates {ℓ₁ ℓ₂} (po : PreorderPlus ℓ₁ ℓ₂ ℓ₁) where
+module Categorical.MonotonePredicates {ℓ₂ ℓ₃} (po : PreorderPlus ℓ₃ ℓ₂ ℓ₃) where
 
 import Function as Fun
 import Relation.Binary.PropositionalEquality as PEq
@@ -73,7 +73,7 @@ product products {A} {B} = record {
       module A = Functor A
       module B = Functor B
       module Po = Category (Preorder po)
-      module Is = Category (ISetoids ℓ₁ ℓ₁)
+      module Is = Category (ISetoids _ _)
 
     -- pointwise product
     omap = λ c → (A.F₀ c) ×-setoid (B.F₀ c)
@@ -171,14 +171,15 @@ cartesian = Cartesian MP record {
 
 -- TODO this seems a construction that should work for any presheaf category
 -- forall quantification lower-bounded by an object from our preorder
-module Forall≥ (P : PreorderPlus.Carrier po → Setoid ℓ₁ ℓ₁) where
+-- Robbert: this construction is also used in their logics
+module Forall≥ (P : PreorderPlus.Carrier po → Setoid ℓ₃ ℓ₃) where
 
   open PreorderPlus po hiding (po; Carrier)
 
   -- morally we have: omap x ≔ ∀ x' → x ⇒ x' → P x'
   omap = λ x → ∀[ PreorderPlus.Carrier po ]-setoid λ x' → ∀[ C [ x , x' ] ]-setoid λ _ → P x'
 
-  hmap : ∀ {A B} → C [ A , B ] → ISetoids ℓ₁ ℓ₁ [ omap A , omap B ]
+  hmap : ∀ {A B} → C [ A , B ] → ISetoids _ _ [ omap A , omap B ]
   _⟨$⟩_ (hmap A⇒B) f X B⇒X = f X (C [ B⇒X ∘ A⇒B ])
   cong (hmap A⇒B) f≡g X B⇒Y = f≡g X (C [ B⇒Y ∘ A⇒B ])
 
@@ -200,7 +201,7 @@ module Forall≥ (P : PreorderPlus.Carrier po → Setoid ℓ₁ ℓ₁) where
         ↑≣⟨ PEq.cong (g X) (Category.assoc C) ⟩
       g X (C [ C [ Z⇒X ∘ Y⇒Z ] ∘ X⇒Y ])
         ↓≣⟨ PEq.refl ⟩
-      (ISetoids ℓ₁ ℓ₁ [ hmap Y⇒Z ∘ hmap X⇒Y ] ⟨$⟩ g) X Z⇒X ∎
+      (ISetoids _ _ [ hmap Y⇒Z ∘ hmap X⇒Y ] ⟨$⟩ g) X Z⇒X ∎
     where open SetoidReasoning (P X)
   F-resp-≡ obj {F = F}{G} F≡G {x = f}{g} f≡g X B⇒A = begin
     f X (C [ B⇒A ∘ F ])
