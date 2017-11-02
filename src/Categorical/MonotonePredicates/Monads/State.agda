@@ -1,3 +1,4 @@
+{-# OPTIONS --show-implicit #-}
 open import Categorical.Preorder
 
 module Categorical.MonotonePredicates.Monads.State {ℓ ℓ₂}
@@ -66,13 +67,13 @@ module IndexedSetoid where
   Pred' {s₁} {s₂} = Pred s₁ s₂
 
   -- lift equality indexed-setoid into a heterogeneous equality type
-  data _[_≅_] {s₁ s₂}(I : Obj (Pred s₁ s₂)) {c} : ∀ {c'} → Carrier (I c) → Carrier (I c') → Set (s₁ ⊔ s₂) where
+  data _[_≅_] {s₁ s₂}(I : Obj (Pred s₁ s₂)) {c} : ∀ {c'} → Carrier (I c) → Carrier (I c') → Set (ℓ ⊔ s₁ ⊔ s₂) where
     hrefl : ∀ {l r} → (I c) [ l ≈ r ] → I [ l ≅ r ]
 
-  .cong-∃ : ∀ {s₁ s₂}{I J : Obj (Pred s₁ s₂)}
+  .≅cong : ∀ {s₁ s₂}{I J : Obj (Pred s₁ s₂)}
             {l l'}{r : Carrier (I l)}{r' : Carrier (I l')} →
             (f : Pred' [ I , J ]) → I [ r ≅ r' ] → J [ (f ⟨$⟩ r) ≅ (f ⟨$⟩ r') ]
-  cong-∃ f (hrefl x) = (hrefl (cong f x))
+  ≅cong f (hrefl x) = (hrefl (cong f x))
 
   ∃[_]-setoid_ : ∀ {ℓ s₁ s₂} → (A : Set ℓ) → Obj (Pred s₁ s₂) → Setoid _ _
   ∃[ A ]-setoid B = record
@@ -134,7 +135,7 @@ module State where
     let
       (Σ , S , v) = φ _ X⇒C μ
     in Σ , S , (η A⇒B Σ) ⟨$⟩ v
-  cong (η (hmap {A}{B} A⇒B) X) φ≡φ' C X⇒C μ = cong-∃ (result-map (F₀ A) (F₀ B) (η A⇒B _)) (φ≡φ' C X⇒C μ)
+  cong (η (hmap {A}{B} A⇒B) X) φ≡φ' C X⇒C μ = ≅cong (result-map (F₀ A) (F₀ B) (η A⇒B _)) (φ≡φ' C X⇒C μ)
   commute (hmap {A} {B} A⇒B) X⇒Y {x} {y} x≡y Z Y⇒Z μZ =
     let
       X⇒Z = C [ Y⇒Z ∘ X⇒Y ]
@@ -143,7 +144,7 @@ module State where
     in
       begin
         Z₁ , S , (η A⇒B _) ⟨$⟩ v
-          ≈⟨ cong-∃ (result-map (F₀ A) (F₀ B) (η A⇒B _)) (x≡y Z X⇒Z μZ) ⟩
+          ≈⟨ ≅cong (result-map (F₀ A) (F₀ B) (η A⇒B _)) (x≡y Z X⇒Z μZ) ⟩
         Z₂ , S' , (η A⇒B _) ⟨$⟩ w ∎
     where open SetoidReasoning (∃Result Z (F₀ B))
 
@@ -161,7 +162,6 @@ module State where
     where open SetoidReasoning (∃Result Z (F₀ P))
 
   private
-
     combine : ∀ P {X} →
               (v : Carrier (∃Result X (F₀ (omap P)))) →
               Carrier (∃Result (proj₁ v) (F₀ P)) →
@@ -176,41 +176,29 @@ module State where
                     Setoid._≈_ (∃Result Y (F₀ P)) (combine P v w) (combine P v' w')
     combine-cong P (hrefl (PEq.refl , geq)) (hrefl (hrefl (PEq.refl , peq))) = hrefl (PEq.refl , peq)
 
-    join$ : ∀ P {X} → Carrier (F₀ (omap (omap P)) X) → Carrier (F₀ (omap P) X)
-    join$ P f Y X⇒Y μY =
+    ηjoin : ∀ P → Pred' [ (F₀ (omap (omap P))) , (F₀ (omap P)) ]
+    _⟨$⟩_ (ηjoin P) f Y X⇒Y μY =
       let
         v@(Z , (Y⇒Z , μZ) , g) = f Y X⇒Y μY
-        w@(Z' , (Z⇒Z' , μZ') , p) = g Z (Category.id C) μZ
-      in combine P v w
+        w@(Z' , (Z⇒Z' , μZ') , p) = g Z (Category.id C) μZ in combine P v w
+    cong (ηjoin P){i = i}{j} i≡j Y X⇒Y μY = combine-cong P (i≡j Y X⇒Y μY) (lem P (i≡j Y X⇒Y μY))
+      where
+        lem : ∀ P {X}{v v' : Carrier (∃Result X (F₀ (omap P)))} → (∃Result X (F₀ (omap P))) [ v ≈ v' ] →
+              (λ u → ∃Result u (F₀ P)) [ (proj₂ (proj₂ v)) (proj₁ v) (id C) (proj₂ (proj₁ (proj₂ v))) ≅
+              (proj₂ (proj₂ v')) (proj₁ v') (id C) (proj₂ (proj₁ (proj₂ v'))) ]
+        lem P {X} {Σ , S , g} {.Σ , .S , g'} (hrefl  (PEq.refl , g≡g')) = hrefl (g≡g' Σ (id C) (proj₂ S))
 
   join : ∀ (P : Obj MP) → MP [ omap (omap P) , omap P ]
-  _⟨$⟩_ (η (join P) X) = join$ P
-  cong (η (join P) X) {i = i}{j} i≡j Y X⇒Y μY =
-    let
-      v@(Σ , (ext , μ) , g) = i Y X⇒Y μY
-      v'@(Σ' , (ext' , μ') , g') = j Y X⇒Y μY
-      w = g _ (Category.id C) μ
-      w' = g' _ (Category.id C) μ'
-      w≡w' = (λ u → ∃Result u (F₀ P)) [ w ≅ w' ] ∋ {!!}
-    in
-    begin
-      join$ P i Y X⇒Y μY
-        ↓≣⟨ PEq.refl ⟩
-      combine P v w
-        ↓⟨ combine-cong P (i≡j Y X⇒Y μY) w≡w' ⟩
-      combine P v' w'
-        ↓≣⟨ PEq.refl ⟩
-      join$ P j Y X⇒Y μY ∎
-    where open SetoidReasoning (∃Result Y (F₀ P))
+  (η (join P) X) = ηjoin P
   commute (join P) {X}{Y} X⇒Y {x}{y} x≡y =
     begin
       (ISetoids ℓ ℓ [ η (join P) Y ∘ (F₁ (omap (omap P)) X⇒Y)] ⟨$⟩ x)
         ↓⟨ _⟶_.cong (ISetoids ℓ ℓ [ η (join P) Y ∘ (F₁ (omap (omap P)) X⇒Y)]) x≡y ⟩
       (ISetoids ℓ ℓ [ η (join P) Y ∘ (F₁ (omap (omap P)) X⇒Y)] ⟨$⟩ y)
         ↓≣⟨ PEq.refl ⟩
-      (join$ P ((F₁ (omap (omap P)) X⇒Y) ⟨$⟩ y))
+      (ηjoin P ⟨$⟩ ((F₁ (omap (omap P)) X⇒Y) ⟨$⟩ y))
         ↓⟨ {!!} ⟩
-      (F₁ (omap P) X⇒Y) ⟨$⟩ (join$ P y)
+      (F₁ (omap P) X⇒Y) ⟨$⟩ (ηjoin P ⟨$⟩ y)
         ↓≣⟨ PEq.refl ⟩
       (ISetoids ℓ ℓ [ F₁ (omap P) X⇒Y ∘ (η (join P) X) ] ⟨$⟩ y) ∎
     where open SetoidReasoning (F₀ (omap P) Y)
@@ -223,7 +211,7 @@ module State where
       (U , T , w) = g Y X⇒Y μY
     in begin
       Z , S , η (MP [ G ∘ F ]) Z ⟨$⟩ v
-        ≈⟨ cong-∃ (result-map (F₀ P) (F₀ R) (η (MP [ G ∘ F ]) _)) (f≡g Y X⇒Y μY) ⟩
+        ≈⟨ ≅cong (result-map (F₀ P) (F₀ R) (η (MP [ G ∘ F ]) _)) (f≡g Y X⇒Y μY) ⟩
       U , T , η (MP [ G ∘ F ]) U ⟨$⟩ w ∎
     where open SetoidReasoning (∃Result Y (F₀ R))
 
@@ -234,7 +222,7 @@ module State where
       (U , T , w) = g Y X⇒Y μY
     in begin
       (Z , S , η F Z ⟨$⟩ v)
-        ≈⟨ cong-∃ (result-map (F₀ P) (F₀ Q) (η F _)) (f≡g Y X⇒Y μY) ⟩
+        ≈⟨ ≅cong (result-map (F₀ P) (F₀ Q) (η F _)) (f≡g Y X⇒Y μY) ⟩
       (U , T , η F U ⟨$⟩ w)
         ≈⟨ hrefl (PEq.refl , F≡G (Setoid.refl (F₀ P (proj₁ (g Y X⇒Y μY))))) ⟩
       (U , T , η G U ⟨$⟩ w) ∎
