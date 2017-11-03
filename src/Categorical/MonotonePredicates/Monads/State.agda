@@ -1,4 +1,3 @@
-{-# OPTIONS --show-implicit #-}
 open import Categorical.Preorder
 
 module Categorical.MonotonePredicates.Monads.State {ℓ ℓ₂}
@@ -17,7 +16,7 @@ open import Relation.Binary.HeterogeneousEquality as HEq using () renaming (_≅
 
 open import Categories.Category
 open import Categories.Agda
-open import Categories.Functor using (Functor; Endofunctor)
+open import Categories.Functor using (Functor) renaming (id to 𝕀)
 open import Categories.Monad
 open import Categories.Monad.Strong
 open import Categories.Support.Equivalence
@@ -238,7 +237,16 @@ F St = record {
 
 -- natural return
 η (η St) = State.return
-commute (η St) X⇒Y {Σ₀}{x}{y} x≡y Σ Σ₀⇒Σ μΣ = hrefl (PEq.refl , {!!})
+commute (η St) {P}{Q} P⇒Q {Σ₀}{x}{y} x≡y =
+  -- η (𝕀 ∘ return) ⟨$⟩ x ≈ η (hmap X⇒Y ∘ return) ⟨$⟩ y
+  begin
+    (η (MP [ (State.return Q) ∘ (F₁ (𝕀 {C = MP}) P⇒Q) ]) Σ₀ ⟨$⟩ x)
+      ↓⟨ cong (η (MP [ State.return Q ∘ F₁ (𝕀 {C = MP}) P⇒Q ]) Σ₀) x≡y ⟩
+    (η (State.return Q) Σ₀) ⟨$⟩ (η (F₁ (𝕀 {C = MP}) P⇒Q) Σ₀ ⟨$⟩ y)
+      ↑⟨ (λ c M μ → hrefl (PEq.refl , commute P⇒Q M (Setoid.refl (F₀ P Σ₀)))) ⟩
+    (η (State.hmap P⇒Q) Σ₀) ⟨$⟩ (η (State.return P) Σ₀ ⟨$⟩ y) ∎
+  where
+    open SetoidReasoning (F₀ (State.omap Q) Σ₀)
 
 -- natural join
 η (μ St) = State.join
