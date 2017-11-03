@@ -256,3 +256,12 @@ commute (μ St) X⇒Y eq Σ x⇒Σ μΣ = {!!}
 assoc St = {!!}
 identityˡ St = λ x a a₁ a₂ → {!!}
 identityʳ St = {!!}
+
+strong : Strength MP monoidal St
+strong = record
+  { σ = {!!}
+  ; identity₁ = {!!}
+  ; identity₂ = {!!}
+  ; α-assoc = {!!}
+  ; μ-assoc = {!!}
+  }
