@@ -196,10 +196,6 @@ module State where
         ↓⟨ _⟶_.cong (ISetoids ℓ ℓ [ η (join P) Y ∘ (F₁ (omap (omap P)) X⇒Y)]) x≡y ⟩
       (ISetoids ℓ ℓ [ η (join P) Y ∘ (F₁ (omap (omap P)) X⇒Y)] ⟨$⟩ y)
         ↓≣⟨ PEq.refl ⟩
-      (ηjoin P ⟨$⟩ ((F₁ (omap (omap P)) X⇒Y) ⟨$⟩ y))
-        ↓⟨ {!!} ⟩
-      (F₁ (omap P) X⇒Y) ⟨$⟩ (ηjoin P ⟨$⟩ y)
-        ↓≣⟨ PEq.refl ⟩
       (ISetoids ℓ ℓ [ F₁ (omap P) X⇒Y ∘ (η (join P) X) ] ⟨$⟩ y) ∎
     where open SetoidReasoning (F₀ (omap P) Y)
 
