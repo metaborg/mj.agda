@@ -16,7 +16,7 @@ open import Relation.Binary.HeterogeneousEquality as HEq using () renaming (_≅
 
 open import Categories.Category
 open import Categories.Agda
-open import Categories.Functor using (Functor) renaming (id to 𝕀)
+open import Categories.Functor using (Functor; Endofunctor) renaming (id to 𝕀)
 open import Categories.Monad
 open import Categories.Monad.Strong
 open import Categories.Support.Equivalence
@@ -167,12 +167,10 @@ module State where
               Carrier (∃Result X (F₀ P))
     combine P (Y , (X⇒Y , μY) , f) (Z , (Y⇒Z , μZ) , v) = Z , (C [ Y⇒Z ∘ X⇒Y ] , μZ) , v
 
-    combine-cong : ∀ P {Y}{v v' : Carrier (∃Result Y (F₀ (omap P)))} →
-                    (v≡v' : Setoid._≈_ (∃Result Y (F₀ (omap P))) v v') →
-                    {w : Carrier (∃Result (proj₁ v) (F₀ P))} →
-                    {w' : Carrier (∃Result (proj₁ v') (F₀ P))} →
-                    (λ u → ∃Result u (F₀ P)) [ w ≅ w' ] →
-                    Setoid._≈_ (∃Result Y (F₀ P)) (combine P v w) (combine P v' w')
+    combine-cong : ∀ P {Y}{v v'}{w w'} →
+                   (v≡v' : ∃Result Y (F₀ (omap P)) [ v ≈ v' ]) →
+                   (λ u → ∃Result u (F₀ P)) [ w ≅ w' ] →
+                   ∃Result Y (F₀ P) [ combine P v w ≈ combine P v' w' ]
     combine-cong P (hrefl (PEq.refl , geq)) (hrefl (hrefl (PEq.refl , peq))) = hrefl (PEq.refl , peq)
 
     ηjoin : ∀ P → Pred' [ (F₀ (omap (omap P))) , (F₀ (omap P)) ]
@@ -182,10 +180,10 @@ module State where
         w@(Z' , (Z⇒Z' , μZ') , p) = g Z (Category.id C) μZ in combine P v w
     cong (ηjoin P){i = i}{j} i≡j Y X⇒Y μY = combine-cong P (i≡j Y X⇒Y μY) (lem P (i≡j Y X⇒Y μY))
       where
-        lem : ∀ P {X}{v v' : Carrier (∃Result X (F₀ (omap P)))} → (∃Result X (F₀ (omap P))) [ v ≈ v' ] →
-              (λ u → ∃Result u (F₀ P)) [ (proj₂ (proj₂ v)) (proj₁ v) (id C) (proj₂ (proj₁ (proj₂ v))) ≅
-              (proj₂ (proj₂ v')) (proj₁ v') (id C) (proj₂ (proj₁ (proj₂ v'))) ]
-        lem P {X} {Σ , S , g} {.Σ , .S , g'} (hrefl  (PEq.refl , g≡g')) = hrefl (g≡g' Σ (id C) (proj₂ S))
+        lem : ∀ P {X}{Σ Σ' c c' μ μ' v v'} →
+              (∃Result X (F₀ (omap P))) [ (Σ , (c , μ) , v) ≈ (Σ' , (c' , μ') , v') ] →
+              (λ u → ∃Result u (F₀ P)) [ v Σ (id C) μ ≅ v' Σ' (id C) μ' ]
+        lem P {X}{Σ = Σ}{μ = μ} (hrefl  (PEq.refl , g≡g')) = hrefl (g≡g' Σ (id C) μ)
 
   join : ∀ (P : Obj MP) → MP [ omap (omap P) , omap P ]
   (η (join P) X) = ηjoin P
@@ -223,17 +221,20 @@ module State where
       (U , T , η G U ⟨$⟩ w) ∎
     where open SetoidReasoning (∃Result Y (F₀ Q))
 
+  functor : Endofunctor MP
+  functor = record
+    {F₀ = omap
+    ; F₁ = hmap
+    ; identity = Fun.id
+    ; homomorphism = λ{ {f = f}{g} → homomorphism' f g }
+    ; F-resp-≡ = λ{ {F = F}{G} → resp-≡ F G }}
+
 open Monad
 open Functor
 open IndexedSetoid
 
 St : Monad MP
-F St = record {
-    F₀ = State.omap
-  ; F₁ = State.hmap
-  ; identity = Fun.id
-  ; homomorphism = λ{ {f = f}{g} → State.homomorphism' f g }
-  ; F-resp-≡ = λ{ {F = F}{G} → State.resp-≡ F G }}
+F St = State.functor
 
 -- natural return
 η (η St) = State.return
@@ -250,13 +251,31 @@ commute (η St) {P}{Q} P⇒Q {Σ₀}{x}{y} x≡y =
 
 -- natural join
 η (μ St) = State.join
-commute (μ St) X⇒Y eq Σ x⇒Σ μΣ = {!!}
+commute (μ St) {P} {Q} P⇒Q {Σ₀} {x} {y} x≡y =
+  begin
+    η (State.join Q MP.∘ (State.hmap (State.hmap P⇒Q))) Σ₀ ⟨$⟩ x
+      ↓⟨ cong (η (State.join Q MP.∘ (State.hmap (State.hmap P⇒Q))) Σ₀) x≡y ⟩
+    η (State.join Q MP.∘ (State.hmap (State.hmap P⇒Q))) Σ₀ ⟨$⟩ y
+      ↓≣⟨ PEq.refl ⟩
+    η (State.hmap P⇒Q MP.∘ State.join P) Σ₀ ⟨$⟩ y ∎
+  where open SetoidReasoning (F₀ (State.omap Q) Σ₀)
 
 -- laws
 assoc St = {!!}
-identityˡ St = λ x a a₁ a₂ → {!!}
-identityʳ St = {!!}
 
+identityˡ St {P}{Σ} {x}{y} x≡y =
+  begin
+    (η (State.join P) Σ) ⟨$⟩ ((η (State.hmap (State.return P)) Σ) ⟨$⟩ x)
+      ↓⟨ cong (η (MP [ η (μ St) P ∘ (State.hmap (η (η St) P)) ]) Σ) x≡y ⟩
+    (η (State.join P) Σ) ⟨$⟩ ((η (State.hmap (State.return P)) Σ) ⟨$⟩ y)
+      ↓⟨ (λ Σ' Σ⇒Σ' μΣ' → {!!}) ⟩
+    y ∎
+  where open SetoidReasoning (F₀ (State.omap P) Σ)
+
+identityʳ St {P}{Σ} {x}{y} x≡y = {!!}
+  where open SetoidReasoning (F₀ (State.omap P) Σ)
+
+-- The monad is strong in this category
 strong : Strength MP monoidal St
 strong = record
   { σ = {!!}
