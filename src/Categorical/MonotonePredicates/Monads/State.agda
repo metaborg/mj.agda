@@ -16,11 +16,11 @@ open import Relation.Binary.HeterogeneousEquality as HEq using () renaming (_≅
 
 open import Categories.Category
 open import Categories.Agda
-open import Categories.Functor using (Functor; Endofunctor) renaming (id to 𝕀)
+open import Categories.Functor using (Functor; Endofunctor) renaming (id to 𝕀; _∘_ to _F∘_)
 open import Categories.Monad
 open import Categories.Monad.Strong
 open import Categories.Support.Equivalence
-open import Categories.NaturalTransformation using (NaturalTransformation)
+open import Categories.NaturalTransformation using (NaturalTransformation; _∘₁_; _∘ˡ_; _∘ʳ_)
 open import Categories.Support.SetoidFunctions as SF hiding (id)
 open import Categories.Support.EqReasoning
 
@@ -160,12 +160,13 @@ module State where
     ∎
     where open SetoidReasoning (∃Result Z (F₀ P))
 
+  combine : ∀ P {X} →
+            (v : Carrier (∃Result X (F₀ (omap P)))) →
+            Carrier (∃Result (proj₁ v) (F₀ P)) →
+            Carrier (∃Result X (F₀ P))
+  combine P (Y , (X⇒Y , μY) , f) (Z , (Y⇒Z , μZ) , v) = Z , (C [ Y⇒Z ∘ X⇒Y ] , μZ) , v
+
   private
-    combine : ∀ P {X} →
-              (v : Carrier (∃Result X (F₀ (omap P)))) →
-              Carrier (∃Result (proj₁ v) (F₀ P)) →
-              Carrier (∃Result X (F₀ P))
-    combine P (Y , (X⇒Y , μY) , f) (Z , (Y⇒Z , μZ) , v) = Z , (C [ Y⇒Z ∘ X⇒Y ] , μZ) , v
 
     combine-cong : ∀ P {Y}{v v'}{w w'} →
                    (v≡v' : ∃Result Y (F₀ (omap P)) [ v ≈ v' ]) →
@@ -261,14 +262,35 @@ commute (μ St) {P} {Q} P⇒Q {Σ₀} {x} {y} x≡y =
   where open SetoidReasoning (F₀ (State.omap Q) Σ₀)
 
 -- laws
-assoc St = {!!}
+assoc St {P}{Σ}{x = x}{y} x≡y =
+  -- associativity: (x : St³ P) → μ ∘ (fmap μ) ≡ μ ∘ μ
+  begin
+    (η (η (μ St ∘₁ State.functor ∘ˡ μ St) P) Σ) ⟨$⟩ x
+      ↓⟨ cong (η (η (μ St ∘₁ State.functor ∘ˡ μ St) P) Σ) x≡y ⟩
+    (η (η (μ St ∘₁ State.functor ∘ˡ μ St) P) Σ) ⟨$⟩ y
+      ↓≣⟨ PEq.refl ⟩
+    (η (η (μ St) P) Σ) ⟨$⟩ ((η (F₁ State.functor (η (μ St) P)) Σ) ⟨$⟩ y)
+      ↓⟨ {!!} ⟩
+    (η (η (μ St ∘₁ (μ St ∘ʳ State.functor)) P) Σ) ⟨$⟩ y ∎
+  where open SetoidReasoning (F₀ (F₀ State.functor P) Σ)
 
 identityˡ St {P}{Σ} {x}{y} x≡y =
   begin
     (η (State.join P) Σ) ⟨$⟩ ((η (State.hmap (State.return P)) Σ) ⟨$⟩ x)
       ↓⟨ cong (η (MP [ η (μ St) P ∘ (State.hmap (η (η St) P)) ]) Σ) x≡y ⟩
     (η (State.join P) Σ) ⟨$⟩ ((η (State.hmap (State.return P)) Σ) ⟨$⟩ y)
-      ↓⟨ (λ Σ' Σ⇒Σ' μΣ' → {!!}) ⟩
+      ↓≣⟨ PEq.refl ⟩
+    (η (State.join P) Σ) ⟨$⟩
+      (λ Σ' Σ⇒Σ' μΣ' →
+        let
+          (Σ , S , v) = y _ Σ⇒Σ' μΣ'
+        in Σ , S , (λ Σ'' Σ⇒Σ'' μ → Σ'' , (id C , μ) , F₁ P Σ⇒Σ'' ⟨$⟩ v))
+      ↓≣⟨ PEq.refl ⟩
+    (λ Y Σ⇒Y μY →
+      let
+        (Z , (Y⇒Z , μZ) , v) = y Y Σ⇒Y μY
+      in Z , (C [ id C ∘ Y⇒Z ] , μZ) , F₁ P (Category.id C) ⟨$⟩ v)
+      ↓⟨ (λ Y Σ⇒Y μY → hrefl (PEq.cong₂ _,_ (identityˡ C) PEq.refl , identity P (Setoid.refl (F₀ P _)))) ⟩
     y ∎
   where open SetoidReasoning (F₀ (State.omap P) Σ)
 
