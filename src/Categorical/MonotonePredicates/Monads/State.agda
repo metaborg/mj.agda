@@ -11,6 +11,7 @@ open import Level
 
 open import Data.Product
 open import Function as Fun using (case_of_;_∋_)
+open import Relation.Binary using (IsPreorder) renaming (Preorder to Po)
 open import Relation.Binary.PropositionalEquality as PEq using () renaming (_≡_ to _≣_)
 open import Relation.Binary.HeterogeneousEquality as HEq using () renaming (_≅_ to _≡~_)
 
@@ -230,6 +231,14 @@ module State where
     ; homomorphism = λ{ {f = f}{g} → homomorphism' f g }
     ; F-resp-≡ = λ{ {F = F}{G} → resp-≡ F G }}
 
+  lemma : ∀ (P : Obj MP){Σ} y →
+          (F₀ (F₀ (functor F∘ functor) P) Σ) [
+            ((η (F₁ functor (join P)) Σ) ⟨$⟩ y) ≈ (η (join (F₀ functor P)) Σ ⟨$⟩ y)
+          ]
+  lemma P {Σ} y Y Σ⇒Y μY with y Y Σ⇒Y μY
+  ... | (Z , (Y⇒Z , μZ) , v) with v Z (id C) μZ
+  ... | (Z' , (Z⇒Z' , μZ') , w) = {!hrefl ?!}
+
 open Monad
 open Functor
 open IndexedSetoid
@@ -262,17 +271,15 @@ commute (μ St) {P} {Q} P⇒Q {Σ₀} {x} {y} x≡y =
   where open SetoidReasoning (F₀ (State.omap Q) Σ₀)
 
 -- laws
-assoc St {P}{Σ}{x = x}{y} x≡y =
-  -- associativity: (x : St³ P) → μ ∘ (fmap μ) ≡ μ ∘ μ
+-- associativity: (x/y : St³ P) → μ ∘ (fmap μ) ≡ μ ∘ μ
+assoc St {P}{Σ}{x = x}{y} x≡y Y Σ⇒Y μY =
   begin
-    (η (η (μ St ∘₁ State.functor ∘ˡ μ St) P) Σ) ⟨$⟩ x
-      ↓⟨ cong (η (η (μ St ∘₁ State.functor ∘ˡ μ St) P) Σ) x≡y ⟩
-    (η (η (μ St ∘₁ State.functor ∘ˡ μ St) P) Σ) ⟨$⟩ y
-      ↓≣⟨ PEq.refl ⟩
-    (η (η (μ St) P) Σ) ⟨$⟩ ((η (F₁ State.functor (η (μ St) P)) Σ) ⟨$⟩ y)
-      ↓⟨ {!!} ⟩
-    (η (η (μ St ∘₁ (μ St ∘ʳ State.functor)) P) Σ) ⟨$⟩ y ∎
-  where open SetoidReasoning (F₀ (F₀ State.functor P) Σ)
+    ((η (η (μ St) P) Σ) ⟨$⟩ ((η (F₁ State.functor (η (μ St) P)) Σ) ⟨$⟩ x)) Y Σ⇒Y μY
+      ↓⟨ cong (η (η (μ St ∘₁ State.functor ∘ˡ μ St) P) Σ) x≡y Y Σ⇒Y μY ⟩
+    ((η (η (μ St) P) Σ) ⟨$⟩ ((η (F₁ State.functor (η (μ St) P)) Σ) ⟨$⟩ y)) Y Σ⇒Y μY
+      ↓⟨ hrefl (PEq.cong₂ _,_ (PreorderPlus.unique po _ _) PEq.refl , Setoid.refl (F₀ P _)) ⟩
+    ((η (η (μ St) P) Σ) ⟨$⟩ (η (η (μ St) (F₀ State.functor P)) Σ ⟨$⟩ y)) Y Σ⇒Y μY ∎
+  where open SetoidReasoning (State.∃Result Y (F₀ P))
 
 identityˡ St {P}{Σ} {x}{y} x≡y =
   begin
