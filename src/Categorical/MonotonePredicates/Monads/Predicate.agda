@@ -1,6 +1,6 @@
 open import Categorical.Preorder
 
-module Categorical.MonotonePredicates.Monads.States {ℓ ℓ₂}
+module Categorical.MonotonePredicates.Monads.Predicate {ℓ ℓ₂}
   (po : PreorderPlus ℓ ℓ₂ ℓ)
   (Store : PreorderPlus.Carrier po → Set ℓ) where
 
@@ -39,7 +39,7 @@ private
 
 module Result where
 
-  -- Morally : (X ≤ Y × State Y) × P Y
+  -- Morally : (X ≤ Y × Predicate Y) × P Y
   -- This isn't a monotone predicate... (it is anti-monotone in X)
   Result : ∀ {s₁ s₂} → Shape → Obj (Pred s₁ s₂) → Obj (Pred _ _)
   Result X P Y = (set→setoid (C [ X , Y ] × Store Y)) ×-setoid (P Y)
@@ -60,7 +60,7 @@ module Result where
 
 open import Categories.Agda using (ISetoids)
 
-module StateT (M : Monad (ISetoids ℓ ℓ)) where
+module PredicateT (M : Monad (ISetoids ℓ ℓ)) where
 
   module M = Monad M
   module F = Functor M.F
@@ -78,12 +78,12 @@ module StateT (M : Monad (ISetoids ℓ ℓ)) where
 
   -- object mapping
   omap : (P : MP.Obj) → MP.Obj
-  omap P = ∀-closure[ StateFun ]
+  omap P = ∀-closure[ PredicateFun ]
     module omap where
       module P = Functor P
 
-      StateFun : Shape → Setoid ℓ ℓ
-      StateFun X =
+      PredicateFun : Shape → Setoid ℓ ℓ
+      PredicateFun X =
         ∀[ Store X ]-setoid λ μ → F₀ M.F (∃Result X P.F₀)
 
   open omap
@@ -159,7 +159,8 @@ module StateT (M : Monad (ISetoids ℓ ℓ)) where
       F.F-resp-≡ (cong (result-anti (F₀ P) X⇒Y)) (eq Σ (id C) μ)
 
     ηjoin : ∀ P → Pred' [ (F₀ (omap (omap P))) , (F₀ (omap P)) ]
-    _⟨$⟩_ (ηjoin P) f Y X⇒Y μY = η M.μ _ ⟨$⟩ (F.F₁ (collapse P) ⟨$⟩ (f Y X⇒Y μY))
+    _⟨$⟩_ (ηjoin P) f Y X⇒Y μY =
+      ISetoids _ _ [ η M.μ _ ∘ (F.F₁ (collapse P)) ] ⟨$⟩ (f Y X⇒Y μY)
     cong (ηjoin P){i = i}{j} i≡j Y X⇒Y μY =
       cong (η M.μ _) (cong (F.F₁ (collapse P)) (i≡j Y X⇒Y μY))
 
@@ -177,51 +178,66 @@ module StateT (M : Monad (ISetoids ℓ ℓ)) where
   open Monad
   open Functor
 
-  St : Monad MP
-  F St = functor
+  monad : Monad MP
+  F monad = functor
 
   -- natural return
-  η (η St) = return
-  commute (η St) {P}{Q} P⇒Q {Σ₀}{x}{y} x≡y =
+  η (η monad) = return
+  commute (η monad) {P}{Q} P⇒Q {X}{x}{y} x≡y =
     begin
-      (η (MP [ (return Q) ∘ (F₁ (𝕀 {C = MP}) P⇒Q) ]) Σ₀ ⟨$⟩ x)
-        ↓⟨ cong (η (MP [ return Q ∘ F₁ (𝕀 {C = MP}) P⇒Q ]) Σ₀) x≡y ⟩
-      (η (return Q) Σ₀) ⟨$⟩ (η (F₁ (𝕀 {C = MP}) P⇒Q) Σ₀ ⟨$⟩ y)
-        ↑⟨ {!!} ⟩ -- (λ c M μ → hrefl (PEq.refl , commute P⇒Q M (Setoid.refl (F₀ P Σ₀)))) ⟩
-      (η (hmap P⇒Q) Σ₀) ⟨$⟩ (η (return P) Σ₀ ⟨$⟩ y) ∎
+        (η (MP [ (return Q) ∘ (F₁ (𝕀 {C = MP}) P⇒Q) ]) X ⟨$⟩ x)
+      ↓⟨ cong (η (MP [ return Q ∘ F₁ (𝕀 {C = MP}) P⇒Q ]) X) x≡y ⟩
+        (η (return Q) X) ⟨$⟩ (η (F₁ (𝕀 {C = MP}) P⇒Q) X ⟨$⟩ y)
+      ↓≣⟨ PEq.refl ⟩
+        (λ Y X⇒Y μ → η M.η _ ⟨$⟩ (Y , (id C , μ) , (F₁ Q X⇒Y) ⟨$⟩ (η P⇒Q X ⟨$⟩ y)))
+      ↑⟨ (λ Y F μ → cong (η M.η _) (hrefl (PEq.refl , commute P⇒Q F (Setoid.refl (F₀ P X))))) ⟩
+        (λ Y X⇒Y μ → η M.η _ ⟨$⟩ (Y , (id C , μ) , η P⇒Q Y ⟨$⟩ ((F₁ P X⇒Y) ⟨$⟩ y)))
+      ↓≣⟨ PEq.refl ⟩
+        (λ Y X⇒Y μ → η M.η _ ⟨$⟩ ((F₁ (𝕀 {C = ISetoids _ _}) (map-∃ P⇒Q)) ⟨$⟩ (Y , (id C , μ) , (F₁ P X⇒Y) ⟨$⟩ y)))
+      ↓⟨ (λ Y X⇒Y μ → commute M.η (map-∃ P⇒Q) (hrefl (PEq.refl , (Setoid.refl (F₀ P Y))))) ⟩
+        (η (hmap P⇒Q) X) ⟨$⟩ (λ Y X⇒Y μ → (η M.η _ ⟨$⟩ (Y , (id C , μ) , (F₁ P X⇒Y) ⟨$⟩ y)))
+      ↓≣⟨ PEq.refl ⟩
+        (η (hmap P⇒Q) X) ⟨$⟩ (η (return P) X ⟨$⟩ y) ∎
     where
-      open SetoidReasoning (F₀ (omap Q) Σ₀)
+      open SetoidReasoning (F₀ (omap Q) X)
 
   -- natural join
-  η (μ St) = join
-  commute (μ St) {P} {Q} P⇒Q {Σ₀} {x} {y} x≡y =
+  η (μ monad) = join
+  commute (μ monad) {P} {Q} P⇒Q {X} {x} {y} x≡y =
     begin
-      η (join Q MP.∘ (hmap (hmap P⇒Q))) Σ₀ ⟨$⟩ x
-        ↓⟨ cong (η (join Q MP.∘ (hmap (hmap P⇒Q))) Σ₀) x≡y ⟩
-      η (join Q MP.∘ (hmap (hmap P⇒Q))) Σ₀ ⟨$⟩ y
-        ↓≣⟨ {!!} ⟩ -- PEq.refl ⟩
-      η (hmap P⇒Q MP.∘ join P) Σ₀ ⟨$⟩ y ∎
+        η (join Q MP.∘ (hmap (hmap P⇒Q))) X ⟨$⟩ x
+      ↓⟨ cong (η (join Q MP.∘ (hmap (hmap P⇒Q))) X) x≡y ⟩
+        η (join Q MP.∘ (hmap (hmap P⇒Q))) X ⟨$⟩ y
+      ↓≣⟨ PEq.refl ⟩
+        (λ Y X⇒Y μ → (ISetoids _ _ [ η M.μ _ ∘ F.F₁ (collapse Q) ]) ⟨$⟩ ((η (hmap (hmap P⇒Q)) X ⟨$⟩ y) Y X⇒Y μ))
+      ↓⟨ (λ Y X⇒Y μ → {!!}) ⟩ -- PEq.refl ⟩
+        (λ Y X⇒Y μ → F.F₁ (map-∃ P⇒Q) ⟨$⟩ ((ISetoids _ _ [ η M.μ _ ∘ F.F₁ (collapse P) ]) ⟨$⟩ y Y X⇒Y μ))
+      ↓≣⟨ PEq.refl ⟩
+        η (hmap P⇒Q) X ⟨$⟩ (λ Y X⇒Y μ → (ISetoids _ _ [ η M.μ _ ∘ F.F₁ (collapse P) ]) ⟨$⟩ y Y X⇒Y μ)
+      ↓≣⟨ PEq.refl ⟩
+        η (hmap P⇒Q MP.∘ join P) X ⟨$⟩ y
+      ∎
     where
-      open SetoidReasoning (F₀ (omap Q) Σ₀)
+      open SetoidReasoning (F₀ (omap Q) X)
 
   -- laws
-  -- associativity: (x/y : St³ P) → μ ∘ (fmap μ) ≡ μ ∘ μ
-  assoc St {P}{Σ}{x = x}{y} x≡y Y Σ⇒Y μY = {!!}
+  -- associativity: (x/y : monad³ P) → μ ∘ (fmap μ) ≡ μ ∘ μ
+  assoc monad {P}{Σ}{x = x}{y} x≡y Y Σ⇒Y μY = {!!}
     {-}
     begin
-      ((η (η (μ St) P) Σ) ⟨$⟩ ((η (F₁ functor (η (μ St) P)) Σ) ⟨$⟩ x)) Y Σ⇒Y μY
-        ↓⟨ cong (η (η (μ St ∘₁ functor ∘ˡ μ St) P) Σ) x≡y Y Σ⇒Y μY ⟩
-      ((η (η (μ St) P) Σ) ⟨$⟩ ((η (F₁ functor (η (μ St) P)) Σ) ⟨$⟩ y)) Y Σ⇒Y μY
+      ((η (η (μ monad) P) Σ) ⟨$⟩ ((η (F₁ functor (η (μ monad) P)) Σ) ⟨$⟩ x)) Y Σ⇒Y μY
+        ↓⟨ cong (η (η (μ monad ∘₁ functor ∘ˡ μ monad) P) Σ) x≡y Y Σ⇒Y μY ⟩
+      ((η (η (μ monad) P) Σ) ⟨$⟩ ((η (F₁ functor (η (μ monad) P)) Σ) ⟨$⟩ y)) Y Σ⇒Y μY
         ↓⟨ hrefl (PEq.cong₂ _,_ (PreorderPlus.unique po _ _) PEq.refl , Setoid.refl (F₀ P _)) ⟩
-      ((η (η (μ St) P) Σ) ⟨$⟩ (η (η (μ St) (F₀ functor P)) Σ ⟨$⟩ y)) Y Σ⇒Y μY ∎
+      ((η (η (μ monad) P) Σ) ⟨$⟩ (η (η (μ monad) (F₀ functor P)) Σ ⟨$⟩ y)) Y Σ⇒Y μY ∎
     where open SetoidReasoning (∃Result Y (F₀ P))
     -}
 
-  identityˡ St {P}{Σ} {x}{y} x≡y = {!!}
+  identityˡ monad {P}{Σ} {x}{y} x≡y = {!!}
   {-}
     begin
       (η (join P) Σ) ⟨$⟩ ((η (hmap (return P)) Σ) ⟨$⟩ x)
-        ↓⟨ cong (η (MP [ η (μ St) P ∘ (hmap (η (η St) P)) ]) Σ) x≡y ⟩
+        ↓⟨ cong (η (MP [ η (μ monad) P ∘ (hmap (η (η monad) P)) ]) Σ) x≡y ⟩
       (η (join P) Σ) ⟨$⟩ ((η (hmap (return P)) Σ) ⟨$⟩ y)
         ↓≣⟨ PEq.refl ⟩
       (η (join P) Σ) ⟨$⟩
@@ -239,7 +255,7 @@ module StateT (M : Monad (ISetoids ℓ ℓ)) where
   -}
     where open SetoidReasoning (F₀ (omap P) Σ)
 
-  identityʳ St {P}{Σ} {x}{y} x≡y = {!!}
+  identityʳ monad {P}{Σ} {x}{y} x≡y = {!!}
     where open SetoidReasoning (F₀ (omap P) Σ)
 
   {-
@@ -253,3 +269,7 @@ module StateT (M : Monad (ISetoids ℓ ℓ)) where
     ; μ-assoc = {!!}
     }
   -}
+
+open import Categorical.ISetoids.Monads.Identity
+Predicate :  Monad MP
+Predicate = PredicateT.monad idM

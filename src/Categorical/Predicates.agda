@@ -1,6 +1,7 @@
 open import Categories.Support.Equivalence
 
--- A category of *set-indexed* setoids (≡ predicates over a Set) module Categorical.Predicates {s₁}(S : Set s₁) where
+-- A category of *set-indexed* setoids (≡ predicates over a Set)
+module Categorical.Predicates {s₁}(S : Set s₁) where
 
 open import Level
 
