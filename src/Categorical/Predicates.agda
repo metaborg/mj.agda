@@ -14,12 +14,11 @@ open import Categories.Functor using (Functor; Endofunctor) renaming (id to 𝕀
 open import Categories.Support.SetoidFunctions as SF hiding (id)
 open import Categories.Support.EqReasoning
 
+open import Categorical.ISetoids.Equality
+
 open Category
 open Functor
 open Setoid
-
-_[_≈_] : ∀ {s₁ s₂} (S : Setoid s₁ s₂) → Carrier S → Carrier S → Set _
-_[_≈_] = Setoid._≈_
 
 Pred : ∀ s₁ s₂ → Category _ _ _
 Obj (Pred s₁ s₂) = (c : S) → Setoid s₁ s₂

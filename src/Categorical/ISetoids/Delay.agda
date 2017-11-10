@@ -19,35 +19,35 @@ open _⟶_
 open Setoid A
 
 mutual
-  data Delay (i : Size) : Set (Level.suc s₁) where
+  data Delay (i : Size) : Set s₁ where
     now   : Carrier → Delay i
     later : ∞Delay i → Delay i
 
-  record ∞Delay (i : Size) : Set (Level.suc s₁) where
+  record ∞Delay (i : Size) : Set s₁ where
     coinductive
     field
       force : {j : Size< i} → Delay j
 
-open ∞Delay
+open ∞Delay public
 open import Function
 
 -- strong bisimilarity
 mutual
-  data _≅_ {i : Size} : (?a ?b : Delay ∞) → Set (s₁ ⊔ s₂) where
+  data _≅_ {i : Size} : (?a ?b : Delay ∞) → Set s₂ where
     now   : ∀ {a b : Carrier} → a ≈ b → now a ≅ now b
     later : ∀ {∞a ∞b}(eq : ∞a ∞≅⟨ i ⟩ ∞b) → later ∞a ≅ later ∞b
 
-  _≅⟨_⟩_ : Delay ∞ → Size → Delay ∞ → Set (s₁ ⊔ s₂)
+  _≅⟨_⟩_ : Delay ∞ → Size → Delay ∞ → Set s₂
   _≅⟨_⟩_ = λ a? i b? → _≅_ {i = i} a? b?
 
-  record _∞≅⟨_⟩_ (∞a : ∞Delay ∞) i (∞b : ∞Delay ∞) : Set (s₁ ⊔ s₂) where
+  record _∞≅⟨_⟩_ (∞a : ∞Delay ∞) i (∞b : ∞Delay ∞) : Set s₂ where
     coinductive
     field
-      ≅force : {j : Size< i} → (force ∞a) ≅⟨ j ⟩ force ∞b
+      .≅force : {j : Size< i} → (force ∞a) ≅⟨ j ⟩ force ∞b
 
 open _∞≅⟨_⟩_ public
 
-_∞≅_ : ∀ {i : Size}(∞a : ∞Delay ∞) (∞b : ∞Delay ∞) → Set (s₁ ⊔ s₂)
+_∞≅_ : ∀ {i : Size}(∞a : ∞Delay ∞) (∞b : ∞Delay ∞) → Set s₂
 _∞≅_ {i} a∞ b∞ = a∞ ∞≅⟨ i ⟩ b∞
 
 mutual
@@ -83,3 +83,11 @@ isEquivalence delay-setoid = record
   { refl = refl'
   ; sym = sym'
   ; trans = trans' }
+
+∞delay-setoid : Setoid _ _
+Carrier ∞delay-setoid = ∞Delay ∞
+_≈_ ∞delay-setoid = _∞≅_
+isEquivalence ∞delay-setoid = record
+  { refl = ∞refl'
+  ; sym = ∞sym'
+  ; trans = ∞trans }
