@@ -12,10 +12,10 @@ open import Categories.Agda
 open import Categories.Category
 open import Categories.Presheaf
 open import Categories.Presheaves
-open import Categories.Functor using (Functor; _∘_)
+open import Categories.Functor using (Functor; _∘_) renaming (id to idF; const to constF)
 open import Categories.Monoidal
 open import Categories.Support.Equivalence
-open import Categories.Support.SetoidFunctions as SF
+open import Categories.Support.SetoidFunctions as SF hiding (const)
 open import Categories.Support.EqReasoning
 open import Categories.Object.BinaryProducts
 open import Categories.Object.Products
@@ -87,17 +87,13 @@ open NaturalIsomorphism
 
 terminal : Terminal MP
 terminal = record {
-  ⊤ = record {
-      F₀ = λ _ → ≡-setoid (Lift Unit.⊤)
-    ; F₁ = λ c≤c' → record { _⟨$⟩_ = λ x → lift Unit.tt ; cong = λ x → PEq.refl }
-    ; identity = λ _ → PEq.refl
-    ; homomorphism = λ _ → PEq.refl
-    ; F-resp-≡ = λ _ _ → PEq.refl
-  }
+  ⊤ = constF (set→setoid (Lift Unit.⊤))
   ; ! = record {
-      η = λ X → record { _⟨$⟩_ = λ x → lift Unit.tt ; cong = λ x → PEq.refl }
+      η = λ X → record { _⟨$⟩_ = λ _ → lift Unit.tt ; cong = λ x → PEq.refl }
     ; commute = λ _ _ → PEq.refl }
   ; !-unique = λ _ _ → PEq.refl }
+
+open Terminal terminal public
 
 -- TODO is this construction general for all presheaves-categories?
 -- i.e. is it domain independent
@@ -211,9 +207,7 @@ has-products = record {
 
 -- the category is monoidal
 monoidal : Monoidal MP
-monoidal = Cartesian MP record {
-  terminal = terminal ;
-  binary = products }
+monoidal = Cartesian MP has-products
 
 -- TODO this seems a construction that should work for any presheaf category
 -- forall quantification lower-bounded by an object from our preorder
