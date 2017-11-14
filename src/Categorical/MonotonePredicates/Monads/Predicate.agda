@@ -175,6 +175,34 @@ module PredicateT (M : Monad (ISetoids ℓ ℓ)) where
       ∎
       where open SetoidReasoning (F.F₀ (∃Result Y (F₀ P)))
 
+    .anti-map-∃-comm : ∀ {P Q : Obj MP}{X Y} (X⇒Y : C [ X , Y ]) (P⇒Q : MP [ P , Q ]) →
+                       ISetoids _ _ [ (ISetoids _ _ [ result-anti (F₀ Q) X⇒Y ∘ (map-∃ P⇒Q) ]) ≡
+                                      (ISetoids _ _ [ map-∃ P⇒Q ∘ (result-anti (F₀ P) X⇒Y) ]) ]
+    anti-map-∃-comm {P}{Q}{X}{Y} X⇒Y P⇒Q {(Z , (Y⇒Z , μ), v)}{y} x≡y =
+      cong (map-∃ P⇒Q) (cong (result-anti (F₀ P) X⇒Y) x≡y)
+
+    .collapse-lem : ∀ {P Q}(P⇒Q : MP [ P , Q ]) Y →
+                   ISetoids _ _ [ ISetoids ℓ ℓ [ collapse Q {Y} ∘ map-∃ (hmap P⇒Q) ] ≡ ISetoids ℓ ℓ [ F.F₁ (map-∃ P⇒Q) ∘ collapse P ] ]
+    collapse-lem {P} {Q} P⇒Q Y {x} {(X , (X⇒Y , μ) , f)} x≡y =
+      begin
+        collapse Q ⟨$⟩ (map-∃ (hmap P⇒Q) ⟨$⟩ x)
+      ↓⟨ cong (collapse Q) (cong (map-∃ (hmap P⇒Q)) x≡y) ⟩
+        collapse Q ⟨$⟩ (map-∃ (hmap P⇒Q) ⟨$⟩ (X , (X⇒Y , μ) , f))
+      ↓≣⟨ PEq.refl ⟩
+        F.F₁ (result-anti (F₀ Q) X⇒Y) ⟨$⟩ ((η (hmap P⇒Q) X ⟨$⟩ f) X (id C) μ)
+      ↓≣⟨ PEq.refl ⟩
+        F.F₁ (result-anti (F₀ Q) X⇒Y) ⟨$⟩ (F.F₁ (map-∃ P⇒Q) ⟨$⟩ (f X (id C) μ))
+      ↑⟨ F.homomorphism (Setoid.refl (F.F₀ (∃Result X (F₀ P)))) ⟩
+        F.F₁ (ISetoids _ _ [ result-anti (F₀ Q) X⇒Y ∘ (map-∃ P⇒Q) ]) ⟨$⟩ (f X (id C) μ)
+      ↓⟨ F.F-resp-≡ (anti-map-∃-comm X⇒Y P⇒Q) (Setoid.refl (F.F₀ (∃Result X (F₀ P)))) ⟩
+        F.F₁ (ISetoids _ _ [ map-∃ P⇒Q ∘ (result-anti (F₀ P) X⇒Y) ]) ⟨$⟩ (f X (id C) μ)
+      ↓⟨ F.homomorphism (Setoid.refl (F.F₀ (∃Result X (F₀ P)))) ⟩
+        F.F₁ (map-∃ P⇒Q) ⟨$⟩ (F.F₁ (result-anti (F₀ P) X⇒Y) ⟨$⟩ (f X (id C) μ))
+      ↓≣⟨ PEq.refl ⟩
+        F.F₁ (map-∃ P⇒Q) ⟨$⟩ (collapse P ⟨$⟩ (X , (X⇒Y , μ) , f))
+      ∎
+      where open SetoidReasoning (F.F₀ (∃Result Y (F₀ Q)))
+
     ηjoin : ∀ P → Pred' [ (F₀ (omap (omap P))) , (F₀ (omap P)) ]
     _⟨$⟩_ (ηjoin P) f Y X⇒Y μY =
       ISetoids _ _ [ η M.μ _ ∘ (F.F₁ (collapse P)) ] ⟨$⟩ (f Y X⇒Y μY)
@@ -229,7 +257,19 @@ module PredicateT (M : Monad (ISetoids ℓ ℓ)) where
       η (join Q MP.∘ (hmap (hmap P⇒Q))) X ⟨$⟩ y
     ↓≣⟨ PEq.refl ⟩
       (λ Y X⇒Y μ → (ISetoids _ _ [ η M.μ _ ∘ F.F₁ (collapse Q) ]) ⟨$⟩ ((η (hmap (hmap P⇒Q)) X ⟨$⟩ y) Y X⇒Y μ))
-    ↓⟨ (λ Y X⇒Y μ → {!!}) ⟩
+    ↓≣⟨ PEq.refl ⟩
+      (λ Y X⇒Y μ → (ISetoids _ _ [ η M.μ _ ∘ F.F₁ (collapse Q) ]) ⟨$⟩ (F.F₁ (map-∃ (hmap P⇒Q)) ⟨$⟩ (y Y X⇒Y μ)))
+    ↓≣⟨ PEq.refl ⟩
+      (λ Y X⇒Y μ → η M.μ _ ⟨$⟩ ((F.F₁ (collapse Q)) ⟨$⟩ (F.F₁ (map-∃ (hmap P⇒Q)) ⟨$⟩ (y Y X⇒Y μ))))
+    ↑⟨ ((λ Y X⇒Y μ → cong (η M.μ _) (F.homomorphism (Setoid.refl (F.F₀ (∃Result Y (F₀ (omap P)))))))) ⟩
+      (λ Y X⇒Y μ → η M.μ _ ⟨$⟩ (F.F₁ (ISetoids _ _ [ collapse Q  ∘ (map-∃ (hmap P⇒Q)) ]) ⟨$⟩ (y Y X⇒Y μ)))
+    ↓⟨ (λ Y X⇒Y μ → cong (η M.μ _) (F.F-resp-≡ (collapse-lem P⇒Q Y) (Setoid.refl (F.F₀ (∃Result Y (F₀ (omap P))))))) ⟩
+      (λ Y X⇒Y μ → η M.μ _ ⟨$⟩ (F.F₁ (ISetoids _ _ [ F.F₁ (map-∃ P⇒Q) ∘ collapse P ]) ⟨$⟩ (y Y X⇒Y μ)))
+    ↓⟨ (λ Y X⇒Y μ → cong (η M.μ _) (F.homomorphism (Setoid.refl (F.F₀ (∃Result Y (F₀ (omap P))))))) ⟩
+      (λ Y X⇒Y μ → η M.μ _ ⟨$⟩ (F.F₁ (F.F₁ (map-∃ P⇒Q)) ⟨$⟩ (F.F₁ (collapse P) ⟨$⟩ y Y X⇒Y μ)))
+    ↓⟨ (λ Y X⇒Y μ → commute M.μ (map-∃ P⇒Q) (Setoid.refl (F₀ (M.F F∘ M.F) (∃Result Y (F₀ P))))) ⟩
+      (λ Y X⇒Y μ → F.F₁ (map-∃ P⇒Q) ⟨$⟩ (η M.μ _ ⟨$⟩ (F.F₁ (collapse P) ⟨$⟩ y Y X⇒Y μ)))
+    ↓≣⟨ PEq.refl ⟩
       (λ Y X⇒Y μ → F.F₁ (map-∃ P⇒Q) ⟨$⟩ ((ISetoids _ _ [ η M.μ _ ∘ F.F₁ (collapse P) ]) ⟨$⟩ y Y X⇒Y μ))
     ↓≣⟨ PEq.refl ⟩
       η (hmap P⇒Q) X ⟨$⟩ (λ Y X⇒Y μ → (ISetoids _ _ [ η M.μ _ ∘ F.F₁ (collapse P) ]) ⟨$⟩ y Y X⇒Y μ)
