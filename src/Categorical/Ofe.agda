@@ -53,6 +53,12 @@ record Ofe s₁ s₂ e : Set (lsuc s₁ ⊔ lsuc s₂ ⊔ lsuc e) where
 _[_≈_] : ∀ {c ℓ e} (O : Ofe c ℓ e) → (x y : Ofe.Carrier O) → Set _
 O [ x ≈ y ] = Ofe._≈_ O x y
 
+_[_≋_] : ∀ {c ℓ e} (O : Ofe c ℓ e) → (x y : Ofe.Carrier O) → Set _
+O [ x ≋ y ] = Ofe._≋_ O x y
+
+_[_≈⟨_⟩_] : ∀ {c ℓ e} (O : Ofe c ℓ e) → Ofe.Carrier O → Fuel → Ofe.Carrier O → Set _
+O [ x ≈⟨ n ⟩ y ] = Ofe._≈⟨_⟩_ O x n y
+
 record Chain {s₁ s₂ e}(T : Ofe s₁ s₂ e) : Set (s₁ ⊔ s₂ ⊔ e) where
   open Ofe T
   field
@@ -143,8 +149,8 @@ From ⇨ To = record
 
 open import Categories.Category
 
-Ofes : ∀ {c ℓ e} → Category _ _ _
-Ofes {c}{ℓ}{e} = record {
+Ofes : ∀ c ℓ e → Category _ _ _
+Ofes c ℓ e = record {
   Obj = Ofe c ℓ e;
   _⇒_ = _⟶_ ;
   _≡_ = λ {o}{o'} → Ofe._≈_ (o ⇨ o') ;
@@ -160,7 +166,6 @@ Limit : ∀ {s₁ s₂ e}{o : Ofe s₁ s₂ e} → Chain o → Set _
 Limit {o = o} c = ∃ λ (c∞ : Carrier) → ∀ n → (c at n) ≈⟨ n ⟩ c∞
   where open Ofe o
 
--- the completion of a mapped chain is the mapped completion of a chain
 .map-limit : ∀ {s₁ s₂ e s₁' s₂' e'}{o : Ofe s₁ s₂ e}{o' : Ofe s₁' s₂' e'}{c : Chain o}(f : o ⟶ o') →
              Limit c → Limit (chain-map f c)
 map-limit f (c∞ , lim) = f ⟨$⟩ c∞ , λ n → cong f (lim n)

@@ -27,6 +27,8 @@ record PreorderPlus ℓ₁ ℓ₂ ℓ₃ : Set (suc ℓ₁ ⊔ suc ℓ₂ ⊔ su
   reflʳ : ∀ {c c'}{p : c ≤ c'} → trans p refl PEq.≡ p
   reflʳ = unique _ _
 
+  _≥_ = Function.flip _≤_
+
   op : PreorderPlus _ _ _
   op = record {
     po = record
