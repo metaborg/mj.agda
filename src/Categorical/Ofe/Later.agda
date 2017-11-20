@@ -8,7 +8,7 @@ open import Data.Nat
 open import Data.Unit hiding (setoid; _≤_)
 open import Level
 
-open import Categorical.Ofe renaming (Ofes to Ofes′)
+open import Categorical.Ofe
 open import Categories.Category
 open import Categories.Functor.Core
 
@@ -48,8 +48,6 @@ module Later {s₁ s₂ e}(o : Ofe s₁ s₂ e) where
 
 -- it is a functor in the category of Ofes
 module LaterOfe {s₁ s₂ e} where
-  Ofes = Ofes′ s₁ s₂ e
-
   omap : (T : Ofe s₁ s₂ e) → Ofe _ _ _
   omap T = record
     { setoid = oid
@@ -139,4 +137,4 @@ module LaterOfe {s₁ s₂ e} where
   identity functor = identity′
   F-resp-≡ functor = resp
 
-open LaterOfe using () renaming (functor to ►) public
+open LaterOfe using () renaming (functor to ►F; omap to ►) public

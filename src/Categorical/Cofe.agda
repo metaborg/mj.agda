@@ -22,19 +22,68 @@ record Cofe s₁ s₂ e : Set (lsuc s₁ ⊔ lsuc s₂ ⊔ lsuc e) where
 
   field
     -- completeness := every cauchy chain has a limit
-    .conv : ∀ (c : Chain ofe) → Limit c
+    conv : ∀ (c : Chain ofe) → Limit c
 
-open Cofe public
+open Cofe
 
-_⟶_ : ∀ {s₁ s₂ e s₁' s₂' e'} → Cofe s₁ s₂ e → Cofe s₁' s₂' e' → Set _
-_⟶_ o o' = (Cofe.ofe o) ⟶' (Cofe.ofe o')
+module Binary {s₁ s₂ e s₁' s₂' e'}(Left : Cofe s₁ s₂ e)(Right : Cofe s₁' s₂' e') where
+
+  _⟶_ = (Cofe.ofe Left) ⟶' (Cofe.ofe Right)
+
+  .conv-map : {c : Chain (ofe Left)} → (F : _⟶_) →
+              (ofe Right) [ at-∞ (conv Right (chain-map F c)) ≋ F ⟨$⟩ (at-∞ (conv Left c)) ]
+  conv-map {c} F n =
+    begin
+      at-∞ (conv Right (chain-map F c))
+    ↑⟨ limit (conv Right (chain-map F c)) n ⟩
+      (F ⟨$⟩ c at n)
+    ↓⟨ cong F (limit (conv Left c) n) ⟩
+      (F ⟨$⟩ at-∞ (conv Left c))
+    ∎
+    where open OfeReasoning (ofe Right)
+
+  _⇨′_ : Cofe _ _ _
+  _⇨′_ = record
+    { ofe = Cofe.ofe Left ⇨ Cofe.ofe Right
+    ; conv = conv′ }
+    where
+      chain-apply : ∀ (x : Carrier Left)(c : Chain (ofe Left ⇨ ofe Right)) → Chain (ofe Right)
+      chain-apply x c = chain-map (record
+        { _⟨$⟩_ = λ f → f ⟨$⟩ x
+        ; cong = λ x≈ₙy → x≈ₙy (Ofe.≈ₙ-refl (ofe Left)) }) c
+
+      conv′ : ∀ (c : Chain (ofe Left ⇨ ofe Right)) → Limit c
+      -- describe the limit of a function chain
+      _⟨$⟩_ (at-∞ (conv′ c)) x =
+        at-∞ (Cofe.conv Right (chain-apply x c))
+      cong (at-∞ (conv′ c)) {n}{x = x}{y} x≈ₙy =
+        begin
+          at-∞ (conv Right (chain-apply x c))
+        ↑⟨ limit (conv Right (chain-apply x c)) n ⟩
+          (c at n) ⟨$⟩ x
+        ↓⟨ cong (_at_ c n) x≈ₙy ⟩
+          (c at n) ⟨$⟩ y
+        ↓⟨ limit (conv Right (chain-apply y c)) n ⟩
+          at-∞ (conv Right (chain-apply y c))
+        ∎
+        where open OfeReasoning (ofe Right)
+      -- proof that this is a limit
+      limit (conv′ c) n {x = x}{y} x≈ₙy =
+        begin
+          (c at n) ⟨$⟩ x
+        ↓⟨ cong (c at n) x≈ₙy ⟩
+          (c at n) ⟨$⟩ y
+        ↓⟨ limit (conv Right (chain-apply y c)) n ⟩
+          at-∞ (conv Right (chain-apply y c))
+        ∎
+        where open OfeReasoning (ofe Right)
 
 open import Categories.Category
 
 Cofes : ∀ {c ℓ e} → Category _ _ _
 Cofes {c}{ℓ}{e} = record {
   Obj = Cofe c ℓ e;
-  _⇒_ = _⟶_ ;
+  _⇒_ = Binary._⟶_ ;
   _≡_ = λ {o}{o'} f g → Ofe._≈_ (ofe o ⇨ ofe o')  f g ;
   id  = Category.id Ofes ;
   _∘_ = Category._∘_ Ofes;
@@ -55,9 +104,4 @@ ofe  (Δ s) = record
                ; limit₂ = λ eq → eq zero
                ; monotone = λ _ eq → eq
                }
-conv (Δ s) = λ c → c at zero , λ n → cauchy c z≤n z≤n
-
-► : ∀ {s₁ s₂ e} → Cofe s₁ s₂ e → Cofe _ _ _
-► T = record
-  { ofe = {!!}
-  ; conv = {!!} }
+conv (Δ s) c = lim (c at zero) (λ n → cauchy c z≤n z≤n)

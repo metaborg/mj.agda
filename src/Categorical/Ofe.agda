@@ -4,7 +4,7 @@ import Categories.Support.SetoidFunctions as SF
 
 module Categorical.Ofe where
 
-open import Relation.Binary.Core using (Reflexive; Transitive; Symmetric)
+open import Relation.Binary.Core using (Reflexive; Transitive; Symmetric) renaming (_≡_ to _≣_; refl to ≣-refl)
 open import Relation.Binary using (IsEquivalence)
 open import Level using (_⊔_) renaming (suc to lsuc)
 open import Data.Nat hiding (_⊔_)
@@ -58,6 +58,41 @@ O [ x ≋ y ] = Ofe._≋_ O x y
 
 _[_≈⟨_⟩_] : ∀ {c ℓ e} (O : Ofe c ℓ e) → Ofe.Carrier O → Fuel → Ofe.Carrier O → Set _
 O [ x ≈⟨ n ⟩ y ] = Ofe._≈⟨_⟩_ O x n y
+
+module OfeReasoning {c ℓ e}(O : Ofe c ℓ e) where
+  open Ofe O
+
+  infix  4 _IsRelatedTo⟨_⟩_
+  infix  1 begin_
+  infixr 2 _↓⟨_⟩_ _↑⟨_⟩_ _↓≣⟨_⟩_ _↑≣⟨_⟩_ _↕_
+  infix  3 _∎
+
+  -- This seemingly unnecessary type is used to make it possible to
+  -- infer arguments even if the underlying equality evaluates.
+
+  data _IsRelatedTo⟨_⟩_ (x : Carrier) n (y : Carrier) : Set (ℓ ⊔ e) where
+    relTo : (x∼y : x ≈⟨ n ⟩ y) → x IsRelatedTo⟨ n ⟩ y
+
+  .begin_ : ∀ {x y n} → x IsRelatedTo⟨ n ⟩ y → x ≈⟨ n ⟩ y
+  begin relTo x∼y = x∼y
+
+  ._↓⟨_⟩_ : ∀ x {y z n} → x ≈⟨ n ⟩ y → y IsRelatedTo⟨ n ⟩ z → x IsRelatedTo⟨ n ⟩ z
+  _ ↓⟨ x∼y ⟩ relTo y∼z = relTo (≈ₙ-trans x∼y y∼z)
+
+  ._↑⟨_⟩_ : ∀ x {y z n} → y ≈⟨ n ⟩ x → y IsRelatedTo⟨ n ⟩ z → x IsRelatedTo⟨ n ⟩ z
+  _ ↑⟨ y∼x ⟩ relTo y∼z = relTo (≈ₙ-trans (≈ₙ-sym y∼x) y∼z)
+
+  ._↓≣⟨_⟩_ : ∀ x {y z n} → x ≣ y → y IsRelatedTo⟨ n ⟩ z → x IsRelatedTo⟨ n ⟩ z
+  _ ↓≣⟨ ≣-refl ⟩ y∼z = y∼z
+
+  ._↑≣⟨_⟩_ : ∀ x {y z n} → y ≣ x → y IsRelatedTo⟨ n ⟩ z → x IsRelatedTo⟨ n ⟩ z
+  _ ↑≣⟨ ≣-refl ⟩ y∼z = y∼z
+
+  ._↕_ : ∀ x {z n} → x IsRelatedTo⟨ n ⟩ z → x IsRelatedTo⟨ n ⟩ z
+  _ ↕ x∼z = x∼z
+
+  ._∎ : ∀ x {n} → x IsRelatedTo⟨ n ⟩ x
+  _∎ _ = relTo ≈ₙ-refl
 
 record Chain {s₁ s₂ e}(T : Ofe s₁ s₂ e) : Set (s₁ ⊔ s₂ ⊔ e) where
   open Ofe T
@@ -149,8 +184,8 @@ From ⇨ To = record
 
 open import Categories.Category
 
-Ofes : ∀ c ℓ e → Category _ _ _
-Ofes c ℓ e = record {
+Ofes : ∀ {c ℓ e} → Category _ _ _
+Ofes {c}{ℓ}{e} = record {
   Obj = Ofe c ℓ e;
   _⇒_ = _⟶_ ;
   _≡_ = λ {o}{o'} → Ofe._≈_ (o ⇨ o') ;
@@ -162,10 +197,15 @@ Ofes c ℓ e = record {
   equiv = λ {A}{B} → Ofe.≈equiv (A ⇨ B) ;
   ∘-resp-≡ = λ {_ _ _}{f}{g}{h} f≈g h≈i x≈y → f≈g (h≈i x≈y) }
 
-Limit : ∀ {s₁ s₂ e}{o : Ofe s₁ s₂ e} → Chain o → Set _
-Limit {o = o} c = ∃ λ (c∞ : Carrier) → ∀ n → (c at n) ≈⟨ n ⟩ c∞
-  where open Ofe o
+record Limit {s₁ s₂ e}{o : Ofe s₁ s₂ e}(c : Chain o) : Set (s₁ ⊔ s₂ ⊔ e) where
+  constructor lim
+  open Ofe o
+  field
+    at-∞  : Carrier
+    .limit : ∀ n → (c at n) ≈⟨ n ⟩ at-∞
+
+open Limit public
 
 .map-limit : ∀ {s₁ s₂ e s₁' s₂' e'}{o : Ofe s₁ s₂ e}{o' : Ofe s₁' s₂' e'}{c : Chain o}(f : o ⟶ o') →
              Limit c → Limit (chain-map f c)
-map-limit f (c∞ , lim) = f ⟨$⟩ c∞ , λ n → cong f (lim n)
+map-limit f (lim c∞ limit) = lim (f ⟨$⟩ c∞) (λ n → cong f (limit n))
