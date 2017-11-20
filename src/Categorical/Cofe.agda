@@ -10,7 +10,7 @@ open import Level using (_⊔_) renaming (suc to lsuc)
 open import Data.Nat hiding (_⊔_)
 open import Data.Product
 
-open import Categorical.Ofe renaming (_⟶_ to _⟶'_)
+open import Categorical.Ofe renaming (_⟶_ to _⟶'_; _⇨_ to _⇨'_)
 
 open Chain
 
@@ -42,17 +42,17 @@ module Binary {s₁ s₂ e s₁' s₂' e'}(Left : Cofe s₁ s₂ e)(Right : Cofe
     ∎
     where open OfeReasoning (ofe Right)
 
-  _⇨′_ : Cofe _ _ _
-  _⇨′_ = record
-    { ofe = Cofe.ofe Left ⇨ Cofe.ofe Right
+  _⇨_ : Cofe _ _ _
+  _⇨_ = record
+    { ofe = Cofe.ofe Left ⇨' Cofe.ofe Right
     ; conv = conv′ }
     where
-      chain-apply : ∀ (x : Carrier Left)(c : Chain (ofe Left ⇨ ofe Right)) → Chain (ofe Right)
+      chain-apply : ∀ (x : Carrier Left)(c : Chain (ofe Left ⇨' ofe Right)) → Chain (ofe Right)
       chain-apply x c = chain-map (record
         { _⟨$⟩_ = λ f → f ⟨$⟩ x
         ; cong = λ x≈ₙy → x≈ₙy (Ofe.≈ₙ-refl (ofe Left)) }) c
 
-      conv′ : ∀ (c : Chain (ofe Left ⇨ ofe Right)) → Limit c
+      conv′ : ∀ (c : Chain (ofe Left ⇨' ofe Right)) → Limit c
       -- describe the limit of a function chain
       _⟨$⟩_ (at-∞ (conv′ c)) x =
         at-∞ (Cofe.conv Right (chain-apply x c))
@@ -78,13 +78,14 @@ module Binary {s₁ s₂ e s₁' s₂' e'}(Left : Cofe s₁ s₂ e)(Right : Cofe
         ∎
         where open OfeReasoning (ofe Right)
 
+open Binary
 open import Categories.Category
 
 Cofes : ∀ {c ℓ e} → Category _ _ _
 Cofes {c}{ℓ}{e} = record {
   Obj = Cofe c ℓ e;
-  _⇒_ = Binary._⟶_ ;
-  _≡_ = λ {o}{o'} f g → Ofe._≈_ (ofe o ⇨ ofe o')  f g ;
+  _⇒_ = _⟶_ ;
+  _≡_ = λ {o}{o'} f g → Cofe._≈_ (o ⇨ o')  f g ;
   id  = Category.id Ofes ;
   _∘_ = Category._∘_ Ofes;
   assoc = λ {_ _ _ _}{f g h} x≈y → assoc {f = f}{g}{h} x≈y ;
