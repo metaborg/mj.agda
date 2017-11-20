@@ -206,6 +206,6 @@ record Limit {s₁ s₂ e}{o : Ofe s₁ s₂ e}(c : Chain o) : Set (s₁ ⊔ s�
 
 open Limit public
 
-.map-limit : ∀ {s₁ s₂ e s₁' s₂' e'}{o : Ofe s₁ s₂ e}{o' : Ofe s₁' s₂' e'}{c : Chain o}(f : o ⟶ o') →
+.limit-map : ∀ {s₁ s₂ e s₁' s₂' e'}{o : Ofe s₁ s₂ e}{o' : Ofe s₁' s₂' e'}{c : Chain o}(f : o ⟶ o') →
              Limit c → Limit (chain-map f c)
-map-limit f (lim c∞ limit) = lim (f ⟨$⟩ c∞) (λ n → cong f (limit n))
+limit-map f (lim c∞ limit) = lim (f ⟨$⟩ c∞) (λ n → cong f (limit n))
