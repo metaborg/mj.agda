@@ -14,7 +14,7 @@ open import Categorical.Ofe.Later using (module Later) renaming (► to Ofe►)
 open import Categorical.Cofe
 
 ► : ∀ {s₁ s₂ e} → Cofe s₁ s₂ e → Cofe _ _ _
-► {s₁}{s₂}{e} T = record
+► T = record
   { ofe = Ofe► (Cofe.ofe T)
   ; conv = conv' }
   where
