@@ -19,18 +19,6 @@ open Category
 module Later {s₁ s₂ e}(o : Ofe s₁ s₂ e) where
   open Ofe o
 
-  data _later≈_ : Carrier → Carrier → Set s₂ where
-    next : ∀ {x x'} → x ≈ x' → x later≈ x'
-
-  unnext : ∀ {x y} → x later≈ y → x ≈ y
-  unnext (next eq) = eq
-
-  .≈-equiv : IsEquivalence _later≈_
-  ≈-equiv = record
-    { refl = λ{ {x} → next ≈-refl }
-    ; sym  = λ{ (next x≈y) → next (≈-sym x≈y) }
-    ; trans = λ{ (next x≈y) (next y≈z) → next (≈-trans x≈y y≈z) }}
-
   data _later≈⟨_⟩_ : Carrier → Fuel → Carrier → Set e where
     now   : ∀ {x y} → x later≈⟨ ℕ.zero ⟩ y
     next  : ∀ {x y n} → x ≈⟨ n ⟩ y → x later≈⟨ ℕ.suc n ⟩ y
@@ -38,17 +26,11 @@ module Later {s₁ s₂ e}(o : Ofe s₁ s₂ e) where
   unnextₙ : ∀ {x y n} → x later≈⟨ ℕ.suc n ⟩ y → x ≈⟨ n ⟩ y
   unnextₙ (next eq) = eq
 
-  oid : Setoid _ _
-  oid = record
-    { Carrier = Carrier
-    ; _≈_ = _later≈_
-    ; isEquivalence = ≈-equiv }
-
 -- it is a functor in the category of Ofes
 module LaterOfe {s₁ s₂ e} where
   omap : (T : Ofe s₁ s₂ e) → Ofe _ _ _
   omap T = record
-    { setoid = oid
+    { setoid = setoid
     ; _≈⟨_⟩_ = _later≈⟨_⟩_
     ; equiv = λ {n} → ≈ₙequiv {n}
     ; limit₁ = limit₁'
@@ -59,20 +41,20 @@ module LaterOfe {s₁ s₂ e} where
       open Ofe T
       open Later T
 
-      .limit₁' : ∀ {x y} → Setoid._≈_ oid x y → (n : ℕ) → x later≈⟨ n ⟩ y
-      limit₁' (next x) ℕ.zero = now
-      limit₁' (next x) (ℕ.suc n) = next (Ofe.limit₁ T x n)
+      .limit₁' : ∀ {x y} → x ≈ y → (n : ℕ) → x later≈⟨ n ⟩ y
+      limit₁' x ℕ.zero = now
+      limit₁' x (ℕ.suc n) = next (Ofe.limit₁ T x n)
 
       open IsEquivalence
       .≈ₙequiv : ∀ {n} → IsEquivalence (λ x y → x later≈⟨ n ⟩ y)
-      refl (≈ₙequiv {n}) = limit₁' (Setoid.refl oid) n
+      refl (≈ₙequiv {n}) = limit₁' ≈-refl n
       sym ≈ₙequiv now = now
       sym ≈ₙequiv (next x≈ₙy) = next (Ofe.≈ₙ-sym T x≈ₙy)
       trans ≈ₙequiv now now = now
       trans ≈ₙequiv (next x≈ₙy) (next y≈ₙz) = next (Ofe.≈ₙ-trans T x≈ₙy y≈ₙz)
 
-      .limit₂' : ∀ {x y} → ((n : ℕ) → x later≈⟨ n ⟩ y) → (x later≈ y)
-      limit₂' {x} {y} x≋y = next (limit₂ λ n → unnextₙ (x≋y (ℕ.suc n)))
+      .limit₂' : ∀ {x y} → ((n : ℕ) → x later≈⟨ n ⟩ y) → (x ≈ y)
+      limit₂' {x} {y} x≋y = limit₂ λ n → unnextₙ (x≋y (ℕ.suc n))
 
       .mono : ∀ {n n' : ℕ} {x y} → n' ≤ n → x later≈⟨ n ⟩ y → x later≈⟨ n' ⟩ y
       mono z≤n x≈ₙy = now
@@ -129,7 +111,7 @@ module LaterOfe {s₁ s₂ e} where
   F₀ functor = omap
   F₁ functor = hmap
   homomorphism functor {f = f}{g} x = homomorph {f = f}{g} x
-  identity functor = identity′
+  identity functor {A} = identity′ {A}
   F-resp-≡ functor {F = F}{G} = resp {F = F}{G}
 
 open LaterOfe using (next-ne) renaming (functor to ►F; omap to ►; hmap to fmap) public
