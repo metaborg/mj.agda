@@ -79,7 +79,7 @@ module Binary {s₁ s₂ e s₁' s₂' e'}(Left : Cofe s₁ s₂ e)(Right : Cofe
         ∎
         where open OfeReasoning (ofe Right)
 
-open Binary
+open Binary using (_⟶_; _⇨_) public
 open import Categories.Category
 
 Cofes : ∀ {c ℓ e} → Category _ _ _
@@ -106,3 +106,18 @@ ofe  (Δ s) = record
   ; limit₂ = λ eq → eq zero
   ; monotone = λ _ eq → eq }
 conv (Δ s) c = lim (c at zero) (λ n → cauchy c z≤n z≤n)
+
+-- limits preserve approximate equality
+.cong-conv : ∀ {s₁ s₂ e}(A : Cofe s₁ s₂ e) → (l r : Chain (Cofe.ofe A)) → ∀ {n} →
+             l chain≈⟨ n ⟩ r → (Cofe.ofe A) [ at-∞ (Cofe.conv A l) ≈⟨ n ⟩ at-∞ (Cofe.conv A r) ]
+cong-conv A l r {n} eq =
+  begin
+    at-∞ (Cofe.conv A l)
+  ↑⟨ limit (Cofe.conv A l) n ⟩
+    l at n
+  ↓⟨ eq n ⟩
+    r at n
+  ↓⟨ limit (Cofe.conv A r) n ⟩
+    at-∞ (Cofe.conv A r)
+  ∎
+  where open OfeReasoning (Cofe.ofe A)

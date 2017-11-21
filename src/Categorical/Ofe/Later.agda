@@ -122,9 +122,9 @@ Contractive {A = A}{B} F = ∀ {x y : Ofe.Carrier A}{n} → (► A) [ x ≈⟨ n
 open Later
 
 -- pre-composing a non-expansive function to a contractive function preserves contractivity
-.[_∘_]-contractive : ∀ {s₁ s₂ e}{A B C : Ofe s₁ s₂ e}(F : A ⟶ B)(G : B ⟶ C) →
+.[_∘_]-contractive : ∀ {s₁ s₂ e}{A B C : Ofe s₁ s₂ e}(G : B ⟶ C)(F : A ⟶ B) →
                       Contractive F → Contractive (Ofes [ G ∘ F ])
-[_∘_]-contractive F G p eq = cong G (p eq)
+[_∘_]-contractive G F p eq = cong G (p eq)
 
 .next-co : ∀ {s₁ s₂ e}{A : Ofe s₁ s₂ e} → Contractive (next-ne A)
 next-co eq = eq
@@ -136,7 +136,7 @@ next-contractive {A = A}{B}{G} (F , eq) {x}{y}{n} eq' =
     G ⟨$⟩ x
   ↓⟨ (NE.limit₁ _ _ G (Ofes [ F ∘ next-ne A ]) eq) n (Ofe.≈ₙ-refl A) ⟩
     Ofes [ F ∘ next-ne A ] ⟨$⟩ x
-  ↓⟨ [ (next-ne A) ∘ F ]-contractive next-co eq' ⟩
+  ↓⟨ [ F ∘ (next-ne A) ]-contractive next-co eq' ⟩
     Ofes [ F ∘ next-ne A ] ⟨$⟩ y
   ↑⟨ (NE.limit₁ _ _ G (Ofes [ F ∘ next-ne A ]) eq) n (Ofe.≈ₙ-refl A) ⟩
     G ⟨$⟩ y
@@ -148,3 +148,31 @@ next-contractive {A = A}{B}{G} (F , eq) {x}{y}{n} eq' =
 contractive-next {B = B}{G = G} p =
   record { _⟨$⟩_ = _⟨$⟩_ G ; cong = p } ,
   λ x≈y → NE.≈-cong _ _ G x≈y
+
+private
+  n-iter : ∀ {ℓ}{A : Set ℓ} → ℕ → (f : A → A) → A → A
+  n-iter ℕ.zero f x = x
+  n-iter (ℕ.suc n) f x = f (n-iter n f x)
+
+-- iterating a contractive function gives a cauchy chain
+iterate : ∀ {s₁ s₂ e}{A : Ofe s₁ s₂ e} → (F : Ofes [ A , A ]) →
+          .(Contractive F) → Ofe.Carrier A → Chain A
+_at_ (iterate F p x) n = n-iter (ℕ.suc n) (_⟨$⟩_ F) x
+cauchy (iterate {A = A} F p x) {n = ℕ.zero} z≤n z≤n = p Later.now
+cauchy (iterate {A = A} F p x) {n = ℕ.suc n} (s≤s n≤i) (s≤s n≤j) =
+  p (Later.next (cauchy (iterate {A = A} F p x) n≤i n≤j))
+
+-- iterating equal functions builds pointwise equal chains
+.iterate-cong : ∀ {s₁ s₂ e}{A : Ofe s₁ s₂ e}(F G : Ofes [ A , A ]) (p : Contractive F)(q : Contractive G) →
+                Ofes [ F ≡ G ] → ∀ {x y n} → A [ x ≈⟨ n ⟩ y ] →
+                (iterate F p x) chain≈⟨ n ⟩ (iterate G q y)
+iterate-cong F G p q F≡G {n = n} x≈y ℕ.zero = NE.limit₁ _ _ F G F≡G n x≈y
+iterate-cong {A = A} F G p q F≡G {x = x}{y}{n} x≈y (ℕ.suc i) =
+  begin
+    F ⟨$⟩ (F ⟨$⟩ n-iter i (_⟨$⟩_ F) x)
+  ↓⟨ (NE.limit₁ _ _ F G F≡G) n (Ofe.≈ₙ-refl A) ⟩
+    G ⟨$⟩ (F ⟨$⟩ n-iter i (_⟨$⟩_ F) x)
+  ↓⟨ cong G (iterate-cong {A = A} F G p q F≡G x≈y i) ⟩
+    G ⟨$⟩ (G ⟨$⟩ n-iter i (_⟨$⟩_ G) y)
+  ∎
+  where open OfeReasoning A

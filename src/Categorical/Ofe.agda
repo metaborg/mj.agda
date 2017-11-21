@@ -102,6 +102,10 @@ record Chain {s₁ s₂ e}(T : Ofe s₁ s₂ e) : Set (s₁ ⊔ s₂ ⊔ e) wher
 
 open Chain public
 
+-- pointwise equal chains
+_chain≈⟨_⟩_ : ∀ {s₁ s₂ e}{A : Ofe s₁ s₂ e} → Chain A → ℕ → Chain A → Set e
+_chain≈⟨_⟩_ {A = A} l n r = ∀ i → A [ l at i ≈⟨ n ⟩ r at i ]
+
 -- non-expansive functions
 infixr 0 _⟶_
 record _⟶_ {cf ℓf ct ℓt ef et} (From : Ofe cf ℓf ef)(To : Ofe ct ℓt et) : Set (cf ⊔ ℓf ⊔ ct ⊔ ℓt ⊔ ef ⊔ et) where
