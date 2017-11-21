@@ -10,7 +10,7 @@ open import Data.Unit hiding (setoid; _≤_)
 open import Level
 
 open import Categorical.Ofe
-open import Categorical.Ofe.Later using (module Later) renaming (► to Ofe►)
+open import Categorical.Ofe.Later using (module Later; next-ne) renaming (► to Ofe►)
 open import Categorical.Cofe
 
 ► : ∀ {s₁ s₂ e} → Cofe s₁ s₂ e → Cofe _ _ _

@@ -5,6 +5,7 @@ open import Categories.Support.Equivalence using (Setoid)
 open import Categories.Support.EqReasoning
 open import Relation.Binary using (IsEquivalence)
 open import Data.Nat
+open import Data.Product
 open import Data.Unit hiding (setoid; _≤_)
 open import Level
 
@@ -85,12 +86,9 @@ module LaterOfe {s₁ s₂ e} where
   cong (next-ne A) {ℕ.suc n} {x} {y} eq = next (Ofe.monotone A (n≤1+n n) eq)
     where open import Data.Nat.Properties
 
-  next-map : ∀ {A B} → Ofes [ A , B ] → Ofe.Carrier (omap A) → Ofe.Carrier (omap B)
-  next-map F x = F ⟨$⟩ x
-
   hmap : ∀ {A B} → Ofes [ A , B ] → Ofes [ omap A , omap B ]
   hmap {A = A}{B} F = record
-    { _⟨$⟩_ = next-map F
+    { _⟨$⟩_ = _⟨$⟩_ F
     ; cong  = λ{ now → now ; (next eq) → next (cong F eq) }}
 
   .homomorph : ∀ {X Y Z}{f : Ofes [ X , Y ]}{g : Ofes [ Y , Z ]} →
@@ -134,4 +132,37 @@ module LaterOfe {s₁ s₂ e} where
   identity functor = identity′
   F-resp-≡ functor {F = F}{G} = resp {F = F}{G}
 
-open LaterOfe using (next-ne) renaming (functor to ►F; omap to ►) public
+open LaterOfe using (next-ne) renaming (functor to ►F; omap to ►; hmap to fmap) public
+
+Contractive : ∀ {s₁ s₂ e}{A B : Ofe s₁ s₂ e} → Ofes [ A , B ] → Set _
+Contractive {A = A}{B} F = ∀ {x y : Ofe.Carrier A}{n} → (► A) [ x ≈⟨ n ⟩ y ] → B [ F ⟨$⟩ x ≈⟨ n ⟩ F ⟨$⟩ y ]
+
+open Later
+
+-- pre-composing a non-expansive function to a contractive function preserves contractivity
+.[_∘_]-contractive : ∀ {s₁ s₂ e}{A B C : Ofe s₁ s₂ e}(F : A ⟶ B)(G : B ⟶ C) →
+                      Contractive F → Contractive (Ofes [ G ∘ F ])
+[_∘_]-contractive F G p eq = cong G (p eq)
+
+.next-co : ∀ {s₁ s₂ e}{A : Ofe s₁ s₂ e} → Contractive (next-ne A)
+next-co eq = eq
+
+.next-contractive : ∀ {s₁ s₂ e}{A B : Ofe s₁ s₂ e}{G} →
+                    (∃ λ (F : Ofes [ ► A , B ]) → Ofes [ G ≡ Ofes [ F ∘ next-ne A ] ]) → Contractive G
+next-contractive {A = A}{B}{G} (F , eq) {x}{y}{n} eq' =
+  begin
+    G ⟨$⟩ x
+  ↓⟨ (NE.limit₁ _ _ G (Ofes [ F ∘ next-ne A ]) eq) n (Ofe.≈ₙ-refl A) ⟩
+    Ofes [ F ∘ next-ne A ] ⟨$⟩ x
+  ↓⟨ [ (next-ne A) ∘ F ]-contractive next-co eq' ⟩
+    Ofes [ F ∘ next-ne A ] ⟨$⟩ y
+  ↑⟨ (NE.limit₁ _ _ G (Ofes [ F ∘ next-ne A ]) eq) n (Ofe.≈ₙ-refl A) ⟩
+    G ⟨$⟩ y
+  ∎
+  where open OfeReasoning B
+
+.contractive-next : ∀ {s₁ s₂ e}{A B : Ofe s₁ s₂ e}{G : Ofes [ A , B ]} →
+                    Contractive G → (∃ λ (F : Ofes [ ► A , B ]) → Ofes [ G ≡ Ofes [ F ∘ next-ne A ] ])
+contractive-next {B = B}{G = G} p =
+  record { _⟨$⟩_ = _⟨$⟩_ G ; cong = p } ,
+  λ x≈y → NE.≈-cong _ _ G x≈y

@@ -26,6 +26,7 @@ record Cofe s₁ s₂ e : Set (lsuc s₁ ⊔ lsuc s₂ ⊔ lsuc e) where
 
 open Cofe
 
+-- TODO: left ofe, right cofe is enough
 module Binary {s₁ s₂ e s₁' s₂' e'}(Left : Cofe s₁ s₂ e)(Right : Cofe s₁' s₂' e') where
 
   _⟶_ = (Cofe.ofe Left) ⟶' (Cofe.ofe Right)
@@ -98,11 +99,10 @@ Cofes {c}{ℓ}{e} = record {
 -- lifting Setoids to degenerate Cofes
 Δ : ∀ {s₁ s₂} → Setoid s₁ s₂ → Cofe _ _ _
 ofe  (Δ s) = record
-               { setoid = s
-               ; _≈⟨_⟩_ = λ x _ y → Setoid._≈_ s x y
-               ; equiv = Setoid.isEquivalence s
-               ; limit₁ = λ eq _ → eq
-               ; limit₂ = λ eq → eq zero
-               ; monotone = λ _ eq → eq
-               }
+  { setoid = s
+  ; _≈⟨_⟩_ = λ x _ y → Setoid._≈_ s x y
+  ; equiv = Setoid.isEquivalence s
+  ; limit₁ = λ eq _ → eq
+  ; limit₂ = λ eq → eq zero
+  ; monotone = λ _ eq → eq }
 conv (Δ s) c = lim (c at zero) (λ n → cauchy c z≤n z≤n)
