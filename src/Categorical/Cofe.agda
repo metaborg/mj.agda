@@ -14,9 +14,9 @@ open import Categorical.Ofe renaming (_⟶_ to _⟶'_; _⇨_ to _⇨'_)
 
 open Chain
 
-record Cofe s₁ s₂ e : Set (lsuc s₁ ⊔ lsuc s₂ ⊔ lsuc e) where
+record Cofe o e e' : Set (lsuc o ⊔ lsuc e ⊔ lsuc e') where
   field
-    ofe : Ofe s₁ s₂ e
+    ofe : Ofe o e e'
 
   open Ofe ofe public
 
@@ -97,7 +97,7 @@ Cofes {c}{ℓ}{e} = record {
   where open Category Ofes
 
 -- lifting Setoids to degenerate Cofes
-Δ : ∀ {s₁ s₂} → Setoid s₁ s₂ → Cofe _ _ _
+Δ : ∀ {o e} → Setoid o e → Cofe o e e
 ofe  (Δ s) = record
   { setoid = s
   ; _≈⟨_⟩_ = λ x _ y → Setoid._≈_ s x y

@@ -13,6 +13,8 @@ open import Categories.Support.Equivalence
 open import Categories.Object.Terminal
 open import Categories.Object.BinaryProducts
 open import Categories.Object.Products
+open import Categories.Monoidal
+open import Categories.Monoidal.Cartesian
 
 open import Categorical.Ofe
 open import Categorical.Cofe using (Δ; Cofe)
@@ -87,8 +89,8 @@ module _ {s₁ s₂ e}(A B : Ofe s₁ s₂ e) where
 
 open BinaryProducts using (product)
 
-products : ∀ {s₁ s₂ e} → BinaryProducts (Ofes {s₁}{s₂}{e})
-product products {A} {B} = record {
+binary-products : ∀ {s₁ s₂ e} → BinaryProducts (Ofes {s₁}{s₂}{e})
+product binary-products {A} {B} = record {
   A×B = A ×-ofe B
   ; π₁ = π₁ A B
   ; π₂ = π₂ A B
@@ -97,8 +99,10 @@ product products {A} {B} = record {
   ; commute₂ = λ{ {f = f}{g} → comm₂ A B {f = f}{g} }
   ; universal = λ{ {f = f}{g}{i} → univ A B {f = f}{g}{i} }}
 
--- has finite products
 has-products : ∀ {s₁ s₂ e} → Products (Ofes {s₁}{s₂}{e})
 has-products = record {
   terminal = ⊤ ;
-  binary = products }
+  binary = binary-products }
+
+monoidal : ∀ {s₁ s₂ e} → Monoidal (Ofes {s₁}{s₂}{e})
+monoidal = Cartesian Ofes has-products

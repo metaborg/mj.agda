@@ -23,17 +23,16 @@ record Ofe s₁ s₂ e : Set (lsuc s₁ ⊔ lsuc s₂ ⊔ lsuc e) where
     -- An approximation of equality
     _≈⟨_⟩_     : Carrier → Fuel → Carrier → Set e
 
-  _≋_ : Carrier → Carrier → Set e
-  x ≋ y = ∀ n → x ≈⟨ n ⟩ y
-
-  field
     -- ...which is an equivalence for every level op approximation,
     .equiv      : ∀ {n} → IsEquivalence (λ x y → x ≈⟨ n ⟩ y)
     -- ...respects the setoid equivalence,
-    .limit₁      : ∀ {x y} → x ≈ y → x ≋ y
-    .limit₂      : ∀ {x y} → x ≋ y → x ≈ y
+    .limit₁      : ∀ {x y} → x ≈ y → (∀ n → x ≈⟨ n ⟩ y)
+    .limit₂      : ∀ {x y} → (∀ n → x ≈⟨ n ⟩ y) → x ≈ y
     -- ...an is monotone
     .monotone   : ∀ {n n' x y} → n ≥ n' → x ≈⟨ n ⟩ y → x ≈⟨ n' ⟩ y
+
+  _≋_ : Carrier → Carrier → Set e
+  x ≋ y = ∀ n → x ≈⟨ n ⟩ y
 
   -- no irrelevant opens
   .≈-sym : Symmetric _≈_
@@ -188,9 +187,9 @@ From ⇨ To = record
 
 open import Categories.Category
 
-Ofes : ∀ {c ℓ e} → Category _ _ _
-Ofes {c}{ℓ}{e} = record {
-  Obj = Ofe c ℓ e;
+Ofes : ∀ {o e₁ e₂} → Category _ _ _
+Ofes {o}{e₁}{e₂} = record {
+  Obj = Ofe o e₁ e₂;
   _⇒_ = _⟶_ ;
   _≡_ = λ {o}{o'} → Ofe._≈_ (o ⇨ o') ;
   id  = id _ ;
