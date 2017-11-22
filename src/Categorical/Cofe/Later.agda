@@ -53,5 +53,5 @@ cong  (μ' {A = A} F p) {n = n}{x = x}{y} x≈y =
 
 -- Because we can build contractive functions from non-expansive functions from ◀ A to A,
 -- we can define a μ that is easier to work with.
-μ : ∀ {s₁ s₂ e}{A : Cofe s₁ s₂ e} → (F : Cofes [ ► A , A ]) → Cofes [ A , A ]
+μ : ∀ {s₁ s₂ e}{A : Cofe s₁ s₂ e} → (F : Ofes [ ofe (► A) , ofe A ]) → Ofes [ ofe A , ofe A ]
 μ {A = A} F = μ' {A = A} (Ofes [ F ∘ next-ne (Cofe.ofe A) ]) ([ F ∘ next-ne (Cofe.ofe A) ]-contractive next-co)

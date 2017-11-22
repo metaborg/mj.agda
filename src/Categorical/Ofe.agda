@@ -118,14 +118,15 @@ record _⟶_ {cf ℓf ct ℓt ef et} (From : Ofe cf ℓf ef)(To : Ofe ct ℓt et
 
 open _⟶_ public
 
-id : ∀ {c f e} → (o : Ofe c f e) → o ⟶ o
-_⟨$⟩_ (id o) x = x
-cong (id o) x = x
+private
+  id : ∀ {c f e} → (o : Ofe c f e) → o ⟶ o
+  _⟨$⟩_ (id o) x = x
+  cong (id o) x = x
 
-_∘_ : ∀ {c f e c' f' e' c'' f'' e''}{o : Ofe c f e}{o' : Ofe c' f' e'}{o'' : Ofe c'' f'' e''} →
-      o' ⟶ o'' → o ⟶ o' → o ⟶ o''
-_⟨$⟩_ (_∘_ g f) x = g ⟨$⟩ (f ⟨$⟩ x)
-cong (_∘_ g f) x = cong g (cong f x)
+  _∘_ : ∀ {c f e c' f' e' c'' f'' e''}{o : Ofe c f e}{o' : Ofe c' f' e'}{o'' : Ofe c'' f'' e''} →
+        o' ⟶ o'' → o ⟶ o' → o ⟶ o''
+  _⟨$⟩_ (_∘_ g f) x = g ⟨$⟩ (f ⟨$⟩ x)
+  cong (_∘_ g f) x = cong g (cong f x)
 
 -- non-expansive functions preserve cauchyness of chains
 chain-map : ∀ {cf ℓf ct ℓt ef et} {From : Ofe cf ℓf ef}{To : Ofe ct ℓt et} →
