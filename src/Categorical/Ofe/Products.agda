@@ -17,7 +17,7 @@ open import Categories.Monoidal
 open import Categories.Monoidal.Cartesian
 
 open import Categorical.Ofe
-open import Categorical.Cofe using (Δ; Cofe)
+open import Categorical.Ofe.Cofe
 
 open Category
 open Ofe
@@ -42,7 +42,7 @@ module _ {o e e' : Level} where
   ⊤ = record
     { ⊤ = record
         { setoid = oid
-        ; _≈⟨_⟩_ = λ x _ y → ≈⊤ x y 
+        ; _≈⟨_⟩_ = λ x _ y → ≈⊤ x y
         ; equiv = equiv-≈⊤
         ; limit₁ = λ _ _ → lift Unit.tt
         ; limit₂ = λ _ → lift Unit.tt
@@ -99,10 +99,22 @@ product binary-products {A} {B} = record {
   ; commute₂ = λ{ {f = f}{g} → comm₂ A B {f = f}{g} }
   ; universal = λ{ {f = f}{g}{i} → univ A B {f = f}{g}{i} }}
 
-has-products : ∀ {s₁ s₂ e} → Products (Ofes {s₁}{s₂}{e})
-has-products = record {
+products : ∀ {s₁ s₂ e} → Products (Ofes {s₁}{s₂}{e})
+products = record {
   terminal = ⊤ ;
   binary = binary-products }
 
 monoidal : ∀ {s₁ s₂ e} → Monoidal (Ofes {s₁}{s₂}{e})
-monoidal = Cartesian Ofes has-products
+monoidal = Cartesian Ofes products
+
+open Cofe
+
+-- taking products of cofes preserves completeness
+_×-cofe_ : ∀ {o e e'}(A B : Cofe o e e') → Cofe o e e'
+A ×-cofe B = record
+  { ofe = (ofe A) ×-ofe (ofe B)
+  ; conv = λ c →
+    let
+      l = conv A (chain-map (π₁ (ofe A) (ofe B)) c)
+      r = Cofe.conv B (chain-map (π₂ (ofe A) (ofe B)) c)
+    in lim (at-∞ l , at-∞ r) (λ n → limit l n , limit r n) }

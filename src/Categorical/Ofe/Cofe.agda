@@ -2,7 +2,7 @@ open import Categories.Agda
 open import Categories.Support.Equivalence using (Setoid)
 import Categories.Support.SetoidFunctions as SF
 
-module Categorical.Cofe where
+module Categorical.Ofe.Cofe where
 
 open import Relation.Binary.Core using (Reflexive; Transitive; Symmetric)
 open import Relation.Binary using (IsEquivalence)

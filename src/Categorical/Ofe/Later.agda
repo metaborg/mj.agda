@@ -1,10 +1,11 @@
 module Categorical.Ofe.Later where
 
-import Relation.Binary.PropositionalEquality as PEq
+open import Relation.Binary.PropositionalEquality using () renaming (refl to ≣-refl)
 open import Categories.Support.Equivalence using (Setoid)
 open import Categories.Support.EqReasoning
 open import Relation.Binary using (IsEquivalence)
 open import Data.Nat
+open import Data.Nat.Properties
 open import Data.Product
 open import Data.Unit hiding (setoid; _≤_)
 open import Level
@@ -80,7 +81,7 @@ module LaterOfe {s₁ s₂ e} where
       hmap (Ofes [ g ∘ f ]) ⟨$⟩ x
     ↓⟨ NE.≈-cong _ _ (hmap (Ofes [ g ∘ f ])) x≈y ⟩
       hmap (Ofes [ g ∘ f ]) ⟨$⟩ y
-    ↓≣⟨ PEq.refl ⟩
+    ↓≣⟨ ≣-refl ⟩
       Ofes [ hmap g ∘ hmap f ] ⟨$⟩ y
     ∎
     where open SetoidReasoning (Ofe.setoid (omap Z))
@@ -89,7 +90,7 @@ module LaterOfe {s₁ s₂ e} where
   identity′ {A} {x = x}{y} x≈y =
     begin
       x
-    ↓≣⟨ PEq.refl ⟩
+    ↓≣⟨ ≣-refl ⟩
       x
     ↓⟨ x≈y ⟩
       y
@@ -176,3 +177,46 @@ iterate-cong {A = A} F G p q F≡G {x = x}{y}{n} x≈y (ℕ.suc i) =
     G ⟨$⟩ (G ⟨$⟩ n-iter i (_⟨$⟩_ G) y)
   ∎
   where open OfeReasoning A
+
+open import Categorical.Ofe.Cofe
+
+►-complete : ∀ {s₁ s₂ e} → Cofe s₁ s₂ e → Cofe _ _ _
+►-complete T = record
+  { ofe = ► (Cofe.ofe T)
+  ; conv = conv' }
+  where
+    open Cofe T
+
+    unfold-chain : ∀ (c : Chain (► ofe)) → Chain ofe
+    _at_   (unfold-chain c) n = (c at (ℕ.suc n))
+    cauchy (unfold-chain c) {i = i}{j} n≤i n≤j = Later.unnextₙ ofe (cauchy c (s≤s n≤i) (s≤s n≤j))
+
+    conv' : (c : Chain (► ofe)) → Limit c
+    at-∞  (conv' c) = at-∞ (Cofe.conv T (unfold-chain c))
+    limit (conv' c) n =
+      begin
+        c at n
+      ↓⟨ cauchy c (≤-reflexive ≣-refl) (n≤1+n n) ⟩
+        c at ℕ.suc n
+      ↓⟨ Ofe.monotone (► ofe) (n≤1+n n) (Later.next (limit (conv (unfold-chain c)) n)) ⟩
+        at-∞ (conv (unfold-chain c))
+      ∎
+      where open OfeReasoning (► ofe)
+
+open import Categories.Category
+open Cofe
+
+-- we can build a fixed point from a contractive function
+μ' : ∀ {s₁ s₂ e}{A : Cofe s₁ s₂ e} →
+     (F : Ofes [ ofe A , ofe A ]) → .(Contractive F) → Ofes [ ofe A , ofe A ]
+_⟨$⟩_ (μ' {A = A} F p) x = at-∞ (Cofe.conv A (iterate F p x))
+cong  (μ' {A = A} F p) {n = n}{x = x}{y} x≈y =
+  cong-conv A
+    (iterate F p x)
+    (iterate F p y)
+    (iterate-cong F F p p (NE.≈-cong _ _ F) x≈y)
+
+-- Because we can build contractive functions from non-expansive functions from ◀ A to A,
+-- we can define a μ that is easier to work with.
+μ : ∀ {s₁ s₂ e}{A : Cofe s₁ s₂ e} → (F : Ofes [ ► (ofe A) , ofe A ]) → Ofes [ ofe A , ofe A ]
+μ {A = A} F = μ' {A = A} (Ofes [ F ∘ next-ne (Cofe.ofe A) ]) ([ F ∘ next-ne (Cofe.ofe A) ]-contractive next-co)

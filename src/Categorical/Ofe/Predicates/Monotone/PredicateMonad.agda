@@ -1,4 +1,3 @@
-{-# OPTIONS --allow-unsolved-meta #-}
 open import Categorical.Preorder
 
 module Categorical.MonotonePredicates.Monads.Predicate {ℓ ℓ₂}
@@ -40,7 +39,7 @@ private
 
 module Result where
 
-  -- Morally : (X ≤ Y × Predicate Y) × P Y
+  -- Morally : (X ≤ Y × Pr Y) × P Y
   -- This isn't a monotone predicate... (it is anti-monotone in X)
   Result : ∀ {s₁ s₂} → Shape → Obj (Pred s₁ s₂) → Obj (Pred _ _)
   Result X P Y = (set→setoid (C [ X , Y ] × Pr Y)) ×-setoid (P Y)
@@ -68,8 +67,9 @@ module PredicateT (M : Monad (ISetoids ℓ ℓ)) where
 
   open Result
 
+  -- ∃ λ (X' : Shape) → X' ≥ X × Pr X' × P X'
   ∃Result : ∀ {s₁ s₂} → Shape → Obj (Pred s₁ s₂) → Setoid _ _
-  ∃Result Σ P = ∃[ Shape ]-setoid (Result Σ P)
+  ∃Result X P = ∃[ Shape ]-setoid (Result X P)
 
   -- ∃Result is an anti-monotone predicate
   -- for now we'll do with the following lemma
@@ -81,6 +81,7 @@ module PredicateT (M : Monad (ISetoids ℓ ℓ)) where
   result-anti-id P (hrefl (PEq.refl , eq)) = hrefl (PEq.cong₂ _,_ (PreorderPlus.unique po _ _) PEq.refl , eq)
 
   -- object mapping
+  -- omap P Σ ≡morally≡ ∀ Σ' → Σ' ≥ Σ → Pr Σ' → M (∃ λ Σ'' → Σ'' ≥ Σ' × Pr Σ'' × P Σ'')
   omap : (P : MP.Obj) → MP.Obj
   omap P = ∀-closure[ PredicateFun ]
     module omap where
