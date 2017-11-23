@@ -65,3 +65,16 @@ module _ {ℓ o e e'}(A : Set ℓ)(B : Pred A {o}{e}{e'}) where
   limit₁ ∀[_] p n = λ a → limit₁ (B a) (p a) n
   limit₂ ∀[_] {x = x} eq = λ a → limit₂ (B a) λ n → eq n a
   monotone ∀[_] = λ n≤m eq a → monotone (B a) n≤m (eq a)
+
+
+open import Categories.Functor.Core
+open Functor
+
+{- TODO
+∃Functor : ∀ {o e e' ℓ}(A : Set ℓ) → Functor (Preds A {o}{e}{e'}) Ofes
+F₀ (∃Functor A) = ∃[ A ]
+F₁ (∃Functor A) = {!!}
+identity (∃Functor A) = {!!}
+homomorphism (∃Functor A) = {!!}
+F-resp-≡ (∃Functor A) = {!!}
+-}
