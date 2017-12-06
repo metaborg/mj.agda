@@ -9,7 +9,9 @@ open import Relation.Binary.PropositionalEquality as PEq using () renaming (_≡
 
 open import Categories.Category
 open import Categories.Support.EqReasoning
+open import Categories.Functor.Core
 
+open import Categorical.Preorder
 open import Categorical.Ofe
 open import Categorical.Ofe.Predicates
 
@@ -66,11 +68,57 @@ module _ {ℓ o e e'}(A : Set ℓ)(B : Pred A {o}{e}{e'}) where
   limit₂ ∀[_] {x = x} eq = λ a → limit₂ (B a) λ n → eq n a
   monotone ∀[_] = λ n≤m eq a → monotone (B a) n≤m (eq a)
 
+module MonotoneClos
+  {o ℓ ℓ'}(po : PreorderPlus o ℓ ℓ')
+  {o e e'}(P : Pred (PreorderPlus.Carrier po){o}{e}{e'}) where
 
-open import Categories.Functor.Core
-open Functor
+  open PreorderPlus po
 
-{- TODO
+  open Category Ord using () renaming (Obj to Shape)
+  open import Categorical.Ofe.Predicates.Monotone po
+  open Functor
+
+  -- morally: omap x ≔ ∀ x' → x ⇒ x' → P x'
+  omap = λ x → ∀[ Shape ] λ x' → ∀[ Ord [ x , x' ] ] λ _ → P x'
+
+  hmap : ∀ {A B} → Ord [ A , B ] → Ofes [ omap A , omap B ]
+  _⟨$⟩_ (hmap A⇒B) f X B⇒X = f X (Ord [ B⇒X ∘ A⇒B ])
+  cong (hmap A⇒B) f≡g X B⇒Y = f≡g X (Ord [ B⇒Y ∘ A⇒B ])
+
+  ∀[_]≤ : Obj MP
+  F₀ ∀[_]≤ X = omap X
+  F₁ ∀[_]≤ A⇒B = hmap A⇒B
+  identity ∀[_]≤ {x = f}{g} f≡g X A⇒X =
+    begin
+      f X (Ord [ A⇒X ∘ Category.id Ord ])
+        ↓≣⟨ PEq.cong (f X) (Category.identityʳ Ord) ⟩
+      f X A⇒X
+        ↓⟨ f≡g X A⇒X ⟩
+      g X A⇒X ∎
+    where open OfeReasoning (P X)
+  homomorphism ∀[_]≤ {f = X⇒Y} {Y⇒Z} {x = f} {g} f≡g X Z⇒X =
+    begin
+      f X (Ord [ Z⇒X ∘ Ord [ Y⇒Z ∘ X⇒Y ] ])
+        ↓⟨ f≡g X _ ⟩
+      g X (Ord [ Z⇒X ∘ Ord [ Y⇒Z ∘ X⇒Y ] ])
+        ↑≣⟨ PEq.cong (g X) (Category.assoc Ord) ⟩
+      g X (Ord [ Ord [ Z⇒X ∘ Y⇒Z ] ∘ X⇒Y ])
+        ↓≣⟨ PEq.refl ⟩
+      (Ofes [ hmap Y⇒Z ∘ hmap X⇒Y ] ⟨$⟩ g) X Z⇒X ∎
+    where open OfeReasoning (P X)
+  F-resp-≡ ∀[_]≤ {F = F}{G} F≡G {x = f}{g} f≡g X B⇒A =
+    begin
+    f X (Ord [ B⇒A ∘ F ])
+      ↓≣⟨ PEq.cong (f X) (Category.∘-resp-≡ Ord PEq.refl F≡G) ⟩
+    f X (Ord [ B⇒A ∘ G ])
+      ↓⟨ f≡g X _ ⟩
+    g X (Ord [ B⇒A ∘ G ]) ∎
+    where open OfeReasoning (P X)
+
+open MonotoneClos using (∀[_]≤) public
+
+{- TODO are all of the above functors?
+
 ∃Functor : ∀ {o e e' ℓ}(A : Set ℓ) → Functor (Preds A {o}{e}{e'}) Ofes
 F₀ (∃Functor A) = ∃[ A ]
 F₁ (∃Functor A) = {!!}

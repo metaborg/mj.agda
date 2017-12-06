@@ -76,15 +76,15 @@ module LaterOfe {s₁ s₂ e} where
 
   .homomorph : ∀ {X Y Z}{f : Ofes [ X , Y ]}{g : Ofes [ Y , Z ]} →
                Ofes [ hmap (Ofes [ g ∘ f ]) ≡ Ofes [ hmap g ∘ hmap f ] ]
-  homomorph {X = X} {Y} {Z} {f} {g} {x} {y} x≈y =
+  homomorph {X = X} {Y} {Z} {f} {g} {_} {x} {y} x≈y =
     begin
       hmap (Ofes [ g ∘ f ]) ⟨$⟩ x
-    ↓⟨ NE.≈-cong _ _ (hmap (Ofes [ g ∘ f ])) x≈y ⟩
+    ↓⟨ cong (hmap (Ofes [ g ∘ f ])) x≈y ⟩
       hmap (Ofes [ g ∘ f ]) ⟨$⟩ y
     ↓≣⟨ ≣-refl ⟩
       Ofes [ hmap g ∘ hmap f ] ⟨$⟩ y
     ∎
-    where open SetoidReasoning (Ofe.setoid (omap Z))
+    where open OfeReasoning (omap Z)
 
   .identity′ : ∀ {A} → Ofes [ hmap {A = A} (Category.id Ofes) ≡ Category.id Ofes ]
   identity′ {A} {x = x}{y} x≈y =
@@ -95,18 +95,18 @@ module LaterOfe {s₁ s₂ e} where
     ↓⟨ x≈y ⟩
       y
     ∎
-    where open SetoidReasoning (Ofe.setoid (omap A))
+    where open OfeReasoning (omap A)
 
   .resp : ∀ {A B}{F G : Ofes [ A , B ]} → Ofes [ F ≡ G ] → Ofes [ hmap F ≡ hmap G ]
   resp {A}{B}{F}{G} F≡G {x = x}{y} x≈y =
     begin
       F ⟨$⟩ x
-    ↓⟨ NE.≈-cong _ _ (next-ne B) (F≡G (Ofe.≈-refl A)) ⟩
+    ↓⟨ cong (next-ne B) (F≡G (Ofe.≈ₙ-refl A)) ⟩
       G ⟨$⟩ x
-    ↓⟨ NE.≈-cong _ _ (hmap G) x≈y ⟩
+    ↓⟨ cong (hmap G) x≈y ⟩
       hmap G ⟨$⟩ y
     ∎
-    where open SetoidReasoning (Ofe.setoid (omap B))
+    where open OfeReasoning (omap B)
 
   functor : Endofunctor Ofes
   F₀ functor = omap
@@ -115,7 +115,7 @@ module LaterOfe {s₁ s₂ e} where
   identity functor {A} = identity′ {A}
   F-resp-≡ functor {F = F}{G} = resp {F = F}{G}
 
-open LaterOfe using (next-ne) renaming (functor to ►F; omap to ►; hmap to fmap) public
+open LaterOfe using (next-ne) renaming (functor to ►F; omap to ►) public
 
 Contractive : ∀ {s₁ s₂ e}{A B : Ofe s₁ s₂ e} → Ofes [ A , B ] → Set _
 Contractive {A = A}{B} F = ∀ {x y : Ofe.Carrier A}{n} → (► A) [ x ≈⟨ n ⟩ y ] → B [ F ⟨$⟩ x ≈⟨ n ⟩ F ⟨$⟩ y ]
@@ -135,11 +135,11 @@ next-co eq = eq
 next-contractive {A = A}{B}{G} (F , eq) {x}{y}{n} eq' =
   begin
     G ⟨$⟩ x
-  ↓⟨ (NE.limit₁ _ _ G (Ofes [ F ∘ next-ne A ]) eq) n (Ofe.≈ₙ-refl A) ⟩
+  ↓⟨ eq (Ofe.≈ₙ-refl A) ⟩
     Ofes [ F ∘ next-ne A ] ⟨$⟩ x
   ↓⟨ [ F ∘ (next-ne A) ]-contractive next-co eq' ⟩
     Ofes [ F ∘ next-ne A ] ⟨$⟩ y
-  ↑⟨ (NE.limit₁ _ _ G (Ofes [ F ∘ next-ne A ]) eq) n (Ofe.≈ₙ-refl A) ⟩
+  ↑⟨ eq (Ofe.≈ₙ-refl A) ⟩
     G ⟨$⟩ y
   ∎
   where open OfeReasoning B
@@ -147,8 +147,7 @@ next-contractive {A = A}{B}{G} (F , eq) {x}{y}{n} eq' =
 .contractive-next : ∀ {s₁ s₂ e}{A B : Ofe s₁ s₂ e}{G : Ofes [ A , B ]} →
                     Contractive G → (∃ λ (F : Ofes [ ► A , B ]) → Ofes [ G ≡ Ofes [ F ∘ next-ne A ] ])
 contractive-next {B = B}{G = G} p =
-  record { _⟨$⟩_ = _⟨$⟩_ G ; cong = p } ,
-  λ x≈y → NE.≈-cong _ _ G x≈y
+  record { _⟨$⟩_ = _⟨$⟩_ G ; cong = p } , λ x≈y → cong G x≈y
 
 private
   n-iter : ∀ {ℓ}{A : Set ℓ} → ℕ → (f : A → A) → A → A
@@ -167,11 +166,11 @@ cauchy (iterate {A = A} F p x) {n = ℕ.suc n} (s≤s n≤i) (s≤s n≤j) =
 .iterate-cong : ∀ {s₁ s₂ e}{A : Ofe s₁ s₂ e}(F G : Ofes [ A , A ]) (p : Contractive F)(q : Contractive G) →
                 Ofes [ F ≡ G ] → ∀ {x y n} → A [ x ≈⟨ n ⟩ y ] →
                 (iterate F p x) chain≈⟨ n ⟩ (iterate G q y)
-iterate-cong F G p q F≡G {n = n} x≈y ℕ.zero = NE.limit₁ _ _ F G F≡G n x≈y
+iterate-cong F G p q F≡G {n = n} x≈y ℕ.zero = F≡G x≈y
 iterate-cong {A = A} F G p q F≡G {x = x}{y}{n} x≈y (ℕ.suc i) =
   begin
     F ⟨$⟩ (F ⟨$⟩ n-iter i (_⟨$⟩_ F) x)
-  ↓⟨ (NE.limit₁ _ _ F G F≡G) n (Ofe.≈ₙ-refl A) ⟩
+  ↓⟨ F≡G (Ofe.≈ₙ-refl A) ⟩
     G ⟨$⟩ (F ⟨$⟩ n-iter i (_⟨$⟩_ F) x)
   ↓⟨ cong G (iterate-cong {A = A} F G p q F≡G x≈y i) ⟩
     G ⟨$⟩ (G ⟨$⟩ n-iter i (_⟨$⟩_ G) y)
@@ -214,9 +213,15 @@ cong  (μ' {A = A} F p) {n = n}{x = x}{y} x≈y =
   cong-conv A
     (iterate F p x)
     (iterate F p y)
-    (iterate-cong F F p p (NE.≈-cong _ _ F) x≈y)
+    (iterate-cong F F p p (cong F) x≈y)
 
 -- Because we can build contractive functions from non-expansive functions from ◀ A to A,
 -- we can define a μ that is easier to work with.
 μ : ∀ {s₁ s₂ e}{A : Cofe s₁ s₂ e} → (F : Ofes [ ► (ofe A) , ofe A ]) → Ofes [ ofe A , ofe A ]
 μ {A = A} F = μ' {A = A} (Ofes [ F ∘ next-ne (Cofe.ofe A) ]) ([ F ∘ next-ne (Cofe.ofe A) ]-contractive next-co)
+
+-- TODO
+-- exponents for Ofes
+-- ► (B ^ A) → B ^ (► A)
+-- ► ⇀ A → (⇀ A)
+-- Δ A → (⇀ A)

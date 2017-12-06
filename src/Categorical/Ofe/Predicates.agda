@@ -28,25 +28,25 @@ module _ {ℓ}(S : Set ℓ){o e e'} where
   Preds : Category _ _ _
   Obj Preds = Pred
   _⇒_ Preds P Q = ∀ {Σ} → (P Σ) ⟶ (Q Σ)
-  _≡_ Preds {P}{Q} f g = ∀ {Σ}(x : Carrier (P Σ)) → (Q Σ) [ (f ⟨$⟩ x) ≈ (g ⟨$⟩ x) ]
+  _≡_ Preds {P}{Q} f g = ∀ {Σ}{x : Carrier (P Σ)}{n} → (Q Σ) [ (f ⟨$⟩ x) ≈⟨ n ⟩ (g ⟨$⟩ x) ]
   id Preds = Ofes.id
   _∘_ Preds = λ f g {Σ} → Ofes._∘_ f g
-  assoc Preds {A}{f = f}{g}{h} x = Ofes.assoc {f = f}{g}{h} (≈-refl (A _))
-  identityˡ Preds {A}{B}{f} x = Ofes.identityˡ {f = f} (≈-refl (A _))
-  identityʳ Preds {A}{B}{f} x = Ofes.identityʳ {f = f} (≈-refl (A _))
+  assoc Preds {A}{f = f}{g}{h} = Ofes.assoc {f = f}{g}{h} (≈ₙ-refl (A _))
+  identityˡ Preds {A}{B}{f} = Ofes.identityˡ {f = f} (≈ₙ-refl (A _))
+  identityʳ Preds {A}{B}{f} = Ofes.identityʳ {f = f} (≈ₙ-refl (A _))
   equiv Preds {A}{B} = record
-    { refl  = λ x → ≈-refl (B _)
-    ; sym   = λ eq x → ≈-sym (B _) (eq x)
-    ; trans = λ eq₁ eq₂ x → ≈-trans (B _) (eq₁ x) (eq₂ x) }
-  ∘-resp-≡ Preds {A}{B}{C}{f}{g}{h}{i} f≡g h≡i {Σ} x =
+    { refl  = ≈ₙ-refl (B _)
+    ; sym   = λ eq → ≈ₙ-sym (B _) eq
+    ; trans = λ eq₁ eq₂ → ≈ₙ-trans (B _) eq₁ eq₂ }
+  ∘-resp-≡ Preds {A} {B} {C} {f} {g} {h} {i} f≡g h≡i {Σ} {x} =
     begin
       f ⟨$⟩ (h ⟨$⟩ x)
-    ↓⟨ NE.≈-cong _ _ f (h≡i x) ⟩
+    ↓⟨ cong f h≡i ⟩
       f ⟨$⟩ (i ⟨$⟩ x)
-    ↓⟨ f≡g (i ⟨$⟩ x) ⟩
+    ↓⟨ f≡g ⟩
       g ⟨$⟩ (i ⟨$⟩ x)
     ∎
-    where open SetoidReasoning (setoid (C Σ))
+    where open OfeReasoning (C Σ)
 
 module _ {ℓ}{S : Set ℓ}{o e e'}(P : Pred S {o}{e}{e'}) where
   -- lift the Ofe equality into their heterogeneous counterparts
@@ -74,3 +74,8 @@ module _ {ℓ}{S : Set ℓ}{o e e'}(P : Pred S {o}{e}{e'}) where
           {l l'}{r : Carrier (I l)}{r' : Carrier (I l')} →
           (f : Preds S [ I , J ]) → I [ r ≅ r' ] → J [ (f ⟨$⟩ r) ≅ (f ⟨$⟩ r') ]
 ≅-cong f (hrefl x) = (hrefl (NE.≈-cong _ _ f x))
+
+.≅⟨⟩-cong : ∀ {ℓ o e e'}{S : Set ℓ}{I J : Pred S {o}{e}{e'}}
+          {l l'}{r : Carrier (I l)}{r' : Carrier (I l')}{n} →
+          (f : Preds S [ I , J ]) → I [ r ≅⟨ n ⟩ r' ] → J [ (f ⟨$⟩ r) ≅⟨ n ⟩ (f ⟨$⟩ r') ]
+≅⟨⟩-cong f (hrefl x) = (hrefl (cong f x))

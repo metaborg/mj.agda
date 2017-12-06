@@ -67,16 +67,9 @@ module Binary {s₁ s₂ e s₁' s₂' e'}(Left : Ofe s₁ s₂ e)(Right : Cofe 
 open Binary using (_⇨_) public
 open import Categories.Category
 
--- lifting Setoids to degenerate Cofes
-Δ : ∀ {o e} → Setoid o e → Cofe o e e
-ofe  (Δ s) = record
-  { setoid = s
-  ; _≈⟨_⟩_ = λ x _ y → Setoid._≈_ s x y
-  ; equiv = Setoid.isEquivalence s
-  ; limit₁ = λ eq _ → eq
-  ; limit₂ = λ eq → eq zero
-  ; monotone = λ _ eq → eq }
-conv (Δ s) c = lim (c at zero) (λ n → cauchy c z≤n z≤n)
+Δ-complete : ∀ {o e} → Setoid o e → Cofe o e e
+ofe  (Δ-complete s) = Δ s
+conv (Δ-complete s) c = lim (c at zero) (λ n → cauchy c z≤n z≤n)
 
 .conv-map : ∀ {o e e'}{A B : Cofe o e e'}{c : Chain (ofe A)} → (F : (ofe A) ⟶ (ofe B)) →
             (ofe B) [ at-∞ (conv B (chain-map F c)) ≋ F ⟨$⟩ (at-∞ (conv A c)) ]

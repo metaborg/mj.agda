@@ -17,7 +17,8 @@ record Ofe s₁ s₂ e : Set (lsuc s₁ ⊔ lsuc s₂ ⊔ lsuc e) where
     setoid : Setoid s₁ s₂
 
   -- TODO open more, renaming stuff
-  open Setoid setoid public using (Carrier; _≈_) renaming (reflexive to ≡-reflexive; isEquivalence to ≈equiv)
+  open Setoid setoid public using (Carrier; _≈_)
+                            renaming (reflexive to ≈-reflexive; isEquivalence to ≈equiv)
 
   field
     -- An approximation of equality
@@ -48,6 +49,9 @@ record Ofe s₁ s₂ e : Set (lsuc s₁ ⊔ lsuc s₂ ⊔ lsuc e) where
   ≈ₙ-trans = IsEquivalence.trans equiv
   .≈ₙ-refl : ∀ {n} → Reflexive (λ x y → x ≈⟨ n ⟩ y)
   ≈ₙ-refl = IsEquivalence.refl equiv
+
+  .≈ₙ-reflexive : ∀ {x y} → x ≣ y → x ≋ y
+  ≈ₙ-reflexive ≣-refl = limit₁ (≈-reflexive ≣-refl)
 
 _[_≈_] : ∀ {c ℓ e} (O : Ofe c ℓ e) → (x y : Ofe.Carrier O) → Set _
 O [ x ≈ y ] = Ofe._≈_ O x y
@@ -118,16 +122,6 @@ record _⟶_ {cf ℓf ct ℓt ef et} (From : Ofe cf ℓf ef)(To : Ofe ct ℓt et
 
 open _⟶_ public
 
-private
-  id : ∀ {c f e} → (o : Ofe c f e) → o ⟶ o
-  _⟨$⟩_ (id o) x = x
-  cong (id o) x = x
-
-  _∘_ : ∀ {c f e c' f' e' c'' f'' e''}{o : Ofe c f e}{o' : Ofe c' f' e'}{o'' : Ofe c'' f'' e''} →
-        o' ⟶ o'' → o ⟶ o' → o ⟶ o''
-  _⟨$⟩_ (_∘_ g f) x = g ⟨$⟩ (f ⟨$⟩ x)
-  cong (_∘_ g f) x = cong g (cong f x)
-
 -- non-expansive functions preserve cauchyness of chains
 chain-map : ∀ {cf ℓf ct ℓt ef et} {From : Ofe cf ℓf ef}{To : Ofe ct ℓt et} →
             (From ⟶ To) → Chain From → Chain To
@@ -186,20 +180,44 @@ From ⇨ To = record
       (To.monotone n≥n' (f≈ₙg From.≈ₙ-refl))
       (cong g x≈ₙ'y) -- g x ≈⟨ n' ⟩ g y
 
+private
+  id : ∀ {c f e} → (o : Ofe c f e) → o ⟶ o
+  _⟨$⟩_ (id o) x = x
+  cong (id o) x = x
+
+  _∘_ : ∀ {c f e c' f' e' c'' f'' e''}{o : Ofe c f e}{o' : Ofe c' f' e'}{o'' : Ofe c'' f'' e''} →
+        o' ⟶ o'' → o ⟶ o' → o ⟶ o''
+  _⟨$⟩_ (_∘_ g f) x = g ⟨$⟩ (f ⟨$⟩ x)
+  cong (_∘_ g f) x = cong g (cong f x)
+
+const : ∀ {c f e} → (A B : Ofe c f e) → Ofe.Carrier B → A ⟶ B
+_⟨$⟩_ (const A B b) _ = b
+cong  (const A B b) _ = Ofe.≈ₙ-refl B
+
+.const-cong : ∀ {c f e}(A B : Ofe c f e){x y} → ∀ {n} → B [ x ≈⟨ n ⟩ y ] → (A ⇨ B) [ const A B x ≈⟨ n ⟩ const A B y ]
+const-cong A B eq eq' = eq
+
 open import Categories.Category
 
 Ofes : ∀ {o e₁ e₂} → Category _ _ _
 Ofes {o}{e₁}{e₂} = record {
   Obj = Ofe o e₁ e₂;
   _⇒_ = _⟶_ ;
-  _≡_ = λ {o}{o'} → Ofe._≈_ (o ⇨ o') ;
+  _≡_ = λ {o}{o'} x y → ∀ {n} → Ofe._≈⟨_⟩_ (o ⇨ o') x n y ;
   id  = id _ ;
   _∘_ = _∘_ ;
-  assoc = λ {A}{B}{C}{D}{f}{g}{h} x≈y → NE.≈-cong _ _ (h ∘ (g ∘ f)) x≈y ;
-  identityʳ = λ {A}{B}{f} x≈y → NE.≈-cong _ _ f x≈y;
-  identityˡ = λ {A}{B}{f} x≈y → NE.≈-cong _ _ f x≈y;
-  equiv = λ {A}{B} → Ofe.≈equiv (A ⇨ B) ;
+  assoc = λ {A}{B}{C}{D}{f}{g}{h} x≈y → cong (h ∘ (g ∘ f)) x≈y ;
+  identityʳ = λ {A}{B}{f} x≈y → cong f x≈y;
+  identityˡ = λ {A}{B}{f} x≈y → cong f x≈y;
+  equiv = λ {A}{B} → record
+    { refl = λ {f} → cong f
+    ; sym = λ f≈g x≈y → Ofe.≈ₙ-sym B (f≈g (Ofe.≈ₙ-sym A x≈y))
+    ; trans = λ f≈g g≈h x≈y → Ofe.≈ₙ-trans B (f≈g x≈y) (g≈h (Ofe.≈ₙ-refl A)) } ;
   ∘-resp-≡ = λ {_ _ _}{f}{g}{h} f≈g h≈i x≈y → f≈g (h≈i x≈y) }
+
+infixl 4 _≡⟨_⟩_
+_≡⟨_⟩_ : ∀ {o e e'}{A B : Ofe o e e'} → Ofes [ A , B ] → ℕ → Ofes [ A , B ] → Set _
+_≡⟨_⟩_ {A = A}{B} f n g = Ofe._≈⟨_⟩_ (A ⇨ B) f n g
 
 record Limit {s₁ s₂ e}{o : Ofe s₁ s₂ e}(c : Chain o) : Set (s₁ ⊔ s₂ ⊔ e) where
   constructor lim
@@ -213,3 +231,21 @@ open Limit public
 .limit-map : ∀ {s₁ s₂ e s₁' s₂' e'}{o : Ofe s₁ s₂ e}{o' : Ofe s₁' s₂' e'}{c : Chain o}(f : o ⟶ o') →
              Limit c → Limit (chain-map f c)
 limit-map f (lim c∞ limit) = lim (f ⟨$⟩ c∞) (λ n → cong f (limit n))
+
+Δ : ∀ {o e} → Setoid o e → Ofe o e e
+Δ s = record
+  { setoid = s
+  ; _≈⟨_⟩_ = λ x _ y → Setoid._≈_ s x y
+  ; equiv = Setoid.isEquivalence s
+  ; limit₁ = λ eq _ → eq
+  ; limit₂ = λ eq → eq zero
+  ; monotone = λ _ eq → eq }
+
+open import Categories.Support.Equivalence
+Δ⁺ : ∀ {ℓ} → Set ℓ → Ofe ℓ ℓ ℓ
+Δ⁺ A = Δ (set→setoid A)
+
+→-to-⟶ : ∀ {o}{A B : Set o} → (A → B) → Δ⁺ A ⟶ Δ⁺ B
+_⟨$⟩_ (→-to-⟶ f) x  = f x
+cong  (→-to-⟶ f) eq = PEq.cong f eq
+  where import Relation.Binary.PropositionalEquality as PEq
