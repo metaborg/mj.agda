@@ -7,12 +7,13 @@ open import Relation.Binary using (IsEquivalence)
 open import Data.Nat
 open import Data.Nat.Properties
 open import Data.Product
-open import Data.Unit hiding (setoid; _≤_)
 open import Level
 
-open import Categorical.Ofe
 open import Categories.Category
 open import Categories.Functor.Core
+
+open import Categorical.Ofe
+open import Categorical.Ofe.Products
 
 open Functor
 open Category
@@ -207,15 +208,15 @@ open Cofe
 
 -- we can build a fixed point from a contractive function
 μ' : ∀ {s₁ s₂ e}{A : Cofe s₁ s₂ e} →
-     (F : Ofes [ ofe A , ofe A ]) → .(Contractive F) → Ofes [ ofe A , ofe A ]
-_⟨$⟩_ (μ' {A = A} F p) x = at-∞ (Cofe.conv A (iterate F p x))
-cong  (μ' {A = A} F p) {n = n}{x = x}{y} x≈y =
+     (F : Ofes [ ofe A , ofe A ]) → .(Contractive F) → Carrier A → Ofes [ ⊤ , ofe A ]
+_⟨$⟩_ (μ' {A = A} F p a) _ = at-∞ (Cofe.conv A (iterate F p a))
+cong  (μ' {A = A} F p a) {n = n}{x = x}{y} x≈y =
   cong-conv A
-    (iterate F p x)
-    (iterate F p y)
-    (iterate-cong F F p p (cong F) x≈y)
+    (iterate F p a)
+    (iterate F p a)
+    (iterate-cong F F p p (cong F) (≈ₙ-refl A))
 
 -- Because we can build contractive functions from non-expansive functions from ◀ A to A,
 -- we can define a μ that is easier to work with.
-μ : ∀ {s₁ s₂ e}{A : Cofe s₁ s₂ e} → (F : Ofes [ ► (ofe A) , ofe A ]) → Ofes [ ofe A , ofe A ]
+μ : ∀ {s₁ s₂ e}{A : Cofe s₁ s₂ e} → (F : Ofes [ ► (ofe A) , ofe A ]) → Carrier A → Ofes [ ⊤ , ofe A ]
 μ {A = A} F = μ' {A = A} (Ofes [ F ∘ next-ne (Cofe.ofe A) ]) ([ F ∘ next-ne (Cofe.ofe A) ]-contractive next-co)

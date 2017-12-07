@@ -38,8 +38,8 @@ module _ {o e e' : Level} where
     ; _≈_ = ≈⊤
     ; isEquivalence = equiv-≈⊤ }
 
-  ⊤ : Terminal (Ofes {o}{e}{e'})
-  ⊤ = record
+  terminal : Terminal (Ofes {o}{e}{e'})
+  terminal = record
     { ⊤ = record
         { setoid = oid
         ; _≈⟨_⟩_ = λ x _ y → ≈⊤ x y
@@ -50,6 +50,8 @@ module _ {o e e' : Level} where
         }
     ; ! = record { _⟨$⟩_ = λ _ → lift Unit.tt ; cong = λ _ → lift Unit.tt }
     ; !-unique = λ _ _ → lift Unit.tt }
+
+  open Terminal terminal public
 
 infixr 2 _×-ofe_
 _×-ofe_ : ∀ {o e ℓ}{o' e' ℓ'} → Ofe o e ℓ → Ofe o' e' ℓ' → Obj Ofes
@@ -109,7 +111,7 @@ product binary-products {A} {B} = record {
 
 products : ∀ {s₁ s₂ e} → Products (Ofes {s₁}{s₂}{e})
 products = record {
-  terminal = ⊤ ;
+  terminal = terminal ;
   binary = binary-products }
 
 monoidal : ∀ {s₁ s₂ e} → Monoidal (Ofes {s₁}{s₂}{e})

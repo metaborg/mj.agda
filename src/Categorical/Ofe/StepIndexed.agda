@@ -68,6 +68,11 @@ module StepIndexed {ℓ ℓ'}(A : Setoid ℓ ℓ') where
   limit₂ ⇀-ofe = λ p n → p n (≤-reflexive ≣-refl)
   monotone ⇀-ofe {x = f}{g} n≥n' eqₙ m≤n = eqₙ (≤-trans m≤n n≥n')
 
+  inhabited : ⇀_
+  _⟨_⟩ inhabited x = nothing
+  _⟨0⟩ inhabited = nothing
+  monotone inhabited _ ()
+
 open StepIndexed using (_⟨_⟩; monotone; _⟨0⟩) renaming (⇀-ofe to ⇀_) public
 
 -- subtract 1 fuel

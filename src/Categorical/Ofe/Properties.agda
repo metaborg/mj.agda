@@ -38,7 +38,7 @@ cong (►⇨ {A = A}) (Later.next feq) xeq = Later.next (feq (monotone A (n≤1+
 
 module _ {ℓ}{A : Ofe ℓ ℓ ℓ} where
   open import Categories.Object.Terminal (Ofes {ℓ}{ℓ}{ℓ})
-  module ⊤ = Terminal ⊤
+  module ⊤ = Terminal terminal
   open import Categories.Morphisms (Ofes {ℓ}{ℓ}{ℓ})
 
   ⊤⇨A≅A : (⊤.⊤ ⇨ A) ≅ A
