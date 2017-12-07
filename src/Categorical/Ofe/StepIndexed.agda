@@ -1,6 +1,7 @@
 module Categorical.Ofe.StepIndexed where
 
-open import Data.Nat
+open import Level
+open import Data.Nat hiding (_⊔_)
 open import Data.Nat.Properties
 open import Data.Product
 open import Relation.Nullary
@@ -32,16 +33,18 @@ Carrier (MaybeS A) = Maybe (Carrier A)
 _≈_ (MaybeS A) = Eq (_≈_ A)
 isEquivalence (MaybeS A) = Eq-isEquivalence (isEquivalence A)
 
-module _ {ℓ ℓ'}(A : Setoid ℓ ℓ') where
+module StepIndexed {ℓ ℓ'}(A : Setoid ℓ ℓ') where
   -- fueled monotone functions with strong bi-similarity
 
-  record ⇀_ : Set ℓ where
+  record ⇀_ : Set (ℓ ⊔ ℓ') where
     infixl 100 _⟨_⟩
     field
       _⟨_⟩ : ℕ → Maybe (Carrier A)
-      monotone : ∀ {m n x} → m ≤ n → _⟨_⟩ m ≣ just x → _⟨_⟩ n ≣ just x
+      _⟨0⟩ : MaybeS A [ _⟨_⟩ 0 ≈ nothing ]
+      monotone : ∀ {m n x} → m ≤ n →
+                 (MaybeS A) [ _⟨_⟩ m ≈ just x ] → (MaybeS A) [ _⟨_⟩ n ≈ just x ]
 
-  open ⇀_
+  open ⇀_ public
 
   ⇀-setoid : Setoid _ _
   Carrier ⇀-setoid = ⇀_
@@ -64,3 +67,14 @@ module _ {ℓ ℓ'}(A : Setoid ℓ ℓ') where
   limit₁ ⇀-ofe = λ p n m≤n → p _
   limit₂ ⇀-ofe = λ p n → p n (≤-reflexive ≣-refl)
   monotone ⇀-ofe {x = f}{g} n≥n' eqₙ m≤n = eqₙ (≤-trans m≤n n≥n')
+
+open StepIndexed using (_⟨_⟩; monotone; _⟨0⟩) renaming (⇀-ofe to ⇀_) public
+
+-- subtract 1 fuel
+↘ : ∀ {e e'}{A : Setoid e e'} → Ofes [ ⇀ A ,  ⇀ A ]
+_⟨$⟩_ ↘ f = record
+  { _⟨_⟩ = λ n → f ⟨ n ∸ 1 ⟩
+  ; _⟨0⟩ = f ⟨0⟩
+  ; monotone = λ {m n} m≤n eq → monotone f (∸-mono {u = 1}{v = 1} m≤n (≤-reflexive ≣-refl)) eq }
+  where open Data.Nat.Properties
+cong ↘ x≈y {m} m≤n = x≈y (≤-trans (n∸m≤n 1 m) m≤n)
