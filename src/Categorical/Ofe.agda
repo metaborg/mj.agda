@@ -6,7 +6,7 @@ module Categorical.Ofe where
 
 open import Relation.Binary.Core using (Reflexive; Transitive; Symmetric) renaming (_≡_ to _≣_; refl to ≣-refl)
 open import Relation.Binary using (IsEquivalence)
-open import Level using (_⊔_) renaming (suc to lsuc)
+open import Level using (_⊔_; Lift; lift; lower) renaming (suc to lsuc)
 open import Data.Nat hiding (_⊔_)
 open import Data.Product
 
@@ -130,7 +130,7 @@ chain-map f c = record
   ; cauchy = λ n≤i n≤j → cong f (cauchy c n≤i n≤j) }
 
 -- non-expansive functions between ofes form a ofe themselves
-_⇨_ : ∀ {cf ℓf ct ℓt ef et} (From : Ofe cf ℓf ef)(To : Ofe ct ℓt et) → Ofe _ _ _
+_⇨_ : ∀ {cf ℓf ct ℓt ef et} (From : Ofe cf ℓf ef)(To : Ofe ct ℓt et) → Ofe (cf ⊔ ct ⊔ ℓf ⊔  ℓt ⊔ ef ⊔ et) (ℓf ⊔ ℓt ⊔ cf) _
 From ⇨ To = record
   { setoid = setoid
   ; _≈⟨_⟩_ = _≈⟨_⟩_
@@ -249,3 +249,20 @@ open import Categories.Support.Equivalence
 _⟨$⟩_ (→-to-⟶ f) x  = f x
 cong  (→-to-⟶ f) eq = PEq.cong f eq
   where import Relation.Binary.PropositionalEquality as PEq
+
+Lift-ofe : ∀ {ℓ e e'}{u v w} → Ofe ℓ e e' → Ofe (ℓ ⊔ u)(e ⊔ v)(e' ⊔ w)
+Lift-ofe {u = u}{v}{w} O =
+  let
+    module O  = Ofe O
+    open O
+  in record
+  { setoid = Lift-setoid {a = u}{b = v} O.setoid
+  ; _≈⟨_⟩_ = λ l n r → Lift {ℓ = w} ((lower l) O.≈⟨ n ⟩ (lower r))
+  ; equiv = record
+    { refl = lift ≈ₙ-refl
+    ; sym = λ x → lift (≈ₙ-sym (lower x))
+    ; trans = λ x y → lift (≈ₙ-trans (lower x) (lower y)) }
+  ; limit₁ = λ eq n → lift (O.limit₁ (lower eq) n)
+  ; limit₂ = λ eq → lift (limit₂ λ n → lower (eq n))
+  ; monotone = λ n≤m eq → lift (monotone n≤m (lower eq))
+  }
