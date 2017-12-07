@@ -112,7 +112,7 @@ p₀ = Lib ,
       ◅ loc (ref INT)
       ◅ asgn x (new INT ((num 9) ∷ []))
       ◅ asgn y (new INT ((num 18) ∷ []))
-      ◅ do (call (var x) "set" {_}{void} (var y ∷ []))
+      ◅ run (call (var x) "set" {_}{void} (var y ∷ []))
       ◅ ε
     )
     (get (var x) "x")

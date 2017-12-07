@@ -39,7 +39,7 @@ caught = Lib , let
       ◅ asgn y (new INT (num 18 ∷ []))
       ◅ (try (block (
           -- perform a side effect on the heap: writing 18 to x's int field
-          do (call (var x) "set" {_}{void} (var y ∷ []))
+          run (call (var x) "set" {_}{void} (var y ∷ []))
           -- raise the exception
           ◅ raise
           ◅ ε

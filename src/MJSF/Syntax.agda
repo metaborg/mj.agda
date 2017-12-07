@@ -129,7 +129,7 @@ module SyntaxG (g : Graph) where
 
   mutual
     data Stmt (s : Scope)(r : VTy) : Scope → Set where
-      do    : ∀ {t'} → Expr s t' → Stmt s r s
+      run   : ∀ {t'} → Expr s t' → Stmt s r s
       ifz   : ∀ {s' s'' : Scope} → Expr s int → Stmt s r s → Stmt s r s → Stmt s r s -- branches are blocks
       set   : ∀ {s' t'} → Expr s (ref s') → (s' ↦ vᵗ t') → Expr s t' → Stmt s r s
       loc   : ∀ (s' : Scope)(t' : VTy)⦃ shape : g s' ≡ ([ vᵗ t' ] , [ s ]) ⦄ → Stmt s r s' -- local variable scope `s'` is connected to lexical context scope `s`

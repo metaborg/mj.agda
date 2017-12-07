@@ -24,6 +24,7 @@ open import Data.String using (String)
 open import Relation.Binary.PropositionalEquality
 
 open import MJ.Semantics.Values Ct
+open import MJ.Semantics.Objects Ct
 open import MJ.Syntax Ct
 open Code Ct
 open Core c

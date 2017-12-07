@@ -1,7 +1,7 @@
 open import Prelude
 open import MJ.Classtable.Core
 
-module MJ.LexicalScope {c}(Σ : Classtable c) where
+module MJ.LexicalScope c where
 
 open import Data.List
 open import Data.List.Any
