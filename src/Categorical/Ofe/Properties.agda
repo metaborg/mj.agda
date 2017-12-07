@@ -22,11 +22,7 @@ open Ofe
 -- laters disappear on fueled functions
 ►⇀ : ∀ {e e'}{A : Setoid e e'} → Ofes [ ► (⇀ A) , (⇀ A) ]
 _⟨$⟩_ ►⇀ f = ↘ ⟨$⟩ f
-cong (►⇀ {A = A}) {x = x}{y} Later.now z≤n =
-  trans (x ⟨0⟩) (sym (y ⟨0⟩))
-  where open Setoid (MaybeS A)
-cong (►⇀ {A = A}) {x = x}{y} (Later.next x≈y) m≤n =
-  x≈y (∸-mono {u = 1}{v = 1} m≤n (≤-reflexive ≣-refl))
+cong (►⇀ {A = A}) = ↘-contractive
 
 -- laters can be pushed through exponentials
 ►⇨ : ∀ {ℓ e e'}{A B : Ofe ℓ e e'} → Ofes [ ► (A ⇨ B) , A ⇨ ► B ]

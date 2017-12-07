@@ -1,4 +1,4 @@
-module Categorical.Ofe.Exponentials where
+module Categorical.Ofe.Exponentials {ℓ} where
 
 open import Data.Product
 open import Relation.Binary.PropositionalEquality using () renaming (refl to ≣-refl)
@@ -10,16 +10,17 @@ open import Categories.Category
 open import Categories.Support.Equivalence
 open import Categories.Object.BinaryProducts
 
-module _ {ℓ} where
-  open import Categories.Object.Exponential (Ofes {ℓ}{ℓ}{ℓ})
-  open import Categories.Object.Product (Ofes {ℓ}{ℓ}{ℓ}) as Prod using (Product)
-  open import Categories.Object.Product.Morphisms (Ofes {ℓ}{ℓ}{ℓ})
-  open Product renaming (⟨_,_⟩ to _⟨_,_⟩)
+open import Categories.Object.Exponential (Ofes {ℓ}{ℓ}{ℓ})
+open import Categories.Object.Product (Ofes {ℓ}{ℓ}{ℓ}) as Prod using (Product)
+open import Categories.Object.Product.Morphisms (Ofes {ℓ}{ℓ}{ℓ})
+open Product renaming (⟨_,_⟩ to _⟨_,_⟩)
 
-  open Ofe
-  open Exponential
-  open Category (Ofes {ℓ}{ℓ}{ℓ})
-  module Binary = BinaryProducts (binary-products {ℓ}{ℓ}{ℓ})
+open Ofe
+open Exponential
+open Category (Ofes {ℓ}{ℓ}{ℓ})
+module Binary = BinaryProducts (binary-products {ℓ}{ℓ}{ℓ})
+
+private
 
   eval' : ∀ {A B : Obj} → Ofes [ (A ⇨ B) ×-ofe A , B ]
   _⟨$⟩_ eval' (f , a)     = f ⟨$⟩ a
@@ -62,10 +63,14 @@ module _ {ℓ} where
     ∎
     where open OfeReasoning B
 
-  exp : ∀ A B → Exponential A B
-  B^A      (exp A B) = A ⇨ B
-  product  (exp A B) = Binary.product
-  eval     (exp A B) = eval'
-  λg       (exp A B) = λg'
-  β        (exp A B) = β'
-  λ-unique (exp A B) = λ-uniq
+exp : ∀ A B → Exponential A B
+B^A      (exp A B) = A ⇨ B
+product  (exp A B) = Binary.product
+eval     (exp A B) = eval'
+λg       (exp A B) = λg'
+β        (exp A B) = β'
+λ-unique (exp A B) = λ-uniq
+
+⇨-const : ∀ {A B : Obj} → Carrier B → Carrier (A ⇨ B)
+⇨-const {B = B} b = record { _⟨$⟩_ = λ _ → b ; cong = λ _ → ≈ₙ-refl B }
+

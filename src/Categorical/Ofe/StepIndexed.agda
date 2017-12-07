@@ -1,28 +1,21 @@
 module Categorical.Ofe.StepIndexed where
 
 open import Level
+open import Data.Maybe hiding (setoid)
 open import Data.Nat hiding (_⊔_)
 open import Data.Nat.Properties
-open import Data.Product
-open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality as PEq using () renaming (refl to ≣-refl; _≡_ to _≣_)
-open import Relation.Binary.Core using (IsEquivalence)
-open import Function.Equivalence as Eqv using (_⇔_; Equivalence; equivalence)
-import Function
 
 open import Categories.Category
 open import Categories.Functor.Core
+open import Categories.Support.Equivalence
 
 open import Categorical.Ofe hiding (_[_≈_])
 open import Categorical.Ofe.Cofe
-open import Categorical.Thin
-
+open import Categorical.Ofe.Later
 open import Categorical.Ofe.Predicates
-open import Categories.Support.Equivalence
 open import Categorical.ISetoids.Equality
-open import Data.Maybe hiding (setoid)
 
-open Thin ℕ≤
 open Category
 open Functor
 open Setoid
@@ -56,24 +49,32 @@ module StepIndexed {ℓ ℓ'}(A : Setoid ℓ ℓ') where
     where module MA = Setoid (MaybeS A)
 
   open Ofe
-  ⇀-ofe : Ofe _ _ _
-  setoid ⇀-ofe = ⇀-setoid
-  _≈⟨_⟩_ ⇀-ofe f n g = ∀ {m} → m ≤ n → (MaybeS A) [ f ⟨ m ⟩ ≈ g ⟨ m ⟩ ]
-  equiv ⇀-ofe = record
+  infixl 1000 ⇀-ofe_
+  ⇀-ofe_ : Ofe _ _ _
+  setoid ⇀-ofe_ = ⇀-setoid
+  _≈⟨_⟩_ ⇀-ofe_ f n g = ∀ {m} → m ≤ n → (MaybeS A) [ f ⟨ m ⟩ ≈ g ⟨ m ⟩ ]
+  equiv ⇀-ofe_ = record
     { refl = λ m≤n → MA.refl
     ; sym = λ p m≤n → MA.sym (p m≤n)
     ; trans = λ p q m≤n → MA.trans (p m≤n) (q m≤n) }
     where module MA = Setoid (MaybeS A)
-  limit₁ ⇀-ofe = λ p n m≤n → p _
-  limit₂ ⇀-ofe = λ p n → p n (≤-reflexive ≣-refl)
-  monotone ⇀-ofe {x = f}{g} n≥n' eqₙ m≤n = eqₙ (≤-trans m≤n n≥n')
+  limit₁ ⇀-ofe_ = λ p n m≤n → p _
+  limit₂ ⇀-ofe_ = λ p n → p n (≤-reflexive ≣-refl)
+  monotone ⇀-ofe_ {x = f}{g} n≥n' eqₙ m≤n = eqₙ (≤-trans m≤n n≥n')
 
   inhabited : ⇀_
   _⟨_⟩ inhabited x = nothing
   _⟨0⟩ inhabited = nothing
   monotone inhabited _ ()
 
-open StepIndexed using (_⟨_⟩; monotone; _⟨0⟩) renaming (⇀-ofe to ⇀_) public
+open StepIndexed using (_⟨_⟩; monotone; _⟨0⟩) renaming (⇀-ofe_ to ⇀_; inhabited to ⇀-inhabited) public
+
+fuel : ∀ {e e'}{A : Setoid e e'} → Carrier A → Ofe.Carrier (⇀ A)
+_⟨_⟩ (fuel a) zero = nothing
+_⟨_⟩ (fuel a) (suc n) = just a
+_⟨0⟩ (fuel a) = nothing
+monotone (fuel a) z≤n ()
+monotone (fuel a) (s≤s m≤n) eq = eq
 
 -- subtract 1 fuel
 ↘ : ∀ {e e'}{A : Setoid e e'} → Ofes [ ⇀ A ,  ⇀ A ]
@@ -83,3 +84,8 @@ _⟨$⟩_ ↘ f = record
   ; monotone = λ {m n} m≤n eq → monotone f (∸-mono {u = 1}{v = 1} m≤n (≤-reflexive ≣-refl)) eq }
   where open Data.Nat.Properties
 cong ↘ x≈y {m} m≤n = x≈y (≤-trans (n∸m≤n 1 m) m≤n)
+
+.↘-contractive : ∀ {e e'}{A : Setoid e e'} → Contractive (↘ {A = A})
+↘-contractive {A = A} {f}{g} Later.now z≤n = M.trans (f ⟨0⟩) (M.sym (g ⟨0⟩))
+  where module M = Setoid (MaybeS A)
+↘-contractive (Later.next x≈y) m≤n = x≈y (∸-mono {u = 1}{v = 1} m≤n (≤-reflexive ≣-refl))
