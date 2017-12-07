@@ -9,6 +9,7 @@ open import Relation.Binary.PropositionalEquality as PEq using () renaming (refl
 open import Categories.Category
 open import Categories.Functor.Core
 open import Categories.Support.Equivalence
+open import Categories.Support.EqReasoning
 
 open import Categorical.Ofe hiding (_[_≈_])
 open import Categorical.Ofe.Cofe
@@ -33,9 +34,9 @@ module StepIndexed {ℓ ℓ'}(A : Setoid ℓ ℓ') where
     infixl 100 _⟨_⟩
     field
       _⟨_⟩ : ℕ → Maybe (Carrier A)
-      _⟨0⟩ : MaybeS A [ _⟨_⟩ 0 ≈ nothing ]
-      monotone : ∀ {m n x} → m ≤ n →
-                 (MaybeS A) [ _⟨_⟩ m ≈ just x ] → (MaybeS A) [ _⟨_⟩ n ≈ just x ]
+      . _⟨0⟩ : MaybeS A [ _⟨_⟩ 0 ≈ nothing ]
+      .monotone : ∀ {m n x} → m ≤ n →
+                  (MaybeS A) [ _⟨_⟩ m ≈ just x ] → (MaybeS A) [ _⟨_⟩ n ≈ just x ]
 
   open ⇀_ public
 
@@ -66,6 +67,23 @@ module StepIndexed {ℓ ℓ'}(A : Setoid ℓ ℓ') where
   _⟨_⟩ inhabited x = nothing
   _⟨0⟩ inhabited = nothing
   monotone inhabited _ ()
+
+  open Cofe
+  ⇀-cofe_ : Cofe _ _ _
+  ofe  ⇀-cofe_ = ⇀-ofe_
+  conv ⇀-cofe_ c = lim
+    -- the limit is the diagonal of the chain
+    (record
+      { _⟨_⟩ = λ n → (c at n) ⟨ n ⟩
+      ; _⟨0⟩ = (c at 0) ⟨0⟩
+      ; monotone = λ {m}{n}{x} m≤n eq →
+        let module M = Setoid (MaybeS A) in
+        monotone
+          (c at n)
+          m≤n
+          (M.trans (cauchy c m≤n (≤-reflexive ≣-refl) (≤-reflexive ≣-refl)) eq)
+      })
+    (λ n {m} m≤n → cauchy c m≤n (≤-reflexive ≣-refl) (≤-reflexive ≣-refl))
 
 open StepIndexed using (_⟨_⟩; monotone; _⟨0⟩) renaming (⇀-ofe_ to ⇀_; inhabited to ⇀-inhabited) public
 
