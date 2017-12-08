@@ -3,6 +3,7 @@ open import Level
 module Categorical.Ofe.Products where
 
 open import Data.Product
+open import Data.Product using (_,_) public
 open import Relation.Binary using (IsEquivalence)
 import Relation.Binary.PropositionalEquality as PEq
 import Data.Unit as Unit

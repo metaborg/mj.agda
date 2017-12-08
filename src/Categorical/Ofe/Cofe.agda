@@ -26,43 +26,43 @@ record Cofe o e e' : Set (lsuc o ⊔ lsuc e ⊔ lsuc e') where
 
 open Cofe
 
-module Binary {s₁ s₂ e s₁' s₂' e'}(Left : Ofe s₁ s₂ e)(Right : Cofe s₁' s₂' e') where
+private
+  module Binary {s₁ s₂ e s₁' s₂' e'}(Left : Ofe s₁ s₂ e)(Right : Cofe s₁' s₂' e') where
+    _⇨_ : Cofe _ _ _
+    _⇨_ = record
+      { ofe = Left ⇨' Cofe.ofe Right
+      ; conv = conv′ }
+      where
+        chain-apply : ∀ (x : Ofe.Carrier Left)(c : Chain (Left ⇨' ofe Right)) → Chain (ofe Right)
+        chain-apply x c = chain-map (record
+          { _⟨$⟩_ = λ f → f ⟨$⟩ x
+          ; cong = λ x≈ₙy → x≈ₙy (Ofe.≈ₙ-refl Left) }) c
 
-  _⇨_ : Cofe _ _ _
-  _⇨_ = record
-    { ofe = Left ⇨' Cofe.ofe Right
-    ; conv = conv′ }
-    where
-      chain-apply : ∀ (x : Ofe.Carrier Left)(c : Chain (Left ⇨' ofe Right)) → Chain (ofe Right)
-      chain-apply x c = chain-map (record
-        { _⟨$⟩_ = λ f → f ⟨$⟩ x
-        ; cong = λ x≈ₙy → x≈ₙy (Ofe.≈ₙ-refl Left) }) c
-
-      conv′ : ∀ (c : Chain (Left ⇨' ofe Right)) → Limit c
-      -- describe the limit of a function chain
-      _⟨$⟩_ (at-∞ (conv′ c)) x =
-        at-∞ (Cofe.conv Right (chain-apply x c))
-      cong (at-∞ (conv′ c)) {n}{x = x}{y} x≈ₙy =
-        begin
-          at-∞ (conv Right (chain-apply x c))
-        ↑⟨ limit (conv Right (chain-apply x c)) n ⟩
-          (c at n) ⟨$⟩ x
-        ↓⟨ cong (_at_ c n) x≈ₙy ⟩
-          (c at n) ⟨$⟩ y
-        ↓⟨ limit (conv Right (chain-apply y c)) n ⟩
-          at-∞ (conv Right (chain-apply y c))
-        ∎
-        where open OfeReasoning (ofe Right)
-      -- proof that this is a limit
-      limit (conv′ c) n {x = x}{y} x≈ₙy =
-        begin
-          (c at n) ⟨$⟩ x
-        ↓⟨ cong (c at n) x≈ₙy ⟩
-          (c at n) ⟨$⟩ y
-        ↓⟨ limit (conv Right (chain-apply y c)) n ⟩
-          at-∞ (conv Right (chain-apply y c))
-        ∎
-        where open OfeReasoning (ofe Right)
+        conv′ : ∀ (c : Chain (Left ⇨' ofe Right)) → Limit c
+        -- describe the limit of a function chain
+        _⟨$⟩_ (at-∞ (conv′ c)) x =
+          at-∞ (Cofe.conv Right (chain-apply x c))
+        cong (at-∞ (conv′ c)) {n}{x = x}{y} x≈ₙy =
+          begin
+            at-∞ (conv Right (chain-apply x c))
+          ↑⟨ limit (conv Right (chain-apply x c)) n ⟩
+            (c at n) ⟨$⟩ x
+          ↓⟨ cong (_at_ c n) x≈ₙy ⟩
+            (c at n) ⟨$⟩ y
+          ↓⟨ limit (conv Right (chain-apply y c)) n ⟩
+            at-∞ (conv Right (chain-apply y c))
+          ∎
+          where open OfeReasoning (ofe Right)
+        -- proof that this is a limit
+        limit (conv′ c) n {x = x}{y} x≈ₙy =
+          begin
+            (c at n) ⟨$⟩ x
+          ↓⟨ cong (c at n) x≈ₙy ⟩
+            (c at n) ⟨$⟩ y
+          ↓⟨ limit (conv Right (chain-apply y c)) n ⟩
+            at-∞ (conv Right (chain-apply y c))
+          ∎
+          where open OfeReasoning (ofe Right)
 
 open Binary using (_⇨_) public
 open import Categories.Category

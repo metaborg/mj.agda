@@ -85,14 +85,21 @@ module StepIndexed {ℓ ℓ'}(A : Setoid ℓ ℓ') where
       })
     (λ n {m} m≤n → cauchy c m≤n (≤-reflexive ≣-refl) (≤-reflexive ≣-refl))
 
-open StepIndexed using (_⟨_⟩; monotone; _⟨0⟩) renaming (⇀-ofe_ to ⇀_; inhabited to ⇀-inhabited) public
+open StepIndexed using (_⟨_⟩; monotone; _⟨0⟩; ⇀-cofe_)
+                 renaming (⇀-ofe_ to ⇀_; inhabited to ⇀-inhabited) public
 
-fuel : ∀ {e e'}{A : Setoid e e'} → Carrier A → Ofe.Carrier (⇀ A)
-_⟨_⟩ (fuel a) zero = nothing
-_⟨_⟩ (fuel a) (suc n) = just a
-_⟨0⟩ (fuel a) = nothing
-monotone (fuel a) z≤n ()
-monotone (fuel a) (s≤s m≤n) eq = eq
+import Categories.Support.SetoidFunctions as SF
+fuel : ∀ {e}{A B : Setoid e e} → (f : A SF.⟶ B) → Ofes [ Δ A , ⇀ B ]
+_⟨$⟩_ (fuel f) a = record
+  { _⟨_⟩ = λ where
+     ℕ.zero → nothing
+     (ℕ.suc x) → just (f SF.⟨$⟩ a)
+  ; _⟨0⟩ = nothing
+  ; monotone = λ where
+     z≤n ()
+     (s≤s m≤n) eq → eq }
+cong (fuel f) eq z≤n = nothing
+cong (fuel f) eq (s≤s m≤n) = just (SF.cong f eq)
 
 -- subtract 1 fuel
 ↘ : ∀ {e e'}{A : Setoid e e'} → Ofes [ ⇀ A ,  ⇀ A ]

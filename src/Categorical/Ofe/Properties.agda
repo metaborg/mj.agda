@@ -21,13 +21,13 @@ open Ofe
 
 -- laters disappear on fueled functions
 ►⇀ : ∀ {e e'}{A : Setoid e e'} → Ofes [ ► (⇀ A) , (⇀ A) ]
-_⟨$⟩_ ►⇀ f = ↘ ⟨$⟩ f
-cong (►⇀ {A = A}) = ↘-contractive
+_⟨$⟩_ ►⇀ (next f) = ↘ ⟨$⟩ f
+cong (►⇀ {A = A}) {x = next f}{y = next g} = ↘-contractive
 
 -- laters can be pushed through exponentials
 ►⇨ : ∀ {ℓ e e'}{A B : Ofe ℓ e e'} → Ofes [ ► (A ⇨ B) , A ⇨ ► B ]
-_⟨$⟩_ (►⇨ {B = B}) f = record
-  { _⟨$⟩_ = λ x → f ⟨$⟩ x
+_⟨$⟩_ (►⇨ {B = B}) (next f) = record
+  { _⟨$⟩_ = λ x → next (f ⟨$⟩ x)
   ; cong = λ eq → monotone (► B) (n≤1+n _) (Later.next (cong f eq)) }
 cong ►⇨ Later.now _ = Later.now
 cong (►⇨ {A = A}) (Later.next feq) xeq = Later.next (feq (monotone A (n≤1+n _) xeq))

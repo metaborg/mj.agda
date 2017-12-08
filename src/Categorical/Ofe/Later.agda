@@ -21,18 +21,43 @@ open Category
 module Later {s₁ s₂ e}(o : Ofe s₁ s₂ e) where
   open Ofe o
 
-  data _later≈⟨_⟩_ : Carrier → Fuel → Carrier → Set e where
-    now   : ∀ {x y} → x later≈⟨ ℕ.zero ⟩ y
-    next  : ∀ {x y n} → x ≈⟨ n ⟩ y → x later≈⟨ ℕ.suc n ⟩ y
+  data Later : Set s₁ where
+    next  : ∀ (x : Carrier) → Later
 
-  unnextₙ : ∀ {x y n} → x later≈⟨ ℕ.suc n ⟩ y → x ≈⟨ n ⟩ y
-  unnextₙ (next eq) = eq
+  unnext : Later → Carrier
+  unnext (next x) = x
+
+  data _later≈_ : Later → Later → Set s₂ where
+    next : ∀ {x y} → x ≈ y → next x later≈ next y
+
+  .next∘unnext : ∀ {x} → next (unnext x) later≈ x
+  next∘unnext {next x} = next ≈-refl
+
+  module _ where
+    open Setoid
+    later-setoid : Setoid _ _
+    Carrier later-setoid = Later
+    _≈_ later-setoid = _later≈_
+    isEquivalence later-setoid = record
+      { refl = λ where
+          {next x} → next ≈-refl
+      ; sym = λ where
+          (next eq) → next (≈-sym eq)
+      ; trans = λ where
+          (next p) (next q) → next (≈-trans p q) }
+
+  data _later≈⟨_⟩_ : Later → Fuel → Later → Set e where
+    now   : ∀ {x y} → x later≈⟨ ℕ.zero ⟩ y
+    next  : ∀ {x y n} → x ≈⟨ n ⟩ y → (next x) later≈⟨ ℕ.suc n ⟩ (next y)
+
+  unnext-eq : ∀ {x y n} → x later≈⟨ ℕ.suc n ⟩ y → unnext x ≈⟨ n ⟩ unnext y
+  unnext-eq (next eq) = eq
 
 -- it is a functor in the category of Ofes
 module LaterOfe {s₁ s₂ e} where
   omap : (T : Ofe s₁ s₂ e) → Ofe _ _ _
   omap T = record
-    { setoid = setoid
+    { setoid = later-setoid
     ; _≈⟨_⟩_ = _later≈⟨_⟩_
     ; equiv = λ {n} → ≈ₙequiv {n}
     ; limit₁ = limit₁'
@@ -40,40 +65,40 @@ module LaterOfe {s₁ s₂ e} where
     ; monotone = mono
     }
     where
-      open Ofe T
+      module T = Ofe T
       open Later T
 
-      .limit₁' : ∀ {x y} → x ≈ y → (n : ℕ) → x later≈⟨ n ⟩ y
+      .limit₁' : ∀ {x y} → x later≈ y → (n : ℕ) → x later≈⟨ n ⟩ y
       limit₁' x ℕ.zero = now
-      limit₁' x (ℕ.suc n) = next (Ofe.limit₁ T x n)
+      limit₁' (next x) (ℕ.suc n) = next (T.limit₁ x n)
 
       open IsEquivalence
       .≈ₙequiv : ∀ {n} → IsEquivalence (λ x y → x later≈⟨ n ⟩ y)
-      refl (≈ₙequiv {n}) = limit₁' ≈-refl n
+      refl (≈ₙequiv {n}) {next x} = limit₁' (next T.≈-refl) n
       sym ≈ₙequiv now = now
       sym ≈ₙequiv (next x≈ₙy) = next (Ofe.≈ₙ-sym T x≈ₙy)
       trans ≈ₙequiv now now = now
       trans ≈ₙequiv (next x≈ₙy) (next y≈ₙz) = next (Ofe.≈ₙ-trans T x≈ₙy y≈ₙz)
 
-      .limit₂' : ∀ {x y} → ((n : ℕ) → x later≈⟨ n ⟩ y) → (x ≈ y)
-      limit₂' {x} {y} x≋y = limit₂ λ n → unnextₙ (x≋y (ℕ.suc n))
+      .limit₂' : ∀ {x y} → ((n : ℕ) → x later≈⟨ n ⟩ y) → (x later≈ y)
+      limit₂' {next x} {next y} x≋y = next (T.limit₂ λ n → unnext-eq (x≋y (ℕ.suc n)))
 
       .mono : ∀ {n n' : ℕ} {x y} → n' ≤ n → x later≈⟨ n ⟩ y → x later≈⟨ n' ⟩ y
       mono z≤n x≈ₙy = now
-      mono (s≤s le) (next x≈ₙy) = next (monotone le x≈ₙy)
+      mono (s≤s le) (next x≈ₙy) = next (T.monotone le x≈ₙy)
 
-  open Later
+  open Later public
 
   next-ne : ∀ (A : Obj Ofes) → Ofes [ A , omap A ]
-  _⟨$⟩_ (next-ne _) x = x
+  _⟨$⟩_ (next-ne _) x = next x
   cong (next-ne _) {ℕ.zero} {x} {y} eq = now
   cong (next-ne A) {ℕ.suc n} {x} {y} eq = next (Ofe.monotone A (n≤1+n n) eq)
     where open import Data.Nat.Properties
 
   hmap : ∀ {A B} → Ofes [ A , B ] → Ofes [ omap A , omap B ]
-  hmap {A = A}{B} F = record
-    { _⟨$⟩_ = _⟨$⟩_ F
-    ; cong  = λ{ now → now ; (next eq) → next (cong F eq) }}
+  hmap {A = A}{B} f = record
+    { _⟨$⟩_ = λ x → next (f ⟨$⟩ (unnext _ x))
+    ; cong  = λ{ now → now ; (next eq) → next (cong f eq) }}
 
   .homomorph : ∀ {X Y Z}{f : Ofes [ X , Y ]}{g : Ofes [ Y , Z ]} →
                Ofes [ hmap (Ofes [ g ∘ f ]) ≡ Ofes [ hmap g ∘ hmap f ] ]
@@ -88,22 +113,14 @@ module LaterOfe {s₁ s₂ e} where
     where open OfeReasoning (omap Z)
 
   .identity′ : ∀ {A} → Ofes [ hmap {A = A} (Category.id Ofes) ≡ Category.id Ofes ]
-  identity′ {A} {x = x}{y} x≈y =
-    begin
-      x
-    ↓≣⟨ ≣-refl ⟩
-      x
-    ↓⟨ x≈y ⟩
-      y
-    ∎
-    where open OfeReasoning (omap A)
+  identity′ {A} {x = next x}{next y} x≈y = x≈y
 
   .resp : ∀ {A B}{F G : Ofes [ A , B ]} → Ofes [ F ≡ G ] → Ofes [ hmap F ≡ hmap G ]
-  resp {A}{B}{F}{G} F≡G {x = x}{y} x≈y =
+  resp {A}{B}{F}{G} F≡G {x = next x}{y} x≈y =
     begin
-      F ⟨$⟩ x
+      next (F ⟨$⟩ x)
     ↓⟨ cong (next-ne B) (F≡G (Ofe.≈ₙ-refl A)) ⟩
-      G ⟨$⟩ x
+      next (G ⟨$⟩ x)
     ↓⟨ cong (hmap G) x≈y ⟩
       hmap G ⟨$⟩ y
     ∎
@@ -116,10 +133,10 @@ module LaterOfe {s₁ s₂ e} where
   identity functor {A} = identity′ {A}
   F-resp-≡ functor {F = F}{G} = resp {F = F}{G}
 
-open LaterOfe using (next-ne) renaming (functor to ►F; omap to ►) public
+open LaterOfe using (next; next-ne) renaming (functor to ►F; omap to ►) public
 
 Contractive : ∀ {s₁ s₂ e}{A B : Ofe s₁ s₂ e} → Ofes [ A , B ] → Set _
-Contractive {A = A}{B} F = ∀ {x y : Ofe.Carrier A}{n} → (► A) [ x ≈⟨ n ⟩ y ] → B [ F ⟨$⟩ x ≈⟨ n ⟩ F ⟨$⟩ y ]
+Contractive {A = A}{B} F = ∀ {x y : Ofe.Carrier A}{n} → (► A) [ next x ≈⟨ n ⟩ next y ] → B [ F ⟨$⟩ x ≈⟨ n ⟩ F ⟨$⟩ y ]
 
 open Later
 
@@ -148,7 +165,10 @@ next-contractive {A = A}{B}{G} (F , eq) {x}{y}{n} eq' =
 .contractive-next : ∀ {s₁ s₂ e}{A B : Ofe s₁ s₂ e}{G : Ofes [ A , B ]} →
                     Contractive G → (∃ λ (F : Ofes [ ► A , B ]) → Ofes [ G ≡ Ofes [ F ∘ next-ne A ] ])
 contractive-next {B = B}{G = G} p =
-  record { _⟨$⟩_ = _⟨$⟩_ G ; cong = p } , λ x≈y → cong G x≈y
+  record
+    { _⟨$⟩_ = λ x → G ⟨$⟩ (unnext _ x)
+    ; cong  = λ where {x = next x}{y = next y} eq → p eq
+    } , λ x≈y → cong G x≈y
 
 private
   n-iter : ∀ {ℓ}{A : Set ℓ} → ℕ → (f : A → A) → A → A
@@ -187,19 +207,23 @@ open import Categorical.Ofe.Cofe
   where
     open Cofe T
 
-    unfold-chain : ∀ (c : Chain (► ofe)) → Chain ofe
-    _at_   (unfold-chain c) n = (c at (ℕ.suc n))
-    cauchy (unfold-chain c) {i = i}{j} n≤i n≤j = Later.unnextₙ ofe (cauchy c (s≤s n≤i) (s≤s n≤j))
+    unnext-chain : ∀ (c : Chain (► ofe)) → Chain ofe
+    _at_   (unnext-chain c) n = unnext _ (c at (ℕ.suc n))
+    cauchy (unnext-chain c) {i = i}{j} n≤i n≤j = Later.unnext-eq ofe (cauchy c (s≤s n≤i) (s≤s n≤j))
 
     conv' : (c : Chain (► ofe)) → Limit c
-    at-∞  (conv' c) = at-∞ (Cofe.conv T (unfold-chain c))
+    at-∞  (conv' c) = next (at-∞ (Cofe.conv T (unnext-chain c)))
     limit (conv' c) n =
       begin
-        c at n
+        (c at n)
       ↓⟨ cauchy c (≤-reflexive ≣-refl) (n≤1+n n) ⟩
-        c at ℕ.suc n
-      ↓⟨ Ofe.monotone (► ofe) (n≤1+n n) (Later.next (limit (conv (unfold-chain c)) n)) ⟩
-        at-∞ (conv (unfold-chain c))
+        (c at ℕ.suc n)
+      ↑⟨ Ofe.limit₁ (► ofe) (next∘unnext _) n ⟩
+        next (unnext _ (c at ℕ.suc n))
+      ↑≣⟨ ≣-refl ⟩
+        next (unnext-chain c at n)
+      ↓⟨ cong (next-ne _) (limit (conv (unnext-chain c)) n) ⟩
+        next (at-∞ (conv (unnext-chain c)))
       ∎
       where open OfeReasoning (► ofe)
 
