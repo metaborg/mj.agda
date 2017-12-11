@@ -15,7 +15,6 @@ open import Categorical.Ofe.Products
 open import Categorical.Ofe.Later
 open import Categorical.Ofe.StepIndexed
 
-
 open _⟶_
 open Ofe
 
@@ -25,6 +24,8 @@ _⟨$⟩_ ►⇀ (next f) = ↘ ⟨$⟩ f
 cong (►⇀ {A = A}) {x = next f}{y = next g} = ↘-contractive
 
 -- laters can be pushed through exponentials
+-- TODO minimal primitive; this one should follow;
+-- TODO Applicative?
 ►⇨ : ∀ {ℓ e e'}{A B : Ofe ℓ e e'} → Ofes [ ► (A ⇨ B) , A ⇨ ► B ]
 _⟨$⟩_ (►⇨ {B = B}) (next f) = record
   { _⟨$⟩_ = λ x → next (f ⟨$⟩ x)
@@ -32,13 +33,19 @@ _⟨$⟩_ (►⇨ {B = B}) (next f) = record
 cong ►⇨ Later.now _ = Later.now
 cong (►⇨ {A = A}) (Later.next feq) xeq = Later.next (feq (monotone A (n≤1+n _) xeq))
 
-module _ {ℓ}{A : Ofe ℓ ℓ ℓ} where
-  open import Categories.Object.Terminal (Ofes {ℓ}{ℓ}{ℓ})
-  module ⊤ = Terminal terminal
-  open import Categories.Morphisms (Ofes {ℓ}{ℓ}{ℓ})
+module _ {ℓ} where
+  C = Ofes {ℓ}{ℓ}{ℓ}
+  open Category C
+  open import Categories.Object.Terminal C
+  open import Categories.Object.Exponential C
+  open import Categories.Object.BinaryProducts C
+  open import Categories.Morphisms C
+  open BinaryProducts binary-products
 
-  ⊤⇨A≅A : (⊤.⊤ ⇨ A) ≅ A
-  ⊤⇨A≅A = record
+  module ⊤ = Terminal terminal
+
+  ⊤⇨A≅A : ∀ {A : Ofe ℓ ℓ ℓ} → (⊤.⊤ ⇨ A) ≅ A
+  ⊤⇨A≅A {A} = record
     { f = from
     ; g = to
     ; iso = record
@@ -52,3 +59,11 @@ module _ {ℓ}{A : Ofe ℓ ℓ ℓ} where
       to : Ofes [ A , ⊤.⊤ ⇨ A  ]
       _⟨$⟩_ to a = record { _⟨$⟩_ = λ _ → a ; cong = λ _ → ≈ₙ-refl A }
       cong to aeq = λ _ → aeq
+
+  rec-unfold : ∀ {A : Ofe ℓ ℓ ℓ}{B : Setoid ℓ ℓ} → Ofes [ ► (A ⇨ ⇀ B) , (A ⇨ ⇀ B) ]
+  rec-unfold {A}{B} =
+    [ exp A (⇀ B) ]λ product (
+        ►⇀
+      ∘ [ exp _ _ ]eval
+      ∘ first {C = A} ►⇨
+    )

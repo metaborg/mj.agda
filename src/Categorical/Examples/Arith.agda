@@ -48,47 +48,40 @@ private
 Val = set→setoid ℕ
 Exp = Δ⁺ Exp-set
 
-destruct : Exp ⇒ (Δ⁺ ℕ) + (Exp ×-ofe Exp)
-destruct = record
-  { _⟨$⟩_ = λ where
-     (num n) → inj₁ n
-     (add l r) → inj₂ (l , r)
-  ; cong = λ where
-     {x = num _  } ≣-refl → inj₁ ≣-refl
-     {x = add _ _} ≣-refl → inj₂ (≣-refl , ≣-refl) }
+module Elim (A : Ofe lz lz lz) where
 
-eval-arith : ⊤ ⇒ (Exp ⇨ ⇀ Val)
-eval-arith = μ (Exp ⇨-cofe (⇀-cofe Val)) eval' (⇨-const (⇀-inhabited Val))
-  where
-    module _ {X : Obj} where
-      open Exponentiating record { exponential = λ {A} → exp A X } public
-    module _ {A B : Obj} where
-      open Exponential (exp A B) public hiding (eval)
+  Rec = (Exp ⇨ A)
 
-    Rec = ► (Exp ⇨ ⇀ Val)
+  elim : (Rec ×-ofe (Δ⁺ ℕ)) ⇒ A →
+             (Rec ×-ofe (Exp ×-ofe Exp)) ⇒ A →
+             (Rec ×-ofe Exp) ⇒ A
+  _⟨$⟩_ (elim f g) (rec , num n) = f ⟨$⟩ (rec , n)
+  _⟨$⟩_ (elim f g) (rec , add e₁ e₂) = g ⟨$⟩ (rec , e₁ , e₂)
+  cong (elim f g) {x = rec , num _} (eq , ≣-refl) = cong f (eq , ≣-refl)
+  cong (elim f g) {x = rec , add _ _} (eq , ≣-refl) = cong g (eq , ≣-refl , ≣-refl)
 
-    -- a helper to call the recursor with one fuel less
-    rec : (Rec × Exp) ⇒ ⇀ Val
-    rec =
-        eval
-      ∘ first {A = Rec}{B = (Exp ⇨ ⇀ Val)}{C = Exp} (
-            λ-abs _ (►⇀ ∘ eval)
-          ∘ ►⇨
+module Eval where
+
+  module _ {X : Obj} where
+    open Exponentiating record { exponential = λ {A} → exp A X } public
+
+  Eval = Exp ⇨ ⇀ Val
+
+  eval-arith : ⊤ ⇒ Eval
+  eval-arith = μ (Exp ⇨-cofe (⇀-cofe Val)) eval' (⇨-const (⇀-inhabited Val))
+    where
+      case-num : (Eval × Δ⁺ ℕ) ⇒ ⇀ Val
+      case-num = fuel SF.id ∘ π₂ {A = Eval}
+
+      case-add : (Eval × (Exp × Exp)) ⇒ ⇀ Val
+      case-add =
+          {!E!}                                    -- add values
+        ∘ _⁂_ {C = Eval × Exp} eval eval          -- recursively evaluate the sub-expressions
+        ∘ ×-distrib-× {A = Eval}{B = Exp}{C = Exp} -- fiddling with arguments
+
+      eval' : Ofes [ ► Eval , (Exp ⇨ ⇀ Val) ]
+      eval' =
+        λ-abs _ (
+            Elim.elim (⇀ Val) case-num case-add
+          ∘ first {C = Exp} rec-unfold
         )
-
-    case-num : (Rec × Δ⁺ ℕ) ⇒ ⇀ Val
-    case-num = fuel SF.id ∘ π₂ {A = Rec}
-
-    case-add : (Rec × (Exp × Exp)) ⇒ ⇀ Val
-    case-add =
-        {!!}                                        -- add values
-      ∘ _⁂_ {A = Rec × Exp}{C = Rec × Exp} rec rec -- recursively evaluate the sub-expressions
-      ∘ ×-distrib-× {A = Rec}{B = Exp}{C = Exp}     -- fiddling with arguments
-
-    eval' : Ofes [ Rec , (Exp ⇨ ⇀ Val) ]
-    eval' =
-      λ-abs _ (
-          case[ case-num , case-add ] -- case-tree for handling the two cases of expressions
-        ∘ ×-distrib-+ {A = Rec}       -- fiddling with arguments
-        ∘ second {A = Rec} destruct   -- destruct the input expression
-      )
