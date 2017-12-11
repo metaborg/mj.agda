@@ -2,7 +2,7 @@ module Categorical.Ofe.Properties where
 
 open import Level
 open import Data.Unit using (tt)
-open import Data.Nat hiding (_⊔_)
+open import Data.Nat hiding (_⊔_; _+_)
 open import Data.Nat.Properties
 open import Relation.Binary.PropositionalEquality as PEq using () renaming (refl to ≣-refl; _≡_ to _≣_)
 
@@ -34,13 +34,16 @@ cong ►⇨ Later.now _ = Later.now
 cong (►⇨ {A = A}) (Later.next feq) xeq = Later.next (feq (monotone A (n≤1+n _) xeq))
 
 module _ {ℓ} where
-  C = Ofes {ℓ}{ℓ}{ℓ}
-  open Category C
-  open import Categories.Object.Terminal C
-  open import Categories.Object.Exponential C
-  open import Categories.Object.BinaryProducts C
-  open import Categories.Morphisms C
-  open BinaryProducts binary-products
+  -- the following properties hold only when
+  -- when the objects and equalities of the Ofes live in the same universe
+  private
+    Cat = Ofes {ℓ}{ℓ}{ℓ}
+
+  open Category Cat
+  open import Categories.Object.Terminal Cat
+  open import Categories.Object.Exponential Cat
+  open import Categories.Object.BinaryProducts Cat
+  open import Categories.Morphisms Cat
 
   module ⊤ = Terminal terminal
 
@@ -62,8 +65,33 @@ module _ {ℓ} where
 
   rec-unfold : ∀ {A : Ofe ℓ ℓ ℓ}{B : Setoid ℓ ℓ} → Ofes [ ► (A ⇨ ⇀ B) , (A ⇨ ⇀ B) ]
   rec-unfold {A}{B} =
-    [ exp A (⇀ B) ]λ product (
+    [ exp A (⇀ B) ]λ Binary.product (
         ►⇀
       ∘ [ exp _ _ ]eval
-      ∘ first {C = A} ►⇨
+      ∘ Binary.first {C = A} ►⇨
     )
+
+module _ {o e e'}{A B C : Ofe o e e'} where
+  private
+    Cat = Ofes {o}{e}{e'}
+
+  open Category Cat
+
+  open import Categorical.Ofe.Coproducts as Cop
+
+  open import Categories.Object.BinaryProducts Cat
+  open import Categories.Object.Coproduct Cat
+
+  open BinaryProducts binary-products
+  open BinCoproducts Cop.binary renaming ([_,_] to case[_,_])
+
+  ×-distrib-+ : (A × (B + C)) ⇒ (A × B) + (A × C)
+  _⟨$⟩_ ×-distrib-+ x with π₂ {A = A}{B = B + C} ⟨$⟩ x
+  ... | inj₁ y = inj₁ (π₁ {A = A}{B = B + C} ⟨$⟩ x , y)
+  ... | inj₂ y = inj₂ (π₁ {A = A}{B = B + C} ⟨$⟩ x , y)
+  cong ×-distrib-+ (eq₁ , inj₁ eq₂) = inj₁ (eq₁ , eq₂)
+  cong ×-distrib-+ (eq₁ , inj₂ eq₂) = inj₂ (eq₁ , eq₂)
+
+  ×-distrib-× : (A × (B × C)) ⇒ ((A × B) × (A × C))
+  _⟨$⟩_ ×-distrib-× (l , m , r) = (l , m) , (l , r)
+  cong ×-distrib-× (e , e' , e'') = (e , e') , (e , e'')
