@@ -81,7 +81,9 @@ module Eval where
 
       eval' : Ofes [ ► Eval , (Exp ⇨ ⇀ Val) ]
       eval' =
-        λ-abs _ (
-            Elim.elim (⇀ Val) case-num case-add
-          ∘ first {C = Exp} rec-unfold
+        λ-abs _ (                                  -- building a function
+          Elim.elim (⇀ Val)                        -- eliminate the two expression-cases
+              case-num
+              case-add
+          ∘ first {C = Exp} rec-unfold             -- build the recursor
         )
