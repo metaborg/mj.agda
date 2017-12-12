@@ -48,7 +48,6 @@ module _ {ℓ o e e'}(A : Set ℓ)(B : Pred A {o}{e}{e'}) where
   ... | hrefl _ = hrefl (limit₂ (B _) λ n → unpackₙ (eq n))
   monotone ∃[_] n≤m (hrefl eqₙ) = hrefl (monotone (B _) n≤m eqₙ)
 
-
   ∀[_] : Ofe _ _ _
   setoid ∀[_] = record
     { Carrier = ∀ (a : A) → B.Carrier a
@@ -67,6 +66,19 @@ module _ {ℓ o e e'}(A : Set ℓ)(B : Pred A {o}{e}{e'}) where
   limit₁ ∀[_] p n = λ a → limit₁ (B a) (p a) n
   limit₂ ∀[_] {x = x} eq = λ a → limit₂ (B a) λ n → eq n a
   monotone ∀[_] = λ n≤m eq a → monotone (B a) n≤m (eq a)
+
+module _ {ℓ o e e'}(A : Set ℓ)(B : CPred A {o}{e}{e'}) where
+  open import Categorical.Ofe.Cofe
+  open Cofe
+  ∀[_]-cofe : Cofe _ _ _
+  ofe ∀[_]-cofe = ∀[ A ] λ a → ofe (B a)
+  conv ∀[_]-cofe ch =
+    lim
+      (λ a → at-∞ (conv (B a) (ch' a)))
+      (λ n a → limit (conv (B a) (ch' a)) n)
+    where
+      ch' : ∀ (a : A) → Chain (ofe (B a))
+      ch' a = chain-map (record { _⟨$⟩_ = λ x → x a ; cong = λ xeq → xeq a }) ch
 
 module MonotoneClos
   {o ℓ ℓ'}(po : PreorderPlus o ℓ ℓ')

@@ -53,8 +53,8 @@ module Elim (A : Ofe lz lz lz) where
 
   -- eliminator of the Exp type
   elim : (Rec ×-ofe (Δ⁺ ℕ)) ⇒ A →
-             (Rec ×-ofe (Exp ×-ofe Exp)) ⇒ A →
-             (Rec ×-ofe Exp) ⇒ A
+         (Rec ×-ofe (Exp ×-ofe Exp)) ⇒ A →
+         (Rec ×-ofe Exp) ⇒ A
   _⟨$⟩_ (elim f g) (rec , num n) = f ⟨$⟩ (rec , n)
   _⟨$⟩_ (elim f g) (rec , add e₁ e₂) = g ⟨$⟩ (rec , e₁ , e₂)
   cong (elim f g) {x = rec , num _} (eq , ≣-refl) = cong f (eq , ≣-refl)
@@ -78,7 +78,7 @@ eval-arith = μ (Exp ⇨-cofe (⇀-cofe Val)) eval' (⇨-const (⇀-inhabited Va
       ∘ _⁂_ {C = Eval × Exp} eval eval          -- recursively evaluate the sub-expressions
       ∘ ×-distrib-× {A = Eval}{B = Exp}{C = Exp} -- fiddling with arguments
 
-    eval' : Ofes [ ► Eval , (Exp ⇨ ⇀ Val) ]
+    eval' : Ofes [ ► Eval , Eval ]
     eval' =
       λ-abs _ (                                  -- building a function
         Elim.elim (⇀ Val)                        -- eliminate the two expression-cases

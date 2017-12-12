@@ -180,3 +180,5 @@ F₁ ⇀-functor {A} = Functorial.hmap
 identity ⇀-functor {A}{n}{x}{y} xeq m≤n = Functorial.ident x y xeq m≤n
 homomorphism ⇀-functor {X}{Y}{Z}{f}{g}{n}{x}{y} eq = Functorial.hom {x = x}{n}{y} eq
 F-resp-≡ ⇀-functor = Functorial.resp
+
+module ⇀-functor {o e} = Functor (⇀-functor {o}{e})

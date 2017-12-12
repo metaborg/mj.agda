@@ -15,6 +15,7 @@ open import Categories.Support.EqReasoning
 open import Categories.Support.Equivalence
 
 open import Categorical.Ofe
+open import Categorical.Ofe.Cofe
 
 open _⟶_
 open Category
@@ -24,6 +25,7 @@ module _ {ℓ}(S : Set ℓ){o e e'} where
   module Ofes = Category (Ofes {o}{e}{e'})
 
   Pred = ∀ (c : S) → Ofe o e e'
+  CPred = ∀ (c : S) → Cofe o e e'
 
   Preds : Category _ _ _
   Obj Preds = Pred
