@@ -27,6 +27,14 @@ data Val (W : World c) : Ty c → Set where
   null : ∀ {C} → Val W (ref C)
   ref  : ∀ {C P} → (obj C) ∈ W → Σ ⊢ C <: P → Val W (ref P)
 
+open import Data.String as Str
+show-val : ∀ {W a} → Val W a → String
+show-val (num x) = "num " Str.++ Nat.show x
+  where import Data.Nat.Show as Nat
+show-val unit = "unit"
+show-val null = "NULL"
+show-val (ref _ _) = "ref _"
+
 {-
 We can construct default values out of thin air for every type
 -}

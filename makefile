@@ -5,6 +5,10 @@ docs/%.html: %.agda
 %.agdai: %.agda
 	agda $<
 
+.PHONY: hs/%
+hs/%: src/%.agda
+	agda --compile --compile-dir hs $<
+
 all: lib Readme.agdai
 
 docs/.git/:
