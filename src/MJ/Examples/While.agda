@@ -34,16 +34,17 @@ count n = Lib ,
     )
     (num 0)
 
-import IO.Primitive as Prim
-open import IO as IO
-open import Data.String
-open import Coinduction
-
-main : Prim.IO ⊤
-main = IO.run (do
-  (just v) ← (♯ return (returns-val (eval 999999999 (count 10000)))) -- return (returns-val (eval 100 p₁))
-    where nothing → ♯ putStr "Err"
-  ♯ putStr (show-val (proj₂ v)))
-
 test1 : (count 10) ⇓⟨ 1000 ⟩ (λ {W} (v : Val W int) → v ≡ num 10)
 test1 = refl
+
+open import IO.Primitive as Prim using (IO)
+
+main : IO ⊤
+main = IO.run (do
+  (just v) ← (♯ return (returns-val (eval 999999999 (count 10000))))
+    where nothing → ♯ putStr "Err"
+  ♯ putStr (show-val (proj₂ v)))
+  where
+    open import IO as IO
+    open import Data.String
+    open import Coinduction

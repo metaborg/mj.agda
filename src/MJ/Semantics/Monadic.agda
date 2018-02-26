@@ -58,7 +58,7 @@ open import Data.Maybe using (Maybe; just; nothing)
 returns-val : ∀ {W A} → Result W A → Maybe (∃ λ W' → A W')
 returns-val (exception x x₁ x₂) = nothing
 returns-val timeout = nothing
-returns-val (returns x x₁ x₂) = just (_ , x₂)
+returns-val (returns _ _ v) = just (_ , v)
 
 result-strengthen : ∀ {W W'}{A : WSet} → W ⊒ W' → Result W A → Result W' A
 result-strengthen ext (exception ext' μ e) = exception (ext ⊚ ext') μ e
