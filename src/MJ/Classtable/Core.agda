@@ -86,6 +86,13 @@ record Classtable : Set where
   _<∶_ : ∀ (cid pid : Cid c) → Set
   a <∶ b = Σ ⊢ a <: b
 
+  -- extended inheritance relation that is defined on all types
+  data _<:<_ : (a b : Ty c) → Set where
+    int  : int <:< int
+    bool : bool <:< bool
+    void : void <:< void
+    cls  : ∀ {a b} → _<∶_ a b → ref a <:< ref b
+
   open import Relation.Binary
   open import Data.Nat.Properties
 

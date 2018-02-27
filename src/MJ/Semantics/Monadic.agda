@@ -11,13 +11,15 @@ import MJ.Classtable.Code as Code
 
 module MJ.Semantics.Monadic {c} (Ct : Core.Classtable c)(ℂ : Code.Code Ct) where
 
-open import Prelude hiding (_^_)
+open import Prelude hiding (_^_; _+_)
 open import Data.Vec hiding (init; _>>=_; _∈_)
 open import Data.Vec.All.Properties.Extra as Vec∀++
 open import Data.List.Most
 open import Relation.Nullary.Decidable
 open import Data.Star hiding (return; _>>=_)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
+open import Data.Integer as Int hiding (suc; -_)
+import Data.Bool as Bool
 
 open Values Ct
 open Syntax Ct
@@ -25,6 +27,7 @@ open Code Ct
 open Core c
 open Classtable Ct
 
+open import MJ.Syntax.BinOp Ct
 open import MJ.Syntax.Program Ct
 open import MJ.Classtable.Membership Ct
 open import MJ.Types
@@ -180,6 +183,22 @@ Fueled interpreter
 -}
 mutual
 
+  eval-bop : ∀ {Σ a b c} → BinOp a b c → Val Σ a → Val Σ b → Val Σ c
+  eval-bop (== (inj₁ x)) l r = bool (l ≟val⟨ x ⟩ r)
+  eval-bop (== (inj₂ x)) l r = bool (r ≟val⟨ x ⟩ l)
+  eval-bop (!= (inj₁ x)) l r = bool (not (l ≟val⟨ x ⟩ r))
+  eval-bop (!= (inj₂ x)) l r = bool (not (r ≟val⟨ x ⟩ l))
+  eval-bop < (num x) (num y) = bool ⌊ Int.suc x Int.≤? y ⌋
+  eval-bop <= (num x) (num y) = bool ⌊ x Int.≤? y ⌋
+  eval-bop > (num x) (num y) = bool ⌊ Int.suc y Int.≤? x ⌋
+  eval-bop >= (num x) (num y) = bool ⌊ y Int.≤? x ⌋
+  eval-bop + (num x) (num y) = num (x Int.+ y)
+  eval-bop - (num x) (num y) = num (x Int.- y)
+  eval-bop * (num x) (num y) = num (x Int.* y)
+  eval-bop orb (bool x) (bool y) = bool (x Bool.∨ y)
+  eval-bop xorb (bool x) (bool y) = bool (x Bool.xor y)
+  eval-bop andb (bool x) (bool y) = bool (x Bool.∧ y)
+
   {-
   Arguments are passed as mutable and thus have to be evaluated, after which
   we store the values in the store and we pass the references.
@@ -275,6 +294,9 @@ mutual
   evalₑ (suc k) (num n) =
     return (num n)
 
+  evalₑ (suc k) (bool b) =
+    return (bool b)
+
   evalₑ (suc k) null =
     return null
 
@@ -290,10 +312,10 @@ mutual
     return $ ref o (s₂ ◅◅ s₁)
 
   -- binary interger operations
-  evalₑ (suc k) (iop f l r) = do
-    num vₗ ← evalₑ k l
-    num vᵣ ← evalₑ k r
-    return (num (f vₗ vᵣ))
+  evalₑ (suc k) (bop f l r) = do
+    vₗ      ← evalₑ k l
+    vᵣ , vₗ  ← evalₑ k r ^ vₗ
+    return (eval-bop f vₗ vᵣ)
 
   -- method calls
   evalₑ (suc k) (call e _ {acc = mtd} args) = do
@@ -365,18 +387,21 @@ mutual
     return (inj₁ v)
 
   -- if-then-else blocks
-  evalc (suc k) (if e then cs else ds) =
-    evalₑ k e >>= λ where
-      (num zero) → evalc k cs
-      (num (suc _)) → evalc k ds
+  evalc (suc k) (if e then cs else ds) = do
+    bool b ← evalₑ k e
+    Bool.if b
+      then evalc k cs
+      else evalc k ds
 
   -- while loops
-  evalc (suc k) (while e run b) =
-    evalₑ (suc k) e >>= λ where
-      (num (suc _)) → continue
-      (num zero)    → do
+  evalc (suc k) (while e run b) = do
+    bool v ← evalₑ (suc k) e
+    Bool.if v
+      then (do
         _ ← evalc k b
         evalc k (while e run b)
+      )
+      else continue
 
   {-
   An helper for interpreting a sequence of statements

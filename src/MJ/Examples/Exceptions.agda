@@ -2,6 +2,7 @@ module MJ.Examples.Exceptions where
 
 open import Prelude
 open import Data.Star
+open import Data.Integer hiding (suc)
 open import Data.Maybe hiding (All)
 open import Data.Vec hiding (_∈_; init)
 import Data.Vec.All as Vec∀
@@ -34,9 +35,9 @@ caught = Lib , let
       loc int
       ◅ loc (ref INT)
       ◅ loc (ref INT)
-      ◅ asgn v (num 0)
-      ◅ asgn x (new INT (num 9 ∷ []))
-      ◅ asgn y (new INT (num 18 ∷ []))
+      ◅ asgn v (num (+ 0))
+      ◅ asgn x (new INT (num (+ 9) ∷ []))
+      ◅ asgn y (new INT (num (+ 18) ∷ []))
       ◅ (try (block (
           -- perform a side effect on the heap: writing 18 to x's int field
           run (call (var x) "set" {_}{void} (var y ∷ []))
@@ -62,16 +63,16 @@ uncaught = Lib , let
       loc int
       ◅ loc (ref INT)
       ◅ loc (ref INT)
-      ◅ asgn v (num 0)
-      ◅ asgn x (new INT (num 9 ∷ []))
-      ◅ asgn y (new INT (num 18 ∷ []))
+      ◅ asgn v (num (+ 0))
+      ◅ asgn x (new INT (num (+ 9) ∷ []))
+      ◅ asgn y (new INT (num (+ 18) ∷ []))
       ◅ asgn v (call (var x) "get" [])
       ◅ raise
       ◅ ε
     )
     (var v)
 
-test : caught ⇓⟨ 100 ⟩ (λ v → v ≡ num 18)
+test : caught ⇓⟨ 100 ⟩ (λ v → v ≡ num (+ 18))
 test = refl
 
 test₂ : uncaught ⇓⟨ 100 ⟩! (λ μ e → e ≡ other)
