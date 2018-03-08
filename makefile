@@ -21,7 +21,12 @@ docs: lib docs/Readme.html
 	cp docs/Readme.html docs/index.html
 
 ### libraries
-lib: lib/stdlib lib/stdlib++
+lib: lib/stdlib lib/stdlib++ lib/categories
+	
+.PHONY: lib/categories
+lib/categories:
+	git submodule update --init lib/categories
+	cd lib/categories && git apply ../categories.patch
 
 .PHONY: lib/stdlib++
 lib/stdlib++:

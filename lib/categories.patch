@@ -1,0 +1,50 @@
+diff --git a/Categories/Monoidal/Helpers.agda b/Categories/Monoidal/Helpers.agda
+index 463bea4..07ef5ee 100644
+--- a/Categories/Monoidal/Helpers.agda
++++ b/Categories/Monoidal/Helpers.agda
+@@ -27,7 +27,7 @@ module MonoidalHelperFunctors {o ℓ e} (C : Category o ℓ e) (—⊗— : Bifu
+   _⊗_ = reduce —⊗—
+ 
+   _⊗₂_ : ∀ {m} (F G : Powerendo m) → Powerendo m
+-  _⊗₂_ = overlap {C} —⊗— -- reduce (flip-bifunctor {C = C} {C} —⊗—)
++  _⊗₂_ = overlap' {C} —⊗— -- reduce (flip-bifunctor {C = C} {C} —⊗—)
+ 
+   id↑ : Powerendo 0
+   id↑ = nullary id
+diff --git a/Categories/Power.agda b/Categories/Power.agda
+index 8935f96..29996b8 100644
+--- a/Categories/Power.agda
++++ b/Categories/Power.agda
+@@ -160,8 +160,8 @@ flattenP-assocʳ {n₁} {n₂} {n₃} F = record
+ reduce2ʳ : ∀ (G : Bifunctor C C C) {n₁ n₂ n₃} (F₁ : Powerendo n₁) (F₂ : Powerendo n₂) (F₃ : Powerendo n₃) → Powerendo ((n₁ + n₂) + n₃)
+ reduce2ʳ G F₁ F₂ F₃ = flattenP-assocʳ (reduce′ G F₁ (reduce′ G F₂ F₃))
+ 
+-overlap : ∀ {D E} (H : Bifunctor D D E) {I} (F G : Powerfunctor′ D I) → Powerfunctor′ E I
+-overlap {D} {E} H {I} F G = record
++overlap' : ∀ {D E} (H : Bifunctor D D E) {I} (F G : Powerfunctor′ D I) → Powerfunctor′ E I
++overlap' {D} {E} H {I} F G = record
+   { F₀ = my-F₀
+   ; F₁ = my-F₁
+   ; identity = λ {As} → my-identity {As}
+@@ -204,7 +204,7 @@ overlap {D} {E} H {I} F G = record
+     open E.HomReasoning
+ 
+ overlap2ʳ : ∀ (G : Bifunctor C C C) {n} (F₁ F₂ F₃ : Powerendo n) → Powerendo n
+-overlap2ʳ G F₁ F₂ F₃ = (overlap {C} G F₁ (overlap {C} G F₂ F₃))
++overlap2ʳ G F₁ F₂ F₃ = (overlap' {C} G F₁ (overlap' {C} G F₂ F₃))
+ 
+ select′ : ∀ {I} (i : I) → Powerendo′ I
+ select′ {I} i = record
+diff --git a/Categories/Power/NaturalTransformation.agda b/Categories/Power/NaturalTransformation.agda
+index 0ee7505..01939d5 100644
+--- a/Categories/Power/NaturalTransformation.agda
++++ b/Categories/Power/NaturalTransformation.agda
+@@ -58,5 +58,5 @@ reduceN′ H {I} {F} {F′} φ {J} {G} {G′} γ = record
+ reduceN : ∀ (H : Bifunctor C C C) {n} {F F′ : Powerendo n} (φ : NaturalTransformation F F′) {m} {G G′ : Powerendo m} (γ : NaturalTransformation G G′) → NaturalTransformation (reduce H F G) (reduce H F′ G′)
+ reduceN H F G = flattenPⁿ (reduceN′ H F G)
+ 
+-overlapN : ∀ (H : Bifunctor C C C) {n} {F F′ : Powerendo n} (φ : NaturalTransformation F F′) {G G′ : Powerendo n} (γ : NaturalTransformation G G′) → NaturalTransformation (overlap {C} {C} H F G) (overlap {C} {C} H F′ G′)
+-overlapN H F G = overlapN-× {D₁ = C} {D₂ = C} H F G
+\ No newline at end of file
++overlapN : ∀ (H : Bifunctor C C C) {n} {F F′ : Powerendo n} (φ : NaturalTransformation F F′) {G G′ : Powerendo n} (γ : NaturalTransformation G G′) → NaturalTransformation (overlap' {C} {C} H F G) (overlap' {C} {C} H F′ G′)
++overlapN H F G = overlapN-× {D₁ = C} {D₂ = C} H F G
