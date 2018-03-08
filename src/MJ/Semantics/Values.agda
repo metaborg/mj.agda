@@ -10,13 +10,12 @@ open import Data.Integer as Int
 open import Data.List.Most
 open import Data.List.Prefix
 open import Relation.Nullary.Decidable
+open import Relation.Unary.Monotone
 
 open Core c
 open Classtable Ct
 open import MJ.Classtable.Membership Ct
 open import MJ.LexicalScope c
-open import Common.Weakening
-
 {-
 MJ inherits the values of STLC+Ref. In contrast to STCL+Ref, MJ also has
 null-pointers; which we add as a constructor to our value type Val. The value
@@ -77,6 +76,9 @@ weaken-val ext (bool b)    = bool b
 weaken-val ext (ref x sub) = ref (∈-⊒ x ext) sub
 
 instance
-  val-weakenable : ∀ {a} → Weakenable (λ W → Val W a)
+  val-weakenable : ∀ {a} → Monotone ⊑-preorder (λ W → Val W a)
   val-weakenable = record { wk = weaken-val }
 
+data Exception : Set where
+  nullderef : Exception
+  other     : Exception

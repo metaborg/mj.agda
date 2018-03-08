@@ -42,12 +42,16 @@ The field decls returns a list of named members for each namespace, where the
 type of the member is namespace-dependent. The uniformity of member definitions
 permits a notion of membership that works for both fields and methods:
 -}
+
+Decl : NS → Set
+Decl ns = String × typing ns
+
 record Class : Set where
   constructor class
   field
     parent  : Cid c
     constr  : List (Ty c) -- argument types
-    decls   : (ns : NS) → List (String × typing ns)
+    decls   : (ns : NS) → List (Decl ns)
 
 ObjectClass = class Object [] (λ _ → [])
 

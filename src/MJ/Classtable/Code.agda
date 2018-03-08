@@ -25,18 +25,6 @@ open import MJ.Syntax Ct
 data Body (I : Ctx) : Ty c → Set where
   body : ∀ {r}{O : Ctx} → Stmts I r O → Expr O r → Body I r
 
-{-
-A helper to generate the shape of the context for method bodies
--}
-methodctx : Cid c → List (Ty c) → Ctx
-methodctx cid as = (ref cid ∷ as)
-
-{-
-A helper to generate the shape of the context for constructors
--}
-constrctx : Cid c → Ctx
-constrctx cid = let cl = Σ cid in (ref cid ∷ Class.constr cl)
-
 -- A method is either just a body, or a body prefixed by a super call.
 data Method (cid : Cid c)(m : String) : Sig c → Set where
   super_⟨_⟩then_ : ∀ {as b} →
@@ -83,3 +71,7 @@ Code = ∀ cid → Implementation cid
 -- Mirroring `IsMember METHOD` we define the notion of an inherited method body.
 InheritedMethod : ∀ (cid : Cid c)(m : String) → Sig c → Set
 InheritedMethod cid m s = ∃ λ pid → Σ ⊢ cid <: pid × Method pid m s
+
+-- Get the implementation of any method definition of a class
+method : ∀ (ℂ : Code){m ty} cid → IsMember cid METHOD m ty → InheritedMethod cid m ty
+method ℂ cid (pid , s , d∈decls) = pid , s , ∈-all (proj₁ (first⟶∈ d∈decls)) (Implementation.mbodies (ℂ pid))

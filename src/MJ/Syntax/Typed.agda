@@ -80,3 +80,15 @@ mutual
 
   Stmts : Ctx → Ty c → Ctx → Set
   Stmts I r O = Star (λ I' O' → Stmt I' r O') I O
+
+{-
+A helper to generate the shape of the context for method bodies
+-}
+methodctx : Cid c → List (Ty c) → Ctx
+methodctx cid as = (ref cid ∷ as)
+
+{-
+A helper to generate the shape of the context for constructors
+-}
+constrctx : Cid c → Ctx
+constrctx cid = let cl = Σ cid in (ref cid ∷ Class.constr cl)

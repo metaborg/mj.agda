@@ -9,19 +9,22 @@ import MJ.Classtable.Code as Code
 -- Substitution-free interpretation of welltyped MJ
 --
 
-module MJ.Semantics.Monadic {c} (Ct : Core.Classtable c)(ℂ : Code.Code Ct) where
+module MJ.Semantics.Monadic
+  {c}(Ct : Core.Classtable c)(ℂ : Code.Code Ct) where
 
+open import Level renaming (zero to ℓz; suc to ℓs)
 open import Prelude hiding (_^_; _+_)
 open import Data.Vec hiding (init; _>>=_; _∈_)
 open import Data.Vec.All.Properties.Extra as Vec∀++
-open import Data.List.Most
+open import Data.List.Most as List hiding (_⊆_)
 open import Relation.Nullary.Decidable
 open import Data.Star hiding (return; _>>=_)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Integer as Int hiding (suc; -_)
 import Data.Bool as Bool
+open import Data.Unit
 
-open Values Ct
+open Values Ct renaming (Val to Val')
 open Syntax Ct
 open Code Ct
 open Core c
@@ -33,423 +36,303 @@ open import MJ.Classtable.Membership Ct
 open import MJ.Types
 open import MJ.LexicalScope c
 open import MJ.Semantics.Environments Ct
+open import MJ.Semantics.BinOp Ct
 open import MJ.Semantics.Objects Ct
-open import MJ.Semantics.Objects.Flat Ct ℂ using (encoding)
+open import MJ.Semantics.Objects.Flat Ct using (encoding)
 open import Common.Weakening
 
-{-
-Make the object encoding API available;
--}
-open ObjEncoding encoding
+open ObjEncoding encoding renaming (StoreVal to StoreVal')
 
-{-
-The monad in which we define evaluation.
-This encapsulates state, lexical environments, timeouts and exceptions.
--}
-WSet = World c → Set
+pre = ⊑-preorder {A = Ty⁺ c}
 
-data Exception : Set where
-  nullderef : Exception
-  other     : Exception
+Val = flip Val'
+StoreVal = flip StoreVal'
 
-data Result (W : World c)(A : WSet) : Set where
-  exception : ∀ {W'} → W' ⊒ W → Store W' → Exception → Result W A
-  timeout   : Result W A
-  returns   : ∀ {W'} → W' ⊒ W → Store W' → A W' → Result W A
+open import Relation.Unary hiding (_∈_)
+open import Relation.Unary.PredicateTransformer using (Pt)
+open import Relation.Unary.Monotone pre
+open import Relation.Unary.Monotone.Prefix
+open import Category.Monad.Monotone pre
+open import Category.Monad.Monotone.Reader pre
+open import Category.Monad.Monotone.State pre
+open import Category.Monad.Monotone.Error pre
+open import Category.Monad.Monotone.Heap pre (Ty⁺ c) StoreVal Store _∈_
 
-open import Data.Maybe using (Maybe; just; nothing)
-returns-val : ∀ {W A} → Result W A → Maybe (∃ λ W' → A W')
-returns-val (exception x x₁ x₂) = nothing
-returns-val timeout = nothing
-returns-val (returns _ _ v) = just (_ , v)
 
-result-strengthen : ∀ {W W'}{A : WSet} → W ⊒ W' → Result W A → Result W' A
-result-strengthen ext (exception ext' μ e) = exception (ext ⊚ ext') μ e
-result-strengthen ext timeout = timeout
-result-strengthen ext (returns ext' μ v) = returns (ext ⊚ ext') μ v
+module Monadic
+  (M : Pred (World c) ℓz → Pt (World c) ℓz)
+  (MM : ∀ {E} → RawMPMonad (M E))
+  (MR : ∀ {E} → ReaderMonad E M)
+  (MS : ∀ {E} → HeapMonad (M E))
+  (MT : ∀ {E} → ErrorMonad ⊤ (M E))
+  (ME : ∀ {E} → ErrorMonad Exception (M E))
+  where
 
--- monad that threads a readonly environment, store and propagates
--- semantic errors
-M : Ctx → World c → WSet → Set
-M Γ W A = Env Γ W → Store W → Result W A
-
-return  : ∀ {Γ W}{A : WSet} → A W → M Γ W A
-return v _ μ = returns ⊑-refl μ v
-
-doTimeout : ∀ {Γ W}{A : WSet} → M Γ W A
-doTimeout _ _ = timeout
-
-raiseM : ∀ {Γ W}{A : WSet} → Exception → M Γ W A
-raiseM exc E μ = exception ⊑-refl μ exc
-
-sval-weaken : ∀ {W W' a} → W' ⊒ W → StoreVal W a → StoreVal W' a
-sval-weaken ext (val x) = val $ weaken-val ext x
-sval-weaken ext (obj cid x) = obj cid (weaken-obj cid ext x)
-
-instance
-  storeval-weakenable : ∀ {a} → Weakenable (λ W → StoreVal W a)
-  storeval-weakenable = record {wk = sval-weaken }
-
-infixl 10 _>>=_
-_>>=_   : ∀ {Γ W}{A B : WSet} → M Γ W A → (∀ {W'} → A W' → M Γ W' B) →
-          M Γ W B
-(k >>= f) E μ with k E μ
-... | exception ext μ' e = exception ext μ' e
-... | timeout = timeout
-... | returns ext μ' v = result-strengthen ext $ f v (map-all (wk ext) E) μ'
-
-infixl 10 _^_
-_^_  :  ∀ {Σ Γ}{A B : WSet} ⦃ w : Weakenable B ⦄ → M Γ Σ A → B Σ → M Γ Σ (A ⊗ B)
-(f ^ x) E μ with (f E μ)
-...  | timeout = timeout
-...  | exception ext μ' e = exception ext μ' e
-...  | returns ext μ' v = returns ext μ' (v , wk ext x)
-
-_recoverWith_ : ∀ {Γ W}{A : WSet} → M Γ W A →
-                (∀ {W'} → Exception → W' ⊒ W → M Γ W' A) →
-                M Γ W A
-(k recoverWith f) E μ with k E μ
-... | timeout = timeout
-... | returns ext μ' x = returns ext μ' x
-... | exception ext μ' e = result-strengthen ext $ f e ext (wk ext E) μ'
-
-store   : ∀ {Γ W a} → StoreVal W a → M Γ W (λ W' → a ∈ W')
-store {Γ}{W}{a} sv E μ =
-  let
-    ext = ∷ʳ-⊒ a W
-    μ'  = (map-all (wk ext) μ) all-∷ʳ (wk ext sv)
-  in returns ext μ' (∈-∷ʳ W a)
-
-update   : ∀ {Γ W a} → a ∈ W → StoreVal W a → M Γ W (λ W' → ⊤)
-update ptr v E μ = returns ⊑-refl (μ All[ ptr ]≔' v) tt
-
-deref : ∀ {Γ W a} → a ∈ W → M Γ W (flip StoreVal a)
-deref ptr E μ = returns ⊑-refl μ (∈-all ptr μ)
-
-getEnv : ∀ {Γ W}{A : WSet} → (Env Γ W → M Γ W A) → M Γ W A
-getEnv f E μ = f E E μ
-
-usingEnv : ∀ {Γ Γ' W}{A : WSet} → Env Γ' W → M Γ' W A → M Γ W A
-usingEnv E e = const $ e E
-
-store*  : ∀ {Γ W as} → All (λ a → StoreVal W (vty a)) as →
-          M Γ W (λ W' → All (λ a → (vty a) ∈ W') as)
-store* [] = return []
-store* (v ∷ vs) = do
-  (r , vs) ← store v ^ vs
-  (rs , r) ← store* vs ^ r
-  return (r ∷ rs)
-
-{-
-Lifting of object getter/setter into the monad
--}
-read-field : ∀ {Γ : Ctx}{C W f a} → IsMember C FIELD f a → Val W (ref C) →
-            M Γ W (λ W → Val W a)
-read-field m null = raiseM nullderef
-read-field m (ref o C<:C') E μ with ∈-all o μ
-read-field m (ref o C<:C') E μ | obj cid O = returns ⊑-refl μ (getter _ O (inherit' C<:C' m))
-
-write-field : ∀ {Γ C W f a} → IsMember C FIELD f a → Val W (ref C) → Val W a →
-            M Γ W (flip Val (ref C))
-write-field m null v = raiseM nullderef
-write-field m (ref o s) v E μ with ∈-all o μ
-write-field m (ref o s) v E μ | obj cid O =
-  let
-    vobj = obj cid (setter _ O (inherit' s m) v)
-    μ' = μ All[ o ]≔' vobj
-  in returns ⊑-refl μ' (ref o s)
-
--- Get the implementation of any method definition of a class
-mbody : ∀ {m ty} cid → AccMember cid METHOD m ty → InheritedMethod cid m ty
-mbody cid mb with toWitness mb
-... | (pid , s , d∈decls) = pid , s , ∈-all (proj₁ (first⟶∈ d∈decls)) (Implementation.mbodies (ℂ pid))
-
-{-
-Refinements of bind and return for the nested monad for command evaluation
--}
-_>>=c_ : ∀ {I O O' : Ctx}{W : World c}{a} →
-          M I W (λ W → Val W a ⊎ Env O W) →
-          (∀ {W'} → Env O W' → M I W' (λ W → Val W a ⊎ Env O' W)) →
-          M I W (λ W → Val W a ⊎ Env O' W)
-m >>=c f = m >>= λ where
-  (inj₁ v) → return (inj₁ v)
-  (inj₂ E) → f E
-
-continue : ∀ {Γ : Ctx}{W : World c}{a} → M Γ W (λ W → Val W a ⊎ Env Γ W)
-continue = getEnv λ E → return (inj₂ E)
-
-{-
-Fueled interpreter
--}
-mutual
-
-  eval-bop : ∀ {Σ a b c} → BinOp a b c → Val Σ a → Val Σ b → Val Σ c
-  eval-bop (== (inj₁ x)) l r = bool (l ≟val⟨ x ⟩ r)
-  eval-bop (== (inj₂ x)) l r = bool (r ≟val⟨ x ⟩ l)
-  eval-bop (!= (inj₁ x)) l r = bool (not (l ≟val⟨ x ⟩ r))
-  eval-bop (!= (inj₂ x)) l r = bool (not (r ≟val⟨ x ⟩ l))
-  eval-bop < (num x) (num y) = bool ⌊ Int.suc x Int.≤? y ⌋
-  eval-bop <= (num x) (num y) = bool ⌊ x Int.≤? y ⌋
-  eval-bop > (num x) (num y) = bool ⌊ Int.suc y Int.≤? x ⌋
-  eval-bop >= (num x) (num y) = bool ⌊ y Int.≤? x ⌋
-  eval-bop + (num x) (num y) = num (x Int.+ y)
-  eval-bop - (num x) (num y) = num (x Int.- y)
-  eval-bop * (num x) (num y) = num (x Int.* y)
-  eval-bop orb (bool x) (bool y) = bool (x Bool.∨ y)
-  eval-bop xorb (bool x) (bool y) = bool (x Bool.xor y)
-  eval-bop andb (bool x) (bool y) = bool (x Bool.∧ y)
+  module _ {E} where
+    open RawMPMonad (MM {E}) public
+    open ErrorMonad ⊤ (MT {E}) using () renaming (throw to timeout) public
+    open ErrorMonad Exception (ME {E}) public renaming (try_catch_ to do-try_catch_)
+    open ReaderMonad (MR {E}) public
+    open HeapMonad (MS {E}) public hiding (super)
 
   {-
-  Arguments are passed as mutable and thus have to be evaluated, after which
-  we store the values in the store and we pass the references.
+  Lifting of object getter/setter into the monad
   -}
-  eval-args : ∀ {Γ as W} → ℕ → All (Expr Γ) as → M Γ W (λ W' → All (λ a → (vty a) ∈ W') as)
-  eval-args k args = do
-    vs ← evalₑ* k args
-    store* (map-all val vs)
+  read-field : ∀ {Γ : Ctx}{C f a} → IsMember C FIELD f a → Val (ref C) ⊆ M (Env Γ) (Val a)
+  read-field m null = throw nullderef
+  read-field m (ref o C<:C') = do
+    obj cid O ← deref o
+    return (getter _ O (inherit' C<:C' m))
 
-  {-
-  Object initialization:
-  Creates a default object; stores a mutable reference to it on the heap; calls the constructor
-  on the resulting reference.
-  -}
-  constructM : ℕ → ∀ cid → ∀ {W} → M (Class.constr (Σ cid)) W (flip Val (ref cid))
-  constructM k cid with ℂ cid
-  constructM k cid | (implementation construct mbodies) = do
-    r      ← store (obj _ (defaultObject cid))
-    r' , r ← store (val (ref r ε)) ^ r
-    _  , r ← getEnv λ E → usingEnv (r' ∷ E) (eval-constructor k ε r construct) ^ r
-    return (ref r ε)
+  write-field : ∀ {Γ C f a} → IsMember C FIELD f a → Val (ref C) ⊆ (Val a ⇒ M (Env Γ) (Val (ref C)))
+  write-field m null v = throw nullderef
+  write-field m (ref o s) v = do
+    (obj cid O , o) , v ← deref o ^ o ^ v
+    let vobj            = obj cid (setter _ O (inherit' s m) v)
+    _ , o               ← modify o (vobj) ^ o
+    return (ref o s)
 
-  {-
-  Constructor interpretation:
-  The difficult case being the one where we have a super call.
-  -}
-  eval-constructor : ∀ {cid' cid W} → ℕ → Σ ⊢ cid' <: cid → (obj cid') ∈ W → Constructor cid →
-                     M (constrctx cid) W (flip Val void)
-  eval-constructor zero _ _ _ = doTimeout
-  eval-constructor {_}{Object} (suc k) _ _ _ = return unit
-  eval-constructor {_}{cls cid} (suc k) s o∈W (super args then b) = do
-    let s' = s ◅◅ super ◅ ε
-    let super-con = Implementation.construct (ℂ (Class.parent (Σ (cls cid))))
-    -- eval the super arguments
-    rvs , o∈W ← eval-args k args ^ o∈W
-    -- store a parent pointer for passing to super
-    getEnv λ where
-      (self ∷ _) → do
-        sup , o∈W , rvs ← store (val (ref o∈W s')) ^ (o∈W , rvs)
-        _ ← usingEnv (sup ∷ rvs) (eval-constructor k s' o∈W super-con)
-        -- evaluate own body
-        _ ← eval-body k b
-        return unit
+  continue : ∀ {E W a} → M E (Val a ∪ E) W
+  continue = asks inj₂
 
-  eval-constructor {_}{cls id} (suc k) _ _ (body x) = do
-    _ ← eval-body k x
-    return unit
+  mutual
 
-  {-
-  Method evaluation including super calls.
-  The difficult case again being the one where we have a super call.
-  -}
-  eval-method : ∀ {cid m as b pid W Γ} → ℕ →
-                Σ ⊢ cid <: pid → (obj cid) ∈ W →
-                All (λ ty → vty ty ∈ W) as →
-                InheritedMethod pid m (as , b) → M Γ W (flip Val b)
+    {-
+    Arguments are passed as mutable and thus have to be evaluated, after which
+    we store the values in the store and we pass the references.
+    -}
+    eval-args : ∀ {Γ as W} → ℕ → All (Expr Γ) as → M (Env Γ) (λ W' → All (λ a → vty a ∈ W') as) W
+    eval-args k args = sequenceM (map-all (λ e {_} _ → eval-arg k e) args)
+      where
+        eval-arg : ∀ {Γ a} → ℕ → Expr Γ a → ∀ {W} → M (Env Γ) (_∈_ (vty a)) W
+        eval-arg k e = do
+          v ← evalₑ k e
+          store (val v)
 
-  eval-method zero _ _ _ _ = doTimeout
+    {-
+    Object initialization:
+    Creates a default object; stores a mutable reference to it on the heap; calls the constructor
+    on the resulting reference.
+    -}
+    constructM : ℕ → ∀ cid {W} → M (Env (Class.constr (Σ cid))) (Val (ref cid)) W
+    constructM k cid = do
+      r      ← store (obj _ (defaultObject cid))
+      r' , r ← store (val (ref r ε)) ^ r
+      let (implementation construct mbodies) = ℂ cid
+      _  , r ← local _ (λ E → r' ∷ E) (eval-constructor k ε r construct) ^ r
+      return (ref r ε)
 
-  eval-method (suc k) s o args (pid' , pid<:pid' , body b) = do
-    mutself , args ← store (val (ref o (s ◅◅ pid<:pid'))) ^ args
-    usingEnv (mutself ∷ args) (eval-body k b)
+    {-
+    Constructor interpretation:
+    The difficult case being the one where we have a super call.
+    -}
+    eval-constructor : ∀ {cid' cid W} → ℕ → Σ ⊢ cid' <: cid → (obj cid') ∈ W → Constructor cid →
+                       M (Env (constrctx cid)) (Val void) W
+    eval-constructor zero _ _ _ = timeout tt
+    eval-constructor {_}{Object} (suc k) _ _ _ = return unit
+    eval-constructor {_}{cls cid} (suc k) s o∈W (super args then b) = do
+      let s'        = s ◅◅ super ◅ ε
+      let pid       = Class.parent (Σ (cls cid))
+      let super-con = Implementation.construct (ℂ pid)
+      -- eval the super arguments
+      rvs , o∈W       ← eval-args k args ^ o∈W
+      -- store a parent pointer for passing to super
+      sup , o∈W , rvs ← store (val (ref o∈W s')) ^ (o∈W , rvs)
+      _               ← local _ (λ _ → sup ∷ rvs) (eval-constructor k s' o∈W super-con)
+      -- evaluate own body
+      _               ← eval-body k b
+      return unit
 
-  -- calling a method on Object is improbable...
-  eval-method {_}{m}{as}{b} (suc k) s o args (Object , _ , super x ⟨ _ ⟩then _) rewrite Σ-Object =
-    ⊥-elim (∉Object {METHOD}{m}{(as , b)}(sound x))
+    eval-constructor {_}{cls id} (suc k) _ _ (body x) = do
+      _ ← eval-body k x
+      return unit
 
-  eval-method (suc k) s o args (cls pid' , pid<:pid' , super x ⟨ supargs ⟩then b) = do
-      let super-met = mbody (Class.parent (Σ (cls pid'))) x
-      -- store a cast this-reference
-      mutself , args , o       ← store (val (ref o (s ◅◅ pid<:pid'))) ^ (args , o)
-      -- eval super args in method context
-      rvs , args , o           ← usingEnv (mutself ∷ args) (eval-args k supargs) ^ (args , o)
-      -- call super
-      retv , args , o          ← eval-method k (s ◅◅ pid<:pid' ◅◅ super ◅ ε) o rvs super-met ^ (args , o)
-      -- store the super return value to be used as a mutable local
-      mutret , args , o        ← store (val retv) ^ (args , o)
-      -- store the cast this-reference
-      mutself' , mutret , args ← store (val (ref o (s ◅◅ pid<:pid'))) ^ (mutret , args)
-      -- call body
-      usingEnv (mutret ∷ mutself' ∷ args) (eval-body k b)
+    {-
+    Method evaluation including super calls.
+    The difficult case again being the one where we have a super call.
+    -}
+    eval-method : ∀ {cid m as b pid W E} → ℕ →
+                  Σ ⊢ cid <: pid → (obj cid) ∈ W →
+                  All (λ ty → vty ty ∈ W) as →
+                  InheritedMethod pid m (as , b) → M E (Val b) W
 
-  {-
-  evaluation of expressions
-  -}
-  evalₑ : ∀ {Γ : Ctx}{a} → ℕ → Expr Γ a → ∀ {W} → M Γ W (flip Val a)
-  evalₑ zero _ = doTimeout
+    eval-method zero _ _ _ _ = timeout _
 
-  -- primitive values
-  evalₑ (suc k) unit =
-    return unit
+    eval-method {E = E} (suc k) s o args (pid' , pid<:pid' , body b) = do
+      mutself , args ← store (val (ref o (s ◅◅ pid<:pid'))) ^ args
+      local {E = E} (Env _) (λ E → mutself ∷ args) (eval-body k b)
 
-  evalₑ (suc k) (num n) =
-    return (num n)
+    -- calling a method on Object is improbable...
+    eval-method {_}{m}{as}{b} (suc k) s o args (Object , _ , super x ⟨ _ ⟩then _) =
+      ⊥-elim (∉Object (subst (λ O → IsMember O _ _ _) founded (sound x)))
 
-  evalₑ (suc k) (bool b) =
-    return (bool b)
+    eval-method {E = E} (suc k) s o args (cls pid' , pid<:pid' , super x ⟨ supargs ⟩then b) = do
+        let super-met = method ℂ (Class.parent (Σ (cls pid'))) (sound x)
+        -- store a cast this-reference
+        mutself , args , o       ← store (val (ref o (s ◅◅ pid<:pid'))) ^ (args , o)
+        -- eval super args in method context
+        rvs , args , o           ← local _ (λ _ → mutself ∷ args) (eval-args k supargs) ^ (args , o)
+        -- call super
+        retv , args , o          ← eval-method k (s ◅◅ pid<:pid' ◅◅ super ◅ ε) o rvs super-met ^ (args , o)
+        -- store the super return value to be used as a mutable local
+        mutret , args , o        ← store (val retv) ^ (args , o)
+        -- store the cast this-reference
+        mutself' , mutret , args ← store (val (ref o (s ◅◅ pid<:pid'))) ^ (mutret , args)
+        -- call body
+        local _ (λ _ → mutret ∷ mutself' ∷ args) (eval-body k b)
 
-  evalₑ (suc k) null =
-    return null
+    {-
+    evaluation of expressions
+    -}
+    evalₑ : ∀ {Γ : Ctx}{a} → ℕ → Expr Γ a → ∀ {W} → M (Env Γ) (Val a) W
+    evalₑ zero _ = timeout _
 
-  -- variable lookup
-  evalₑ (suc k) (var x) = do
-    v     ← getEnv (λ E → return $ ∈-all x E)
-    val w ← deref v
-    return w
+    -- primitive values
+    evalₑ (suc k) unit =
+      return unit
 
-  evalₑ (suc k) (upcast ε e) = evalₑ k e
-  evalₑ (suc k) (upcast s₁@(_ ◅ _) e) = do
-    (ref o s₂ ) ← evalₑ k e where null → return null
-    return $ ref o (s₂ ◅◅ s₁)
+    evalₑ (suc k) (num n) =
+      return (num n)
 
-  -- binary interger operations
-  evalₑ (suc k) (bop f l r) = do
-    vₗ      ← evalₑ k l
-    vᵣ , vₗ  ← evalₑ k r ^ vₗ
-    return (eval-bop f vₗ vᵣ)
+    evalₑ (suc k) (bool b) =
+      return (bool b)
 
-  -- method calls
-  evalₑ (suc k) (call e _ {acc = mtd} args) = do
-    ref {dyn-cid} o s₁ ← evalₑ k e where null → raiseM nullderef
-    -- evaluate the arguments
-    rvs , o            ← eval-args k args ^ o
-    -- dynamic dispatch: dynamic lookup of the method on the runtime class of the reference
-    -- and execution of the call
-    (eval-method k ε o rvs (mbody dyn-cid (inherit _ s₁ mtd)))
+    evalₑ (suc k) null =
+      return null
 
-  -- field lookup in the heap
-  evalₑ (suc k) (get e _ {_}{fld}) = do
-    ref o s ← evalₑ k e where null → raiseM nullderef
-    obj c O ← deref o
-    return (getter _ O $ inherit' s (sound fld))
+    -- variable lookup
+    evalₑ (suc k) (var x) = do
+      v     ← asks (λ E → ∈-all x E)
+      val w ← deref v
+      return w
 
-  -- object allocation
-  evalₑ (suc k) (new C args) = do
-    rvs ← eval-args k args
-    usingEnv rvs (constructM k C)
+    evalₑ (suc k) (upcast ε e) = evalₑ k e
+    evalₑ (suc k) (upcast s₁@(_ ◅ _) e) = do
+      (ref o s₂ ) ← evalₑ k e where null → return null
+      return $ ref o (s₂ ◅◅ s₁)
 
+    -- binary interger operations
+    evalₑ (suc k) (bop f l r) = do
+      vₗ      ← evalₑ k l
+      vᵣ , vₗ  ← evalₑ k r ^ vₗ
+      return (eval-bop f vₗ vᵣ)
 
-  {-
-  Statement evaluation
-  -}
-  evalc : ∀ {I : Ctx}{O : Ctx}{W : World c}{a} → ℕ →
-          Stmt I a O → M I W (λ W → Val W a ⊎ Env O W)
+    -- method calls
+    evalₑ (suc k) (call e _ {acc = mtd} args) = do
+      ref {dyn-cid} o s₁ ← evalₑ k e where null → throw nullderef
+      -- evaluate the arguments
+      rvs , o            ← eval-args k args ^ o
+      -- dynamic dispatch: dynamic lookup of the method on the runtime class of the reference
+      -- and execution of the call
+      (eval-method k ε o rvs (method ℂ dyn-cid (sound (inherit _ s₁ mtd))))
 
-  evalc zero _ = doTimeout
+    -- field lookup in the heap
+    evalₑ (suc k) (get e _ {_}{fld}) = do
+      ref o s ← evalₑ k e where null → throw nullderef
+      obj c O ← deref o
+      return (getter _ O $ inherit' s (sound fld))
 
-  evalc (suc k) raise = raiseM other
+    -- object allocation
+    evalₑ (suc k) (new C args) = do
+      rvs ← eval-args k args
+      local _ (λ _ → rvs) (constructM k C)
 
-  evalc (suc k) (block stmts) =
-    eval-stmts k stmts >>=c λ _ → continue
+    {-
+    Statement evaluation
+    -}
+    evalc : ∀ {I : Ctx}{O : Ctx}{W : World c}{a} → ℕ →
+            Stmt I a O → M (Env I) (λ W → Val a W ⊎ Env O W) W
 
-  evalc (suc k) (try cs catch cs') =
-    (evalc k cs >>=c λ _ → continue)
-    recoverWith λ e ext → do
-      _ ← evalc k cs'
+    evalc zero _ = timeout _
+
+    evalc (suc k) raise = throw other
+
+    evalc (suc k) (block stmts) = do
+      (right _) ← eval-stmts k stmts
+        where (left v) → return (left v)
       continue
 
-  -- new local variable
-  evalc (suc k) (loc a) = do
-    r ← store (val $ default a)
-    getEnv λ E → return (inj₂ (r ∷ E))
+    evalc (suc k) (try cs catch cs') =
+      do-try
+        (do
+          (right _) ← evalc k cs
+            where (left v) → return (left v)
+          continue
+        )
+      catch
+        (λ _ e → do
+          _ ← evalc k cs'
+          continue
+        )
 
-  -- assigning to a local
-  evalc (suc k) (asgn x e) = do
-    v        ← evalₑ k e
-    addr , v ← getEnv (λ E → return $ ∈-all x E) ^ v
-    _        ← update addr (val v)
-    continue
+    -- new local variable
+    evalc (suc k) (loc a) = do
+      r ← store (val $ default a)
+      asks λ E → inj₂ (r ∷ E)
 
-  -- setting a field
-  evalc (suc k) (set r _ {_}{fld} e) = do
-    r'@(ref _ _) ← evalₑ k r where null → raiseM nullderef
-    (v , r')     ← evalₑ k e ^ r'
-    _            ← write-field (sound fld) r' v
-    continue
+    -- assigning to a local
+    evalc (suc k) (asgn x e) = do
+      v        ← evalₑ k e
+      addr , v ← asks (λ E → ∈-all x E) ^ v
+      _        ← modify addr (val v)
+      continue
 
-  -- side-effectful expressions
-  evalc (suc k) (run e) = do
-    _ ← evalₑ k e
-    continue
+    -- setting a field
+    evalc (suc k) (set r _ {_}{fld} e) = do
+      r'@(ref _ _) ← evalₑ k r where null → throw nullderef
+      (v , r')     ← evalₑ k e ^ r'
+      _            ← write-field (sound fld) r' v
+      continue
 
-  -- early returns
-  evalc (suc k) (ret e) = do
-    v ← evalₑ k e
-    return (inj₁ v)
+    -- side-effectful expressions
+    evalc (suc k) (run e) = do
+      _ ← evalₑ k e
+      continue
 
-  -- if-then-else blocks
-  evalc (suc k) (if e then cs else ds) = do
-    bool b ← evalₑ k e
-    Bool.if b
-      then evalc k cs
-      else evalc k ds
+    -- early returns
+    evalc (suc k) (ret e) = do
+      v ← evalₑ k e
+      return (inj₁ v)
 
-  -- while loops
-  evalc (suc k) (while e run b) = do
-    bool v ← evalₑ (suc k) e
-    Bool.if v
-      then (do
-        _ ← evalc k b
-        evalc k (while e run b)
-      )
-      else continue
+    -- if-then-else blocks
+    evalc (suc k) (if e then cs else ds) = do
+      bool b ← evalₑ k e
+      Bool.if b
+        then evalc k cs
+        else evalc k ds
 
-  {-
-  An helper for interpreting a sequence of statements
-  -}
-  eval-stmts : ∀ {Γ Γ' W a} → ℕ → Stmts Γ a Γ' → M Γ W (λ W → Val W a ⊎ Env Γ' W)
-  eval-stmts k ε = continue
-  eval-stmts k (x ◅ st) =
-    evalc k x >>=c λ E' →
-    usingEnv E' (eval-stmts k st)
+    -- while loops
+    evalc (suc k) (while e run b) = do
+      bool v ← evalₑ (suc k) e
+      Bool.if v
+        then (do
+          _ ← evalc k b
+          evalc k (while e run b)
+        )
+        else continue
 
-  {-
-  An helper for interpreting method bodies (i.e. sequence of Stmts optionally followed by a return).
-  -}
-  eval-body : ∀ {I : Ctx}{W : World c}{a} → ℕ → Body I a → M I W (λ W → Val W a)
-  eval-body k (body ε re) = evalₑ k re
-  eval-body k (body stmts@(_ ◅ _) e) =
-    eval-stmts k stmts >>= λ where
-      (inj₁ v) → return v
-      (inj₂ E) → usingEnv E (evalₑ k e)
+    {-
+    An helper for interpreting a sequence of statements
+    -}
+    eval-stmts : ∀ {Γ Γ' W a} → ℕ → Stmts Γ a Γ' → M (Env Γ) (Val a ∪ Env Γ') W
+    eval-stmts k ε = continue
+    eval-stmts k (x ◅ st) = do
+      (right E') ← evalc k x
+        where (left v) → return (left v)
+      local _ (λ _ → E') (eval-stmts k st)
 
-  {-
-  An helper for interpreting a list of expressions in the same context.
-  -}
-  evalₑ* : ∀ {Γ W as} → ℕ → All (Expr Γ) as → M Γ W (λ W → All (Val W) as)
-  evalₑ* k [] = return []
-  evalₑ* k (e ∷ es) = do
-    v      ← evalₑ k e
-    vs , v ← evalₑ* k es ^ v
-    return (v ∷ vs)
+    {-
+    An helper for interpreting method bodies (i.e. sequence of Stmts optionally followed by a return).
+    -}
+    eval-body : ∀ {I : Ctx}{W : World c}{a} → ℕ → Body I a → M (Env I) (Val a) W
+    eval-body k (body ε re) = evalₑ k re
+    eval-body k (body stmts@(_ ◅ _) e) = do
+      (right E) ← eval-stmts k stmts
+         where (left v) → return v
+      local _ (λ _ → E) (evalₑ k e)
 
-eval : ∀ {a} → ℕ → Prog a → Result [] (flip Val a)
-eval k (lib , main) = eval-body k main [] []
-
-{-
-a few predicates on program interpretation:
-... saying it will terminate succesfully in a state where P holds
--}
-_⇓⟨_⟩_ : ∀ {a} → Prog a → ℕ → (P : ∀ {W} → Val W a → Set) → Set
-p ⇓⟨ k ⟩ P with eval k p
-p ⇓⟨ k ⟩ P | exception _ _ _ = ⊥
-p ⇓⟨ k ⟩ P | timeout = ⊥
-p ⇓⟨ k ⟩ P | returns ext μ v = P v
-
-{-
-...saying it will raise an exception in a state where P holds
--}
-_⇓⟨_⟩!_ : ∀ {a} → Prog a → ℕ → (P : ∀ {W} → Store W → Exception → Set) → Set
-p ⇓⟨ k ⟩! P with eval k p
-p ⇓⟨ k ⟩! P | exception _ μ e = P μ e
-p ⇓⟨ k ⟩! P | timeout = ⊥
-p ⇓⟨ k ⟩! P | returns ext μ v = ⊥
+    {-
+    An helper for interpreting a list of expressions in the same context.
+    -}
+    evalₑ* : ∀ {Γ W as} → ℕ → All (Expr Γ) as → M (Env Γ) (λ W → All (λ a → Val a W) as) W
+    evalₑ* k es = sequenceM (map-all (λ e {_} _ → evalₑ k e) es)
