@@ -60,16 +60,15 @@ open SyntaxG g
 open UsesGraph g
 
 IntegerImpl : Class (# 0) (# 1)
-IntegerImpl = class0 {ms = intmethods}{intfields}
-  ( -- methods
-    (#m' (meth (# 2) (body-void (
-      set
-        (var (path [] (here refl)))
-        (path [] (there (here refl)))
-        (get (var (path [] (here refl))) (path [] (there (here refl))))
-      ◅ ε
-    )))) ∷ [])
-  ( -- fields
+IntegerImpl = class0 {ms = intmethods}{intfields}{[]}
+  (-- methods
+    (#m' (meth (# 2) (body-void
+    (set
+      (this [] (here refl))
+      (path [] (there (here refl)))
+      (get (var (path [] (here refl))) (path [] (there (here refl))))
+    ◅ ε)))) ∷ [])
+  (-- fields
     (#v' tt) ∷ [])
   []
 
@@ -107,5 +106,5 @@ open Semantics _ g
 open import MJSF.Values
 open ValuesG _ g
 
-test : p ⇓⟨ 100 ⟩ (λ v → v ≡ num (+ 18) )
+test : p ⇓⟨ 100 ⟩ (λ v → v ≡ num (+ 9) )
 test = refl

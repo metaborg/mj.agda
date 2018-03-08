@@ -101,7 +101,7 @@ open import STLCSF.Semantics
     lambdas (Section 5.3 and 5.4), we use tagging predicates in
     `MJSF.Syntax`.
 
-  Then there are a few notable differences between the original
+  Then there are some notable differences between the original
   presentation of MJ and our development:
 
   - Original MJ distinguishes promotable expressions (method
@@ -131,6 +131,9 @@ open import STLCSF.Semantics
 
   - Our MJ syntax admits fields typed by `void`, which Original MJ
     does not.
+
+  - Our MJ syntax incorporates a dedicated `this` expression for
+    referencing the "self" of an object.
 
 -}
 

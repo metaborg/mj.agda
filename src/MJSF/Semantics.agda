@@ -90,9 +90,9 @@ module Semantics (g : Graph) where
   -- an edge to the root scope).
 
   init-obj : ∀ {sʳ s s' Σ} → Class sʳ s → Inherits s s' → M sʳ (Frame s) Σ
-  init-obj (class0 ⦃ shape ⦄ ms fs oms) (obj _)
+  init-obj (class0 ms fs oms) (obj _)
     = getFrame >>= λ f →
-      initι _ ⦃ shape ⦄ (λ fc → (map-all (λ{ (#m' m) → mᵗ fc m }) ms) ++-all (defaults fs)) (f ∷ []) >>= λ f' →
+      initι _ (λ fc → (map-all (λ{ (#m' m) → mᵗ fc m }) ms) ++-all (defaults fs)) (f ∷ []) >>= λ f' →
       (usingFrame f' (override oms) ^ f') >>= λ{ (_ , f') →
       return f' }
   init-obj (class0 ⦃ shape ⦄ _ _ _) (super ⦃ shape' ⦄ _)
@@ -169,9 +169,9 @@ module Semantics (g : Graph) where
       eval k e >>= λ {
         null → raise ;
         (ref p' f) →
-          usingFrame f (getv (prepend p' p)) >>= λ{ (mᵗ f' (meth s ⦃ shape ⦄ b)) →  -- f' is the "self"
+          usingFrame f (getv (prepend p' p)) >>= λ{ (mᵗ f' (meth s b)) →  -- f' is the "self"
           (eval-args k args ^ f') >>= λ{ (slots , f') →
-          init s ⦃ shape ⦄ slots (f' ∷ []) >>= λ f'' →  -- f' is the static link of the method call frame
+          init s slots (f' ∷ []) >>= λ f'' →  -- f' is the static link of the method call frame
           usingFrame f'' (eval-body k b) }}}
     eval (suc k) (this p e) =
       getf p >>= λ f →
@@ -264,7 +264,7 @@ module Semantics (g : Graph) where
   -- slots in the root frame are self-referential.
 
   eval-program : ℕ → ∀ {sʳ t} → Program sʳ t → Res (∃ λ Σ' → (Heap Σ' × Val t Σ'))
-  eval-program k (program _ ⦃ shape ⦄ cs b) =
+  eval-program k (program _ cs b) =
     let (f₀ , h₀) = initFrameι _ (λ f → map-all (λ{ (#c' (c , _ , ic)) → cᵗ c ic f }) cs) [] []
     in case (eval-body k b f₀ h₀) of λ{
          (ok (Σ' , h' , v , _)) → ok (Σ' , h' , v)
