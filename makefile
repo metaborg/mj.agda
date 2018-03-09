@@ -23,16 +23,16 @@ docs: lib docs/Readme.html
 	cp docs/Readme.html docs/index.html
 
 ### libraries
-lib: lib/stdlib lib/stdlib++ lib/categories
+lib: lib/stdlib/.git lib/stdlib++/.git lib/categories/.git
 
-lib/categories:
+lib/categories/.git:
 	git submodule update --init lib/categories
 	cd lib/categories
 
-lib/stdlib++:
+lib/stdlib++/.git:
 	git submodule update --init lib/stdlib++
 
-lib/stdlib:
+lib/stdlib/.git:
 	git submodule update --init lib/stdlib
 
 .PHONY: assumptions
@@ -47,4 +47,7 @@ clean:
 	-cd src && find . -iname '*.agdai' -exec rm {} \;
 
 release:
-	tar cvzf mj-$(VERSION).tar.gz --exclude-vcs src lib makefile NOTICE LICENSE Readme.agda .agda-lib
+	git clone . build
+	cd build && make lib && \
+	tar cvzf ../mj-$(VERSION).tar.gz --exclude=*.agdai --exclude-vcs src lib makefile NOTICE LICENSE Readme.agda .agda-lib
+	rm -rf build
