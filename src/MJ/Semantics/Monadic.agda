@@ -43,10 +43,11 @@ open import Common.Weakening
 
 open ObjEncoding encoding renaming (StoreVal to StoreVal')
 
-pre = ⊑-preorder {A = Ty⁺ c}
+private
+  pre = ⊑-preorder {A = Ty⁺ c}
 
-Val = flip Val'
-StoreVal = flip StoreVal'
+  Val = flip Val'
+  StoreVal = flip StoreVal'
 
 open import Relation.Unary hiding (_∈_)
 open import Relation.Unary.PredicateTransformer using (Pt)
@@ -58,22 +59,21 @@ open import Category.Monad.Monotone.State pre
 open import Category.Monad.Monotone.Error pre
 open import Category.Monad.Monotone.Heap pre (Ty⁺ c) StoreVal Store _∈_
 
-
 module Monadic
   (M : Pred (World c) ℓz → Pt (World c) ℓz)
-  (MM : ∀ {E} → RawMPMonad (M E))
-  (MR : ∀ {E} → ReaderMonad E M)
-  (MS : ∀ {E} → HeapMonad (M E))
-  (MT : ∀ {E} → ErrorMonad ⊤ (M E))
-  (ME : ∀ {E} → ErrorMonad Exception (M E))
+  (MM : ∀ E ⦃ mono-E : Monotone E ⦄ → RawMPMonad (M E))
+  (MR : ∀ E ⦃ mono-E : Monotone E ⦄ → ReaderMonad E M)
+  (MS : ∀ E ⦃ mono-E : Monotone E ⦄ → HeapMonad (M E))
+  (MT : ∀ E ⦃ mono-E : Monotone E ⦄ → ErrorMonad ⊤ (M E))
+  (ME : ∀ E ⦃ mono-E : Monotone E ⦄ → ErrorMonad Exception (M E))
   where
 
-  module _ {E} where
-    open RawMPMonad (MM {E}) public
-    open ErrorMonad ⊤ (MT {E}) using () renaming (throw to timeout) public
-    open ErrorMonad Exception (ME {E}) public renaming (try_catch_ to do-try_catch_)
-    open ReaderMonad (MR {E}) public
-    open HeapMonad (MS {E}) public hiding (super)
+  module _ {E}⦃ E-mono : Monotone E ⦄ where
+    open RawMPMonad (MM E) public
+    open ErrorMonad ⊤ (MT E) using () renaming (throw to timeout) public
+    open ErrorMonad Exception (ME E) public renaming (try_catch_ to do-try_catch_)
+    open ReaderMonad (MR E) public
+    open HeapMonad (MS E) public hiding (super)
 
   {-
   Lifting of object getter/setter into the monad
@@ -92,7 +92,7 @@ module Monadic
     _ , o               ← modify o (vobj) ^ o
     return (ref o s)
 
-  continue : ∀ {E W a} → M E (Val a ∪ E) W
+  continue : ∀ {E W a} ⦃ mono-E : Monotone E ⦄ → M E (Val a ∪ E) W
   continue = asks inj₂
 
   mutual
@@ -151,7 +151,7 @@ module Monadic
     Method evaluation including super calls.
     The difficult case again being the one where we have a super call.
     -}
-    eval-method : ∀ {cid m as b pid W E} → ℕ →
+    eval-method : ∀ {cid m as b pid W E}⦃ mono-E : Monotone E ⦄ → ℕ →
                   Σ ⊢ cid <: pid → (obj cid) ∈ W →
                   All (λ ty → vty ty ∈ W) as →
                   InheritedMethod pid m (as , b) → M E (Val b) W
