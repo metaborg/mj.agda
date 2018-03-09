@@ -26,7 +26,7 @@ lib: lib/stdlib lib/stdlib++ lib/categories
 .PHONY: lib/categories
 lib/categories:
 	git submodule update --init lib/categories
-	cd lib/categories && git apply ../categories.patch
+	cd lib/categories
 
 .PHONY: lib/stdlib++
 lib/stdlib++:
