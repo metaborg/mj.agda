@@ -42,3 +42,4 @@ release:
 	git clone . build
 	cd build && make lib && \
 	tar cvzf ../mj-$(VERSION).tar.gz --exclude=*.agdai --exclude-vcs src lib makefile NOTICE LICENSE Readme.agda .agda-lib
+	rm -rf build
