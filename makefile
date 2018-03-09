@@ -24,8 +24,7 @@ docs: lib docs/Readme.html
 
 ### libraries
 lib: lib/stdlib lib/stdlib++ lib/categories
-	
-.PHONY: lib/categories
+
 lib/categories:
 	git submodule update --init lib/categories
 	cd lib/categories
