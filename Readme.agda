@@ -10,8 +10,13 @@
   A rendered and linked version of this readme can be found here:
   - https://metaborg.github.io/mj.agda/
 
-  This development has been tested against Agda 2.5.3 (and should also compile
-  with 2.6.0). If you have this installed, you should simply be able to run
+  The current development uses do-notation syntactic sugar
+  that is part of Agda 2.6.0 and will not compile with earlier versions.
+  The POPL paper does *not* use do-notation; you may want to download the
+  mj-1.0.0-popl18 release if you want a version compatible with the
+  paper and Agda 2.5.3.
+
+  If you have the right version of Agda installed, you should be able to run
   `make` in the project root. This will checkout the two dependencies in
   `./lib/` first and then build this `./Readme.agda` which serves as the main
   entrypoint to the development.
@@ -22,7 +27,7 @@
   for it. The html docs are syntax-highlighted and you can click
   references to navigate to their definitions.
 
-  There are some minor differences between the Agda code used in the
+  There are some differences between the Agda code used in the
   paper and this mechanization.  One general (but minor) discrepancy
   is that the definitions in the paper are typed in a manner that is
   not universe polymorphic.  However, the development makes extensive
