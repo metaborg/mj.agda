@@ -1,3 +1,5 @@
+VERSION = 1.0.0-SNAPSHOT
+
 # some library paths
 docs/%.html: %.agda
 	agda $< --html --html-dir=./docs/
@@ -19,11 +21,9 @@ docs: lib docs/Readme.html
 ### libraries
 lib: lib/stdlib lib/stdlib++
 
-.PHONY: lib/stdlib++
 lib/stdlib++:
 	git submodule update --init lib/stdlib++
 
-.PHONY: lib/stdlib
 lib/stdlib:
 	git submodule update --init lib/stdlib
 
@@ -38,5 +38,5 @@ clean:
 	-rm Readme.agdai
 	-cd src && find . -iname '*.agdai' -exec rm {} \;
 
-clean-all: clean
-	rm -rf lib
+release:
+	tar cvzf mj-$(VERSION).tar.gz --exclude-vcs src lib makefile NOTICE LICENSE Readme.agda .agda-lib
