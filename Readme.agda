@@ -11,7 +11,7 @@
   - https://metaborg.github.io/mj.agda/
 
   The current development uses do-notation syntactic sugar
-  that is part of Agda 2.6.0 and will not compile with earlier versions.
+  that is now part of Agda 2.5.4+ and will not compile with earlier versions.
   The POPL paper does *not* use do-notation; you may want to download the
   mj-1.0.0-popl18 release if you want a version compatible with the
   paper and Agda 2.5.3.
@@ -182,13 +182,13 @@ open import MJ.Semantics.Values
 open import MJ.Semantics.Environments
 open import MJ.Semantics.Objects
 open import MJ.Semantics.Objects.Flat
-open import MJ.Semantics.Monadic
+-- open import MJ.Semantics.Monadic
 
 -- examples
-open import MJ.Examples.Integer
-open import MJ.Examples.Exceptions
-open import MJ.Examples.While
-open import MJ.Examples.DynDispatch
+-- open import MJ.Examples.Integer
+-- open import MJ.Examples.Exceptions
+-- open import MJ.Examples.While
+-- open import MJ.Examples.DynDispatch
 
 {-
   * Appendix B *
@@ -228,9 +228,9 @@ open import Experiments.Infer
   point-free style.
 -}
 
-open import Experiments.Category
-open import Experiments.StrongMonad
-open import Experiments.STLCRefPointfree
+-- open import Experiments.Category
+-- open import Experiments.StrongMonad
+-- open import Experiments.STLCRefPointfree
 
 {-
   We briefly outline how these experiments relate to our paper.

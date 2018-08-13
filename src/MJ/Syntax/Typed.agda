@@ -6,7 +6,7 @@ module MJ.Syntax.Typed {c}(Ct : Core.Classtable c) where
 open import Prelude hiding (erase)
 open import Data.Maybe as Maybe using (Maybe; just; nothing)
 open import Data.Maybe.All as MayAll
-open import Data.Vec as Vec hiding (_∈_)
+open import Data.Vec as Vec
 open import Data.Star as Star
 open import Data.List.Most as List
 open import Data.List.Properties.Extra as List+

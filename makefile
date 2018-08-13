@@ -1,15 +1,17 @@
 VERSION = 1.0.0-SNAPSHOT
+AGDA_OPTS = --verbose=2
+AGDA = agda $(AGDA_OPTS)
 
 # some library paths
 docs/%.html: %.agda
-	agda $< --html --html-dir=./docs/
+	$(AGDA) $< --html --html-dir=./docs/
 
 %.agdai: %.agda
-	agda $<
+	$(AGDA) $<
 
 .PHONY: hs/%
 hs/%: src/%.agda
-	agda --compile --compile-dir hs $<
+	$(AGDA) --compile --compile-dir hs $<
 
 all: lib Readme.agdai
 

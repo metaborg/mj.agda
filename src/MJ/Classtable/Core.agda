@@ -3,9 +3,9 @@ open import Prelude hiding (begin_; _∎; _≡⟨_⟩_)
 module MJ.Classtable.Core (c : ℕ) where
 
 open import Data.List
-open import Data.List.Any.Membership.Propositional
+open import Data.List.Membership.Propositional
 open import Relation.Binary.Core using (Transitive)
-open import Data.Vec hiding (_∈_)
+open import Data.Vec
 open import Data.Maybe
 open import Data.String
 
@@ -152,7 +152,7 @@ record Classtable : Set where
         ... | no ¬q with helper (p ◅◅ (super ◅ p)) gap
         ... | z , q = z , (begin
             suc (gap + len p)
-              ≡⟨ sym $ m+1+n≡1+m+n gap (len p) ⟩
+              ≡⟨ sym (+-suc gap (len p)) ⟩
             gap + (len (super ◅ p))
               ≤⟨ +-mono-≤ { gap } ≤-refl (≤-steps (len p) ≤-refl) ⟩
             gap + (len p + len (super ◅ p))

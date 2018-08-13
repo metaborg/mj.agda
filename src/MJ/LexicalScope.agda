@@ -5,7 +5,7 @@ module MJ.LexicalScope c where
 
 open import Data.List
 open import Data.List.Any
-open import Data.List.Any.Membership.Propositional
+open import Data.List.Membership.Propositional
 open import MJ.Types
 
 Ctx : Set

@@ -16,7 +16,7 @@ open import Level renaming (zero to ℓz; suc to ℓs)
 open import Prelude hiding (_^_; _+_)
 open import Data.Vec hiding (init; _>>=_; _∈_)
 open import Data.Vec.All.Properties.Extra as Vec∀++
-open import Data.List.Most as List hiding (_⊆_)
+open import Data.List.Most as List
 open import Relation.Nullary.Decidable
 open import Data.Star hiding (return; _>>=_)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -45,7 +45,6 @@ open ObjEncoding encoding renaming (StoreVal to StoreVal')
 
 private
   pre = ⊑-preorder {A = Ty⁺ c}
-
   Val = flip Val'
   StoreVal = flip StoreVal'
 
@@ -119,7 +118,7 @@ module Monadic
       r      ← store (obj _ (defaultObject cid))
       r' , r ← store (val (ref r ε)) ^ r
       let (implementation construct mbodies) = ℂ cid
-      _  , r ← local _ (λ E → r' ∷ E) (eval-constructor k ε r construct) ^ r
+      _  , r ← local (λ E → r' ∷ E) (eval-constructor k ε r construct) ^ r
       return (ref r ε)
 
     {-
@@ -138,7 +137,7 @@ module Monadic
       rvs , o∈W       ← eval-args k args ^ o∈W
       -- store a parent pointer for passing to super
       sup , o∈W , rvs ← store (val (ref o∈W s')) ^ (o∈W , rvs)
-      _               ← local _ (λ _ → sup ∷ rvs) (eval-constructor k s' o∈W super-con)
+      _               ← local (λ _ → sup ∷ rvs) (eval-constructor k s' o∈W super-con)
       -- evaluate own body
       _               ← eval-body k b
       return unit
@@ -160,7 +159,7 @@ module Monadic
 
     eval-method {E = E} (suc k) s o args (pid' , pid<:pid' , body b) = do
       mutself , args ← store (val (ref o (s ◅◅ pid<:pid'))) ^ args
-      local {E = E} (Env _) (λ E → mutself ∷ args) (eval-body k b)
+      local {E = E} (λ E → mutself ∷ args) (eval-body k b)
 
     -- calling a method on Object is improbable...
     eval-method {_}{m}{as}{b} (suc k) s o args (Object , _ , super x ⟨ _ ⟩then _) =
@@ -171,7 +170,7 @@ module Monadic
         -- store a cast this-reference
         mutself , args , o       ← store (val (ref o (s ◅◅ pid<:pid'))) ^ (args , o)
         -- eval super args in method context
-        rvs , args , o           ← local _ (λ _ → mutself ∷ args) (eval-args k supargs) ^ (args , o)
+        rvs , args , o           ← local (λ _ → mutself ∷ args) (eval-args k supargs) ^ (args , o)
         -- call super
         retv , args , o          ← eval-method k (s ◅◅ pid<:pid' ◅◅ super ◅ ε) o rvs super-met ^ (args , o)
         -- store the super return value to be used as a mutable local
@@ -179,7 +178,7 @@ module Monadic
         -- store the cast this-reference
         mutself' , mutret , args ← store (val (ref o (s ◅◅ pid<:pid'))) ^ (mutret , args)
         -- call body
-        local _ (λ _ → mutret ∷ mutself' ∷ args) (eval-body k b)
+        local (λ _ → mutret ∷ mutself' ∷ args) (eval-body k b)
 
     {-
     evaluation of expressions
@@ -235,7 +234,7 @@ module Monadic
     -- object allocation
     evalₑ (suc k) (new C args) = do
       rvs ← eval-args k args
-      local _ (λ _ → rvs) (constructM k C)
+      local (λ _ → rvs) (constructM k C)
 
     {-
     Statement evaluation
@@ -319,7 +318,7 @@ module Monadic
     eval-stmts k (x ◅ st) = do
       (right E') ← evalc k x
         where (left v) → return (left v)
-      local _ (λ _ → E') (eval-stmts k st)
+      local (λ _ → E') (eval-stmts k st)
 
     {-
     An helper for interpreting method bodies (i.e. sequence of Stmts optionally followed by a return).
@@ -329,10 +328,4 @@ module Monadic
     eval-body k (body stmts@(_ ◅ _) e) = do
       (right E) ← eval-stmts k stmts
          where (left v) → return v
-      local _ (λ _ → E) (evalₑ k e)
-
-    {-
-    An helper for interpreting a list of expressions in the same context.
-    -}
-    evalₑ* : ∀ {Γ W as} → ℕ → All (Expr Γ) as → M (Env Γ) (λ W → All (λ a → Val a W) as) W
-    evalₑ* k es = sequenceM (map-all (λ e {_} _ → evalₑ k e) es)
+      local (λ _ → E) (evalₑ k e)

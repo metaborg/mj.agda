@@ -70,7 +70,7 @@ Store Σ = All (λ t → Val t Σ) Σ
 -- The `lookup-store` function is defined in terms of the `lookup`
 -- function from `Data.List.All` in the Agda Standard Library.
 lookup-store : ∀ {Σ t} → t ∈ Σ → Store Σ → Val t Σ
-lookup-store x μ = List∀.lookup μ x
+lookup-store x μ = lookup-all μ x
 
 -- The `update-store` function is defined in terms of the update
 -- function for the `All` type: `_All[_]≔'_` from the Standard Library
@@ -138,7 +138,7 @@ store {Σ} {t} v _ μ
     in just (_ , μ' , v' , ext)
 
 deref    :    ∀ {Σ Γ t} → t ∈ Σ → M Γ (Val t) Σ
-deref x E μ = return (List∀.lookup μ x) E μ
+deref x E μ = return (lookup-all μ x) E μ
 
 update   :    ∀ {Σ Γ t} → t ∈ Σ → Val t Σ → M Γ (λ _ → ⊤) Σ
 update x v E μ = return tt E (update-store x v μ)
@@ -169,7 +169,7 @@ eval (suc k)  unit        =
   return unit
 eval (suc k)  (var x)     =
   getEnv >>= λ E →
-  return (List∀.lookup E x)
+  return (lookup-all E x)
 eval (suc k)  (ƛ e)       =
   getEnv >>= λ E →
   return ⟨ e , E ⟩
