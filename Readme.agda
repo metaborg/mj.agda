@@ -182,13 +182,13 @@ open import MJ.Semantics.Values
 open import MJ.Semantics.Environments
 open import MJ.Semantics.Objects
 open import MJ.Semantics.Objects.Flat
--- open import MJ.Semantics.Monadic
+open import MJ.Semantics.Monadic
 
 -- examples
--- open import MJ.Examples.Integer
--- open import MJ.Examples.Exceptions
--- open import MJ.Examples.While
--- open import MJ.Examples.DynDispatch
+open import MJ.Examples.Integer
+open import MJ.Examples.Exceptions
+open import MJ.Examples.While
+open import MJ.Examples.DynDispatch
 
 {-
   * Appendix B *
