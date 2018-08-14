@@ -7,7 +7,7 @@ module MJ.Semantics.Monad {c} (Ct : Core.Classtable c) (Exc : Set) where
 
 open import Prelude hiding (_^_; _+_)
 open import Function
-open import Data.List.Most as List hiding (_⊆_)
+open import Data.List.Most as List
 open import Data.Maybe as Maybe using (Maybe; nothing; just)
 open import Relation.Binary using (Preorder)
 open import Relation.Unary hiding (_∈_)
