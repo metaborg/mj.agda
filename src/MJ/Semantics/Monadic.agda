@@ -157,9 +157,9 @@ module Monadic
 
     eval-method zero _ _ _ _ = timeout _
 
-    eval-method {E = E} (suc k) s o args (pid' , pid<:pid' , body b) = do
+    eval-method (suc k) s o args (pid' , pid<:pid' , body b) = do
       mutself , args ← store (val (ref o (s ◅◅ pid<:pid'))) ^ args
-      local {E = E} (λ E → mutself ∷ args) (eval-body k b)
+      local (λ E → mutself ∷ args) (eval-body k b)
 
     -- calling a method on Object is improbable...
     eval-method {_}{m}{as}{b} (suc k) s o args (Object , _ , super x ⟨ _ ⟩then _) =
