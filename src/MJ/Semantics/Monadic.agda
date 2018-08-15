@@ -168,7 +168,7 @@ module Monadic
     eval-method {E = E} (suc k) s o args (cls pid' , pid<:pid' , super x ⟨ supargs ⟩then b) = do
         let super-met = method ℂ (Class.parent (Σ (cls pid'))) (sound x)
         -- store a cast this-reference
-        mutself , args , o       ← store (val (ref o (s ◅◅ pid<:pid'))) ^ (args , o)
+        mutself , args , o       ← ts _ ⦃ mono-∩ ⦄ (store (val (ref o (s ◅◅ pid<:pid')))) (args , o)
         -- eval super args in method context
         rvs , args , o           ← local (λ _ → mutself ∷ args) (eval-args k supargs) ^ (args , o)
         -- call super
