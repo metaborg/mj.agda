@@ -157,9 +157,9 @@ store = mk⇒
 ------------------------------------------------------------------------
 
 envlookup : ∀ {a Γ} → a ∈ Γ → Env Γ ⇒ Val a
-envlookup x = mk⇒ (λ E → lookup E x) λ{ c~c' {E} → sym (lem c~c' E x)}
+envlookup x = mk⇒ (λ E → lookup-all E x) λ{ c~c' {E} → sym (lem c~c' E x)}
   where
-    lem : ∀ {Γ Σ Σ' a} → (p : Σ ⊑ Σ') → (E : Env' Γ Σ) → (e : a ∈ Γ) → val-mono p (lookup E e) ≡ lookup (env-mono p E) e
+    lem : ∀ {Γ Σ Σ' a} → (p : Σ ⊑ Σ') → (E : Env' Γ Σ) → (e : a ∈ Γ) → val-mono p (lookup-all E e) ≡ lookup-all (env-mono p E) e
     lem p (px ∷ E) (here refl) = refl
     lem p (px ∷ E) (there e) = lem p E e
 

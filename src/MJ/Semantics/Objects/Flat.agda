@@ -3,7 +3,7 @@ import MJ.Classtable.Core as Core
 import MJ.Classtable.Code as Code
 import MJ.Syntax as Syntax
 
-module MJ.Semantics.Objects.Flat {c}(Ct : Core.Classtable c)(ℂ : Code.Code Ct) where
+module MJ.Semantics.Objects.Flat {c}(Ct : Core.Classtable c) where
 
 open import Prelude
 
@@ -12,7 +12,7 @@ open import Data.Vec hiding (_++_; lookup; drop)
 open import Data.Star
 open import Data.List
 open import Data.List.First.Properties
-open import Data.List.Any.Membership.Propositional
+open import Data.List.Membership.Propositional
 open import Data.List.Any.Properties
 open import Data.List.All as List∀
 open import Data.List.All.Properties.Extra
@@ -26,7 +26,6 @@ open import Relation.Binary.PropositionalEquality
 open import MJ.Semantics.Values Ct
 open import MJ.Semantics.Objects Ct
 open import MJ.Syntax Ct
-open Code Ct
 open Core c
 open Classtable Ct
 open import MJ.Classtable.Membership Ct

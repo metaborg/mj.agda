@@ -6,7 +6,7 @@ open import Data.Fin using (Fin; #_; suc; zero) public
 
 open import Data.Unit using (tt; ⊤) public
 open import Data.Empty public
-open import Data.Bool using (true; false; Bool) public
+open import Data.Bool using (true; false; Bool; not) public
 
 open import Data.Product public using (∃; ∃₂; _×_; _,_; proj₁; proj₂; ,_) public
 

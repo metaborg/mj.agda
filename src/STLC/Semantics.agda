@@ -100,7 +100,7 @@ eval (suc k)  unit        =
   return unit
 eval (suc k)  (var x)     =
   getEnv >>= λ E →
-  return (lookup E x)
+  return (lookup-all E x)
 eval (suc k)  (ƛ b)       =
   getEnv >>= λ E →
   return ⟨ b , E ⟩

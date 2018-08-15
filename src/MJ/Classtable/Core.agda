@@ -3,9 +3,9 @@ open import Prelude hiding (begin_; _∎; _≡⟨_⟩_)
 module MJ.Classtable.Core (c : ℕ) where
 
 open import Data.List
-open import Data.List.Any.Membership.Propositional
+open import Data.List.Membership.Propositional
 open import Relation.Binary.Core using (Transitive)
-open import Data.Vec hiding (_∈_)
+open import Data.Vec
 open import Data.Maybe
 open import Data.String
 
@@ -42,12 +42,16 @@ The field decls returns a list of named members for each namespace, where the
 type of the member is namespace-dependent. The uniformity of member definitions
 permits a notion of membership that works for both fields and methods:
 -}
+
+Decl : NS → Set
+Decl ns = String × typing ns
+
 record Class : Set where
   constructor class
   field
     parent  : Cid c
     constr  : List (Ty c) -- argument types
-    decls   : (ns : NS) → List (String × typing ns)
+    decls   : (ns : NS) → List (Decl ns)
 
 ObjectClass = class Object [] (λ _ → [])
 
@@ -85,6 +89,13 @@ record Classtable : Set where
 
   _<∶_ : ∀ (cid pid : Cid c) → Set
   a <∶ b = Σ ⊢ a <: b
+
+  -- extended inheritance relation that is defined on all types
+  data _<:<_ : (a b : Ty c) → Set where
+    int  : int <:< int
+    bool : bool <:< bool
+    void : void <:< void
+    cls  : ∀ {a b} → _<∶_ a b → ref a <:< ref b
 
   open import Relation.Binary
   open import Data.Nat.Properties
@@ -141,7 +152,7 @@ record Classtable : Set where
         ... | no ¬q with helper (p ◅◅ (super ◅ p)) gap
         ... | z , q = z , (begin
             suc (gap + len p)
-              ≡⟨ sym $ m+1+n≡1+m+n gap (len p) ⟩
+              ≡⟨ sym (+-suc gap (len p)) ⟩
             gap + (len (super ◅ p))
               ≤⟨ +-mono-≤ { gap } ≤-refl (≤-steps (len p) ≤-refl) ⟩
             gap + (len p + len (super ◅ p))

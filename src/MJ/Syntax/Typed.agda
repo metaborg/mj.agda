@@ -6,13 +6,14 @@ module MJ.Syntax.Typed {c}(Ct : Core.Classtable c) where
 open import Prelude hiding (erase)
 open import Data.Maybe as Maybe using (Maybe; just; nothing)
 open import Data.Maybe.All as MayAll
-open import Data.Vec as Vec hiding (_∈_)
+open import Data.Vec as Vec
 open import Data.Star as Star
 open import Data.List.Most as List
 open import Data.List.Properties.Extra as List+
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary.Decidable
 open import Data.String
+open import Data.Integer using (ℤ)
 
 import Data.Vec.All as Vec∀
 
@@ -20,8 +21,7 @@ open Core c
 open Classtable Ct
 open import MJ.Classtable.Membership Ct
 open import MJ.LexicalScope c
-
-NativeBinOp = ℕ → ℕ → ℕ
+open import MJ.Syntax.BinOp Ct
 
 {-
 Expressions are indexed by a lexical context and a type.
@@ -38,11 +38,12 @@ data Expr (Γ : Ctx) : Ty c → Set where
   -- irreducible expressions
   unit     : Expr Γ void
   null     : ∀ {C} → Expr Γ (ref C)
-  num      : ℕ → Expr Γ int
+  num      : ℤ → Expr Γ int
+  bool     : Bool → Expr Γ bool
 
   -- storeless expressions
   var      : ∀ {a} → Var Γ a → Expr Γ a
-  iop      : NativeBinOp → (l r : Expr Γ int) → Expr Γ int
+  bop      : ∀ {a b c} → BinOp a b c → (l : Expr Γ a)(r : Expr Γ b) → Expr Γ c
   upcast   : ∀ {c c'} → Σ ⊢ c <: c' → Expr Γ (ref c) → Expr Γ (ref c')
 
   -- storeful
@@ -73,9 +74,21 @@ mutual
     ret        : Expr I r → Stmt I r I
     raise      : Stmt I r I
     try_catch_ : ∀ {O O'} → Stmt I r O → Stmt I r O' → Stmt I r I
-    while_run_ : ∀ {O} → Expr I int → Stmt I r O → Stmt I r I
+    while_run_ : ∀ {O} → Expr I bool → Stmt I r O → Stmt I r I
     block      : ∀ {O} → Stmts I r O → Stmt I r I
-    if_then_else_ : ∀ {a} → Expr I int → Stmt I r a → Stmt I r a → Stmt I r a
+    if_then_else_ : ∀ {a} → Expr I bool → Stmt I r a → Stmt I r a → Stmt I r a
 
   Stmts : Ctx → Ty c → Ctx → Set
   Stmts I r O = Star (λ I' O' → Stmt I' r O') I O
+
+{-
+A helper to generate the shape of the context for method bodies
+-}
+methodctx : Cid c → List (Ty c) → Ctx
+methodctx cid as = (ref cid ∷ as)
+
+{-
+A helper to generate the shape of the context for constructors
+-}
+constrctx : Cid c → Ctx
+constrctx cid = let cl = Σ cid in (ref cid ∷ Class.constr cl)

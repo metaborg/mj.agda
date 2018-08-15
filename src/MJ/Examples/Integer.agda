@@ -6,6 +6,7 @@ open import Data.Vec hiding (_∈_; init)
 import Data.Vec.All as Vec∀
 open import Data.Star
 open import Data.Bool
+open import Data.Integer hiding (suc)
 open import Data.List
 open import Data.List.Any
 open import Data.List.Any.Membership.Propositional
@@ -110,12 +111,12 @@ p₀ = Lib ,
     (
         loc (ref INT)
       ◅ loc (ref INT)
-      ◅ asgn x (new INT ((num 9) ∷ []))
-      ◅ asgn y (new INT ((num 18) ∷ []))
+      ◅ asgn x (new INT ((num (+ 9)) ∷ []))
+      ◅ asgn y (new INT ((num (+ 18)) ∷ []))
       ◅ run (call (var x) "set" {_}{void} (var y ∷ []))
       ◅ ε
     )
     (get (var x) "x")
 
-test0 : p₀ ⇓⟨ 100 ⟩ (λ {W} (v : Val W int) → v ≡ num 18)
+test0 : p₀ ⇓⟨ 100 ⟩ (λ {W} (v : Val W int) → v ≡ num (+ 18))
 test0 = refl

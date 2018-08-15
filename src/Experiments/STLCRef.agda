@@ -67,13 +67,13 @@ mutual
              e ≡ e' → E ≡ E' → ⟨ e , E ⟩ ≡ ⟨ e' , E' ⟩
   clo-cong refl refl = refl
 
-  mono-val-refl  :  ∀ {t c}{ext : c ⊑ c}(p : Val t c) → 
+  mono-val-refl  :  ∀ {t c}{ext : c ⊑ c}(p : Val t c) →
                         weaken-val ext p ≡ p
   mono-val-refl unit      = refl
   mono-val-refl ⟨ e , E ⟩ = clo-cong refl (mono-env-refl E)
   mono-val-refl (loc l)   = {!!}
 
-  mono-env-refl  :  ∀ {Γ c}{ext : c ⊑ c}(p : Env Γ c) → 
+  mono-env-refl  :  ∀ {Γ c}{ext : c ⊑ c}(p : Env Γ c) →
                         weaken-env ext p ≡ p
   mono-env-refl []       = refl
   mono-env-refl (v ∷ vs) = {!!}
@@ -105,13 +105,6 @@ M' Γ P = mp (λ Σ → ∀ Σ₁ → Σ ⊑ Σ₁ → Env' Γ · Σ₁ → Stor
     monotone-refl = λ f → meq' (λ Σ₁ _ E μ → cong (λ u → f Σ₁ u E μ) ⊑-trans-refl) ;
     monotone-trans = λ f w₀ w₁ → meq' (λ Σ₁ w₂ E μ → cong (λ u → f Σ₁ u E μ) (sym ⊑-trans-assoc))
   }
-
-Const : ∀ (T : Set) → MP₀
-Const T = mp (λ _ → T) ((record {
-    monotone = λ x x₁ → x₁ ;
-    monotone-refl = λ _ → refl ;
-    monotone-trans = λ _ _ _ → refl
-  }))
 
 -- one : ∀ {Γ} → M' Γ One
 -- one = ?
@@ -164,7 +157,7 @@ bind' {Q = Q} F = μ' Q ∘ fmap' F
 --   case (f Σ ext E μ) of (λ{
 --     nothing → nothing
 --   ; (just (Σ₁ , ext₁ , μ₁ , v)) →
---     bind' 
+--     bind'
 --     case g v Σ₁ ⊑-refl (weaken-env ext₁ E) μ₁ of (λ{
 --       nothing → nothing
 --     ; (just (Σ₂ , ext₂ , μ₂ , v')) →
@@ -228,7 +221,6 @@ strength {_} {Q} =
 --                                    (λ c~c' → {!!})))
 --                                   })
 --                       λ c~c' → {!!} ))
-                
 --         ; _ → {!!} })
 --       (λ c~c' → {!!})
 
@@ -241,7 +233,7 @@ eval (suc k) =
         ; (var x) →
           apply (bind' {_} {_} {Env' _} {Val' _}
                        (mk⇒ (λ E →
-                               apply (η' (Val' _)) (lookup E x))
+                               apply (η' (Val' _)) (lookup-all E x))
                             (λ c~c' → {- ugh -} {!!})))
                 getEnv
         ; (app {a} {b} e1 e2) →

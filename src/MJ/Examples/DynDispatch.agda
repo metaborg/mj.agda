@@ -5,6 +5,7 @@ open import Data.Maybe hiding (All)
 open import Data.Vec hiding (_∈_; init)
 import Data.Vec.All as Vec∀
 open import Data.Star
+open import Data.Integer hiding (suc)
 open import Data.Bool
 open import Data.List
 open import Data.List.Any
@@ -122,6 +123,7 @@ Integer+Sig = (class INT (int ∷ []) decls+)
 
 open import MJ.Classtable.Code Σ
 open import MJ.Syntax Σ
+import MJ.Syntax.BinOp as BOp
 open import MJ.Syntax.Program Σ
 
 -- Integer class body
@@ -163,10 +165,10 @@ Integer+Impl = implementation
     -- methods
     (
       -- override get
-      (body (body ε (iop (λ l r → l + r) (get (var (here refl)) "x") (num 1))))
+      (body (body ε (bop BOp.+ (get (var (here refl)) "x") (num (+ 1)))))
 
       -- set
-      ∷ (super _ ⟨ new INT (iop (λ l r → l + r) (get (var (there (here refl))) "x") (num 1) ∷ []) ∷ [] ⟩then
+      ∷ (super _ ⟨ new INT (bop BOp.+ (get (var (there (here refl))) "x") (num (+ 1)) ∷ []) ∷ [] ⟩then
         body
           ε
           (var (here refl)))
@@ -194,11 +196,11 @@ p₀ = Lib ,
     (
         loc (ref INT) -- y
       ◅ loc (ref INT+) -- x
-      ◅ asgn x (new INT+ ((num 0) ∷ []))
-      ◅ asgn y (new INT ((num 18) ∷ []))
+      ◅ asgn x (new INT+ ((num (+ 0)) ∷ []))
+      ◅ asgn y (new INT ((num (+ 18)) ∷ []))
       ◅ ε
     )
     (call (var x) "set" (var y ∷ []))
 
-test0 : p₀ ⇓⟨ 100 ⟩ (λ {W} (v : Val W int) → v ≡ num 20)
+test0 : p₀ ⇓⟨ 100 ⟩ (λ {W} (v : Val W int) → v ≡ num (+ 20))
 test0 = refl

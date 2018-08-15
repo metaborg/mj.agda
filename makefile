@@ -1,11 +1,17 @@
 VERSION = 1.0.0-SNAPSHOT
+AGDA_OPTS = --verbose=2
+AGDA = agda $(AGDA_OPTS)
 
 # some library paths
 docs/%.html: %.agda
-	agda $< --html --html-dir=./docs/
+	$(AGDA) $< --html --html-dir=./docs/
 
 %.agdai: %.agda
-	agda $<
+	$(AGDA) $<
+
+.PHONY: hs/%
+hs/%: src/%.agda
+	$(AGDA) --compile --compile-dir hs $<
 
 all: lib Readme.agdai
 
@@ -19,7 +25,11 @@ docs: lib docs/Readme.html
 	cp docs/Readme.html docs/index.html
 
 ### libraries
-lib: lib/stdlib/.git lib/stdlib++/.git
+lib: lib/stdlib/.git lib/stdlib++/.git lib/categories/.git
+
+lib/categories/.git:
+	git submodule update --init lib/categories
+	cd lib/categories
 
 lib/stdlib++/.git:
 	git submodule update --init lib/stdlib++

@@ -33,3 +33,15 @@ record ObjEncoding : Set (lsuc lzero) where
 
   Store : World c → Set
   Store W = All (StoreVal W) W
+
+  sval-weaken : ∀ {W W' a} → W' ⊒ W → StoreVal W a → StoreVal W' a
+  sval-weaken ext (val x) = val $ weaken-val ext x
+  sval-weaken ext (obj cid x) = obj cid (weaken-obj cid ext x)
+
+  open import Relation.Binary using (Preorder)
+  open import Relation.Unary.Monotone (⊑-preorder {A = Ty⁺ c})
+
+  instance
+    open Monotone
+    storeval-monotone : ∀ {a} → Monotone (λ W → StoreVal W a)
+    wk storeval-monotone = sval-weaken

@@ -2,7 +2,7 @@ open import Data.Nat
 open import Data.Fin
 open import Data.List.Most
 open import Data.List.All renaming (lookup to lookup∀)
-open import Data.Vec hiding (_∈_ ; _∷ʳ_ ; _>>=_ ; init)
+open import Data.Vec hiding (_∷ʳ_ ; _>>=_ ; init; _∈_)
 open import Data.Product
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open ≡-Reasoning
