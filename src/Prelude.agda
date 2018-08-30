@@ -8,7 +8,7 @@ open import Data.Unit using (tt; ⊤) public
 open import Data.Empty public
 open import Data.Bool using (true; false; Bool) public
 
-open import Data.Product public using (∃; ∃₂; _×_; _,_; proj₁; proj₂; ,_) public
+open import Data.Product public using (∃; ∃₂; _×_; _,_; proj₁; proj₂) public
 
 open import Relation.Binary.PropositionalEquality hiding ([_]) public
 open ≡-Reasoning public

@@ -1,3 +1,4 @@
+open import Data.Bool
 open import Data.Nat
 open import Data.List.Most
 open import Data.Integer
@@ -7,15 +8,17 @@ open import Data.Product
 -- interpreter for MJ using scopes and frames, described in Section 5
 -- of the paper.
 
-module MJSF.Values (k : ℕ) where
+module MJSF.Values where
 
-open import MJSF.Syntax k
-open import ScopesFrames.ScopesFrames k Ty
+open import MJSF.Syntax
+open import ScopesFrames.ScopeGraph Ty ℕ Bool
+open import ScopesFrames.FrameHeap Ty ℕ Bool
 
-module ValuesG (g : Graph) where
+module Values {g : Graph} where
 
-  open SyntaxG g
-  open UsesGraph g public
+  open Graph
+  open Syntax {g}
+  open UsesGraph {g} public
   open import Common.Weakening
 
   ------------
@@ -35,7 +38,7 @@ module ValuesG (g : Graph) where
   --   for producing a `void` value directly, but method bodies still
   --   return `void`; we regard `void` as a unit type)
 
-  data Val : VTy → List Scope → Set where
+  data Val : VTy (ı g) → List (Scope (ı g)) → Set where
     ref    :  ∀ {s s' Σ} → s <: s' → Frame s Σ → Val (ref s') Σ
     null   :  ∀ {s Σ} → Val (ref s) Σ
     num    :  ∀ {Σ} → ℤ → Val int Σ
@@ -56,7 +59,7 @@ module ValuesG (g : Graph) where
   --   used for initializing new object instances, as well as a frame
   --   pointer to the root frame (class table).
 
-  data Valᵗ : Ty → List Scope → Set where
+  data Valᵗ : Ty (ı g) → List (Scope (ı g)) → Set where
     vᵗ : ∀ {t Σ} → Val t Σ → Valᵗ (vᵗ t) Σ
     mᵗ : ∀ {s ts rt Σ} → (self : Frame s Σ) → (body : Meth s ts rt) → Valᵗ (mᵗ ts rt) Σ
     cᵗ : ∀ {sʳ s s' Σ} → (class-def : Class sʳ s) → (ic : Inherits s s') → (root : Frame sʳ Σ) → Valᵗ (cᵗ sʳ s) Σ
@@ -98,5 +101,5 @@ module ValuesG (g : Graph) where
   -- as described in the paper.
 
   upcastRef : ∀ {t t' Σ} → t <: t' → Val (ref t) Σ → Val (ref t') Σ
-  upcastRef i (ref i' f) = ref (concatₚ i' i) f
+  upcastRef i (ref i' f) = ref (concat⇣ i' i) f
   upcastRef i null = null

@@ -4,6 +4,7 @@ open import Data.List.Most
 open import Data.Integer hiding (suc)
 open import Data.Product hiding (map)
 open import Data.Unit
+open import Data.Bool
 open import Data.Star hiding (return ; _>>=_ ; map)
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open ≡-Reasoning
@@ -15,19 +16,15 @@ open import Data.Empty
 -- The definitions are parameterized by a scope graph of size `k`, as
 -- usual:
 
-module MJSF.Syntax (k : ℕ) where
-
-private
-  Scope : Set
-  Scope = Fin k
+module MJSF.Syntax where
 
 -- Return types, method parameters, and field types in MJ are given by
 -- `VTy`:
 
-data VTy : Set where
-  void : VTy
-  int : VTy
-  ref : Scope → VTy
+data VTy (k : ℕ) : Set where
+  void : VTy k
+  int : VTy k
+  ref : Fin k → VTy k
 
 -- The scope graph library is parameterized by a single kind of type,
 -- to be used for all declarations.  But there are three different
@@ -38,43 +35,43 @@ data VTy : Set where
 -- We use the following type to "tag" and distinguish the various
 -- kinds of declarations.
 
-data Ty : Set where
-  vᵗ : VTy → Ty
-  mᵗ : List VTy → VTy → Ty
-  cᵗ : Scope → Scope → Ty
+data Ty (k : ℕ) : Set where
+  vᵗ : VTy k → Ty k
+  mᵗ : List (VTy k) → VTy k → Ty k
+  cᵗ : Fin k → Fin k → Ty k
 
 -- We specialize the scopes-and-frames library to the size of our
 -- scope graph, and the tagged type for declarations above:
 
-open import ScopesFrames.ScopesFrames k Ty hiding (Scope)
+open import ScopesFrames.ScopeGraph Ty ℕ Bool
 
+open Graph
 
--------------
--- HAS TAG --
--------------
+open import ScopesFrames.FrameHeap Ty ℕ Bool
 
--- As summarized above, declarations may be either value-typed,
--- method-typed, or class-typed.  We introduce some parameterized
--- predicates which only hold for a particular tag.  This is useful
--- for saying that some list of types `ts : List Ty` only contains
--- value types, and that a particular property holds for each of those
--- value types.  For example, the type `All (#v (λ _ → ⊤)) ts`
--- guarantees that `ts` contains only value types, and does not
--- constrain the value types further (due to the use of `⊤`).
+module Syntax {g : Graph} where
 
-data #v : (VTy → Set) → Ty → Set where
-  #v' : ∀ {t p} → p t → #v p (vᵗ t)
+  -------------
+  -- HAS TAG --
+  -------------
 
-data #m : (List VTy → VTy → Set) → Ty → Set where
-  #m' : ∀ {ts rt p} → p ts rt → #m p (mᵗ ts rt)
+  -- As summarized above, declarations may be either value-typed,
+  -- method-typed, or class-typed.  We introduce some parameterized
+  -- predicates which only hold for a particular tag.  This is useful
+  -- for saying that some list of types `ts : List Ty` only contains
+  -- value types, and that a particular property holds for each of those
+  -- value types.  For example, the type `All (#v (λ _ → ⊤)) ts`
+  -- guarantees that `ts` contains only value types, and does not
+  -- constrain the value types further (due to the use of `⊤`).
 
-data #c (sʳ : Scope) (p : Scope → Set) : Ty → Set where
-  #c' : ∀ {s} → p s → #c sʳ p (cᵗ sʳ s)
+  data #v : (VTy (ı g) → Set) → Ty (ı g) → Set where
+    #v' : ∀ {t p} → p t → #v p (vᵗ t)
 
+  data #m : (List (VTy (ı g)) → VTy (ı g) → Set) → Ty (ı g) → Set where
+    #m' : ∀ {ts rt p} → p ts rt → #m p (mᵗ ts rt)
 
-module SyntaxG (g : Graph) where
-
-  open UsesGraph g
+  data #c (sʳ : Scope (ı g)) (p : Scope (ı g) → Set) : Ty (ı g) → Set where
+    #c' : ∀ {s} → p s → #c sʳ p (cᵗ sʳ s)
 
 
   -------------------------------
@@ -84,8 +81,8 @@ module SyntaxG (g : Graph) where
   -- As summarized in the paper, we define sub-typing in terms of
   -- inheritance edges between class scopes in the scope graph:
 
-  _<:_ : Scope → Scope → Set
-  _<:_ = _⟶_
+  _<:_ : Scope (ı g) → Scope (ı g) → Set
+  _<:_ = g ⊢⇣_⟶_
 
   -- Scope graphs may be cyclic, and there is (in theory) nothing that
   -- prevents classes from mutually extending one another, thereby
@@ -95,9 +92,9 @@ module SyntaxG (g : Graph) where
   -- initialization in a way that lets Agda prove that object
   -- initialization takes finite time (i.e., no need for fuel).
 
-  data Inherits : Scope → Scope → Set where
-    obj   : ∀ s {ds sʳ} ⦃ shape : g s ≡ (ds , [ sʳ ]) ⦄ → Inherits s s
-    super : ∀ {s ds sʳ sᵖ s'} ⦃ shape : g s ≡ (ds , sʳ ∷ sᵖ ∷ []) ⦄ → Inherits sᵖ s' → Inherits s s'
+  data Inherits : Scope (ı g) → Scope (ı g) → Set where
+    obj   : ∀ s {ds sʳ} ⦃ shape : nodeOf⇣ g s ≡ (ds , [ sʳ ]) ⦄ → Inherits s s
+    super : ∀ {s ds sʳ sᵖ s'} ⦃ shape : nodeOf⇣ g s ≡ (ds , sʳ ∷ sᵖ ∷ []) ⦄ → Inherits sᵖ s' → Inherits s s'
 
 
   ------------
@@ -107,19 +104,19 @@ module SyntaxG (g : Graph) where
   -- The expressions of MJ where the `s` in `Expr s t` is the lexical
   -- context scope:
 
-  data Expr (s : Scope) : VTy → Set where
+  data Expr (s : Scope (ı g)) : VTy (ı g) → Set where
     call     :  ∀ {s' ts t} → Expr s (ref s') → -- receiver
-                (s' ↦ (mᵗ ts t)) →              -- path to method declaration
+                (g ⊢⇣ s' ↦ (mᵗ ts t)) →              -- path to method declaration
                 All (Expr s) ts →               -- argument list
                 Expr s t
-    get      :  ∀ {s' t} → Expr s (ref s') → (s' ↦ vᵗ t) → Expr s t
-    var      :  ∀ {t} → (s ↦ vᵗ t) → Expr s t
-    new      :  ∀ {sʳ s'} → s ↦ cᵗ sʳ s' → Expr s (ref s') -- path to class declaration
+    get      :  ∀ {s' t} → Expr s (ref s') → (g ⊢⇣ s' ↦ vᵗ t) → Expr s t
+    var      :  ∀ {t} → (g ⊢⇣ s ↦ vᵗ t) → Expr s t
+    new      :  ∀ {sʳ s'} → g ⊢⇣ s ↦ cᵗ sʳ s' → Expr s (ref s') -- path to class declaration
     null     :  ∀ {s'} → Expr s (ref s')
     num      :  ℤ → Expr s int
     iop      :  (ℤ → ℤ → ℤ) → (l r : Expr s int) → Expr s int
     upcast   :  ∀ {t' t} → t' <: t → Expr s (ref t') → Expr s (ref t)
-    this     :  ∀ {s' self} → s ⟶ s' → self ∈ edgesOf s' → -- the `self` of objects is given by the lexical parent edge of a method
+    this     :  ∀ {s' self} → g ⊢⇣ s ⟶ s' → self ∈ edgesOf⇣ g s' → -- the `self` of objects is given by the lexical parent edge of a method
                 Expr s (ref self)
 
   -- The statements of MJ where the `s` in `Stmt s t s'` is the
@@ -128,25 +125,25 @@ module SyntaxG (g : Graph) where
   -- statement.
 
   mutual
-    data Stmt (s : Scope)(r : VTy) : Scope → Set where
+    data Stmt (s : Scope (ı g))(r : VTy (ı g)) : Scope (ı g) → Set where
       run   : ∀ {t'} → Expr s t' → Stmt s r s
-      ifz   : ∀ {s' s'' : Scope} → Expr s int → Stmt s r s → Stmt s r s → Stmt s r s -- branches are blocks
-      set   : ∀ {s' t'} → Expr s (ref s') → (s' ↦ vᵗ t') → Expr s t' → Stmt s r s
-      loc   : ∀ (s' : Scope)(t' : VTy)⦃ shape : g s' ≡ ([ vᵗ t' ] , [ s ]) ⦄ → Stmt s r s' -- local variable scope `s'` is connected to lexical context scope `s`
-      asgn  : ∀ {t'} → (s ↦ vᵗ t') → Expr s t' → Stmt s r s
+      ifz   : ∀ {s' s'' : Scope (ı g)} → Expr s int → Stmt s r s → Stmt s r s → Stmt s r s -- branches are blocks
+      set   : ∀ {s' t'} → Expr s (ref s') → (g ⊢⇣ s' ↦ vᵗ t') → Expr s t' → Stmt s r s
+      loc   : ∀ (s' : Scope (ı g))(t' : VTy (ı g))⦃ shape : nodeOf⇣ g s' ≡ ([ vᵗ t' ] , [ s ]) ⦄ → Stmt s r s' -- local variable scope `s'` is connected to lexical context scope `s`
+      asgn  : ∀ {t'} → (g ⊢⇣ s ↦ vᵗ t') → Expr s t' → Stmt s r s
       ret   : Expr s r → Stmt s r s
       block : ∀ {s'} → Stmts s r s' → Stmt s r s
 
     -- A block of statements is given by a sequence of statements
     -- whose scopes are lexically nested (if at all):
 
-    Stmts : Scope → VTy → Scope → Set
+    Stmts : Scope (ı g) → VTy (ı g) → Scope (ı g) → Set
     Stmts s r s' = Star (λ s s' → Stmt s r s') s s'
 
   -- Method bodies have a mandatory return expression, except for
   -- `void` typed method bodies:
 
-  data Body (s : Scope) : VTy → Set where
+  data Body (s : Scope (ı g)) : VTy (ı g) → Set where
     body      : ∀ {s' t} → Stmts s t s' → Expr s' t → Body s t
     body-void : ∀ {s'} → Stmts s void s' → Body s void
 
@@ -156,9 +153,9 @@ module SyntaxG (g : Graph) where
   -- where they are defined.  The `s` in `Meth s ts t` is the scope of
   -- the surrounding class.
 
-  data Meth (s : Scope) : List VTy → VTy → Set where
-    meth  :  ∀ {ts rt}(s' : Scope)
-             ⦃ shape : g s' ≡ (map vᵗ ts , [ s ]) ⦄ →
+  data Meth (s : Scope (ı g)) : List (VTy (ı g)) → VTy (ı g) → Set where
+    meth  :  ∀ {ts rt}(s' : Scope (ı g))
+             ⦃ shape : nodeOf⇣ g s' ≡ (map vᵗ ts , [ s ]) ⦄ →
              Body s' rt →
              Meth s ts rt
 
@@ -183,19 +180,19 @@ module SyntaxG (g : Graph) where
   --   and a well-typed method `Meth s ts t` which overrides the
   --   method corresponding to that declaration.
 
-  data Class (sʳ s : Scope) : Set where
+  data Class (sʳ s : Scope (ı g)) : Set where
     class1  :  ∀ {ms fs oms sᵖ} →
-               sʳ ↦ (cᵗ sʳ sᵖ) →
-               ⦃ shape  :  g s  ≡  (ms ++ fs ,  sʳ ∷ sᵖ ∷ []) ⦄ →
+               g ⊢⇣ sʳ ↦ (cᵗ sʳ sᵖ) →
+               ⦃ shape  :  nodeOf⇣ g s  ≡  (ms ++ fs ,  sʳ ∷ sᵖ ∷ []) ⦄ →
                All (#m (Meth s)) ms →
                All (#v (λ _ → ⊤)) fs →
-               All (#m (λ ts rt → (s ↦ (mᵗ ts rt)) × Meth s ts rt )) oms → -- overrides
+               All (#m (λ ts rt → (g ⊢⇣ s ↦ (mᵗ ts rt)) × Meth s ts rt )) oms → -- overrides
                Class sʳ s
     class0 : ∀ {ms fs oms} →
-             ⦃ shape : g s ≡ (ms ++ fs , [ sʳ ]) ⦄ →
+             ⦃ shape : nodeOf⇣ g s ≡ (ms ++ fs , [ sʳ ]) ⦄ →
              All (#m (Meth s)) ms →   -- only methods
              All (#v (λ _ → ⊤)) fs →  -- only values
-             All (#m (λ ts rt → (s ↦ (mᵗ ts rt)) × Meth s ts rt )) oms → -- overrides
+             All (#m (λ ts rt → (g ⊢⇣ s ↦ (mᵗ ts rt)) × Meth s ts rt )) oms → -- overrides
              Class sʳ s
 
   -- A program consists of a sequence of well-typed class definitions
@@ -203,9 +200,9 @@ module SyntaxG (g : Graph) where
   -- scope.  The root scope has only class-typed declarations, and has
   -- no parent edges:
 
-  data Program (sʳ : Scope)(a : VTy) : Set where
+  data Program (sʳ : Scope (ı g))(a : VTy (ı g)) : Set where
     program :
-      ∀ cs ⦃ shape : g sʳ ≡ (cs , []) ⦄ →
+      ∀ cs ⦃ shape : nodeOf⇣ g sʳ ≡ (cs , []) ⦄ →
         -- implementation of all the classes
         All (#c sʳ (λ s → Class sʳ s × ∃ λ s' → Inherits s s')) cs →
         -- main function

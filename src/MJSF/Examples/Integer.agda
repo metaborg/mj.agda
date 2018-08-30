@@ -2,24 +2,25 @@ module MJSF.Examples.Integer where
 
 open import Prelude
 open import Data.Maybe hiding (All)
-open import Data.Vec hiding (_∈_; init; _++_)
+open import Data.Vec hiding (init; _++_)
 import Data.Vec.All as Vec∀
+open import Data.Unit
 open import Data.Star
 open import Data.Bool
 open import Data.List
 open import Data.Integer
 open import Data.List.Any
-open import Data.List.Any.Membership.Propositional
+open import Data.List.Membership.Propositional
 open import Data.List.All hiding (lookup)
 open import Data.Product hiding (Σ)
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary.Decidable
 
-k : ℕ
+
 k = 5
 
-open import MJSF.Syntax k
-open import ScopesFrames.ScopesFrames k Ty
+open import MJSF.Syntax
+open import ScopesFrames.ScopeGraph Ty ℕ Bool
 
 {-
     class Integer {
@@ -30,43 +31,40 @@ open import ScopesFrames.ScopesFrames k Ty
     }
 -}
 
-classes : List Ty
-classes = (cᵗ (# 0) (# 1) ∷ [])
+classes : Decls k
+classes = ((0 , cᵗ (# 0) (# 1)) ∷ [])
 
-intmethods intfields : List Ty
+intmethods intfields : Decls k
 intfields =
-  {- x -} vᵗ int
+  {- x -} (1 , vᵗ int)
   ∷ []
 intmethods =
-  {- set -} mᵗ ((ref (# 1)) ∷ []) void
+  {- set -} (2 , mᵗ ((ref (# 1)) ∷ []) void)
   ∷ []
 
-Integer : Scope
+Integer : Scope k
 Integer = # 1
 
 g : Graph
--- root scope
-g zero = classes , []
--- class scope of Integer class
-g (suc zero)= (intmethods ++ intfields) , zero ∷ []
--- scope of Integer.set method
-g (suc (suc zero)) = (vᵗ (ref (# 1)) ∷ []) , # 1 ∷ []
--- scopes of main
-g (suc (suc (suc zero))) = vᵗ (ref Integer) ∷ [] , (# 0 ∷ [])
-g (suc (suc (suc (suc zero)))) = vᵗ (ref Integer) ∷ [] , # 3 ∷ []
-g (suc (suc (suc (suc (suc ())))))
+g =
+  mkGraph 5
+    ( (classes , []) -- root scope
+    ∷ ((intmethods ++ intfields) , (true , # 0) ∷ []) -- class scope of Integer class
+    ∷ (((3 , vᵗ (ref (# 1))) ∷ []) , ((true , # 1) ∷ [])) -- scope of Integer.set method
+    ∷ ((4 , vᵗ (ref Integer)) ∷ [] , ((true , # 0) ∷ [])) -- scope of main (1)
+    ∷ ((5 , vᵗ (ref Integer)) ∷ [] , (true , # 3) ∷ []) -- scope of main (2)
+    ∷ [])
 
-open SyntaxG g
-open UsesGraph g
+open Syntax {g}
 
 IntegerImpl : Class (# 0) (# 1)
-IntegerImpl = class0 {ms = intmethods}{intfields}{[]}
+IntegerImpl = class0 {ms = Data.List.map proj₂ intmethods}{Data.List.map proj₂ intfields}{[]}
   (-- methods
     (#m' (meth (# 2) (body-void
     (set
       (this [] (here refl))
-      (path [] (there (here refl)))
-      (get (var (path [] (here refl))) (path [] (there (here refl))))
+      (path⇣ [] (there (here refl)))
+      (get (var (path⇣ [] (here refl))) (path⇣ [] (there (here refl))))
     ◅ ε)))) ∷ [])
   (-- fields
     (#v' tt) ∷ [])
@@ -89,22 +87,22 @@ main = body
     (
         loc (# 3) (ref Integer)
       ◅ loc (# 4) (ref Integer)
-      ◅ asgn (path (here refl ∷ []) (here refl)) (new (path (here refl ∷ here refl ∷ []) (here refl)))
-      ◅ asgn (path [] (here refl)) (new (path (here refl ∷ here refl ∷ []) (here refl)))
-      ◅ set (var (path (here refl ∷ []) (here refl))) (path [] (there (here refl))) (num (+ 9))
-      ◅ set (var (path [] (here refl))) (path [] (there (here refl))) (num (+ 18))
-      ◅ run (call (var (path [] (here refl))) (path [] (here refl)) (var (path (here refl ∷ []) (here refl)) ∷ []))
+      ◅ asgn (path⇣ (here refl ∷ []) (here refl)) (new (path⇣ (here refl ∷ here refl ∷ []) (here refl)))
+      ◅ asgn (path⇣ [] (here refl)) (new (path⇣ (here refl ∷ here refl ∷ []) (here refl)))
+      ◅ set (var (path⇣ (here refl ∷ []) (here refl))) (path⇣ [] (there (here refl))) (num (+ 9))
+      ◅ set (var (path⇣ [] (here refl))) (path⇣ [] (there (here refl))) (num (+ 18))
+      ◅ run (call (var (path⇣ [] (here refl))) (path⇣ [] (here refl)) (var (path⇣ (here refl ∷ []) (here refl)) ∷ []))
       ◅ ε
     )
-    (get (var (path [] (here refl))) (path [] (there (here refl))))
+    (get (var (path⇣ [] (here refl))) (path⇣ [] (there (here refl))))
 
 p : Program (# 0) int
-p = program classes (#c' (IntegerImpl , # 1 , obj (# 1) ⦃ refl ⦄)  ∷ []) main
+p = program (Data.List.map proj₂ classes) (#c' (IntegerImpl , # 1 , obj (# 1) ⦃ refl ⦄)  ∷ []) main
 
 open import MJSF.Semantics
-open Semantics _ g
+open Semantics g
 open import MJSF.Values
-open ValuesG _ g
+open Values {g}
 
 test : p ⇓⟨ 100 ⟩ (λ v → v ≡ num (+ 9) )
 test = refl

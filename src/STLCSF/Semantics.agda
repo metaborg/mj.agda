@@ -23,7 +23,7 @@ open import Common.Weakening
 -- parameterized by a `k` representing the number of scopes that a
 -- particular object language program has.
 
-module STLCSF.Semantics (k : ℕ) where
+module STLCSF.Semantics where
 
 
 -----------
@@ -41,7 +41,8 @@ data Ty : Set where
 --
 -- * `Ty` is the type of declarations in the scope graph
 
-open import ScopesFrames.ScopesFrames k Ty
+open import ScopesFrames.ScopeGraph (λ _ → Ty) ℕ ⊤
+open Graph
 
 -- Our interpreter is parameterized by a scope graph, via the module
 -- below.
@@ -51,7 +52,8 @@ module Syntax (g : Graph) where
   -- We load all the scope graph definitions in the scope graph
   -- library, by passing the object scope graph `g` as module
   -- parameter:
-  open UsesGraph g
+  open import ScopesFrames.FrameHeap (λ _ → Ty) ℕ ⊤
+  open UsesGraph {g}
 
 
   ------------
@@ -60,10 +62,10 @@ module Syntax (g : Graph) where
 
   -- We can now define our well-typed syntax as described in the paper
   -- Section 4.2:
-  data Expr (s : Scope) : Ty → Set where
+  data Expr (s : Scope (ı g)) : Ty → Set where
     unit  : Expr s unit
-    var   : ∀ {t} → (s ↦ t) → Expr s t
-    ƛ     : ∀ {s' a b} → ⦃ shape : g s' ≡ ( [ a ] , [ s ] ) ⦄ → Expr s' b → Expr s (a ⇒ b)
+    var   : ∀ {t} → (g ⊢⇣ s ↦ t) → Expr s t
+    ƛ     : ∀ {s' a b} → ⦃ shape : nodeOf⇣ g s' ≡ ( [ a ] , [ s ] ) ⦄ → Expr s' b → Expr s (a ⇒ b)
     _·_   : ∀ {a b} → Expr s (a ⇒ b) → Expr s a → Expr s b
     num   : ℤ → Expr s int
     iop   : (ℤ → ℤ → ℤ) → (l r : Expr s int) → Expr s int
@@ -77,7 +79,7 @@ module Syntax (g : Graph) where
   -- Section 4.4:
   data Val : Ty → (Σ : HeapTy) → Set where
     unit   : ∀ {Σ} → Val unit Σ
-    ⟨_,_⟩  : ∀ {Σ s s' a b}⦃ shape : g s' ≡ ( [ a ] , [ s ] ) ⦄ →
+    ⟨_,_⟩  : ∀ {Σ s s' a b}⦃ shape : nodeOf⇣ g s' ≡ ( [ a ] , [ s ] ) ⦄ →
              Expr s' b → Frame s Σ → Val (a ⇒ b) Σ
     num    : ∀ {Σ} → ℤ → Val int Σ
 
@@ -103,10 +105,10 @@ module Syntax (g : Graph) where
 
   -- These definitions correspond to Section 4.4.
 
-  M : (s : Scope) → (HeapTy → Set) → HeapTy → Set
+  M : (s : Scope (ı g)) → (HeapTy → Set) → HeapTy → Set
   M s p Σ = Frame s Σ → Heap Σ → Maybe (∃ λ Σ' → (Heap Σ' × p Σ' × Σ ⊑ Σ'))
 
-  _>>=_       :  ∀ {s Σ}{p q : List Scope → Set} →
+  _>>=_       :  ∀ {s Σ}{p q : List (Scope (ı g)) → Set} →
                  M s p Σ → (∀ {Σ'} → p Σ' → M s q Σ') → M s q Σ
   (a >>= b) f h
     with (a f h)
@@ -116,35 +118,35 @@ module Syntax (g : Graph) where
   ...     | nothing = nothing
   ...     | just (Σ' , h'' , v' , ext') = just (Σ' , h'' , v' , ext ⊚ ext')
 
-  return      :  ∀ {s Σ}{p : List Scope → Set} → p Σ → M s p Σ
+  return      :  ∀ {s Σ}{p : List (Scope (ı g)) → Set} → p Σ → M s p Σ
   return v f h = just (_ , h , v , ⊑-refl)
 
   getFrame    :  ∀ {s Σ} → M s (Frame s) Σ
   getFrame f = return f f
 
-  usingFrame  :  ∀ {s s' Σ}{p : List Scope → Set} → Frame s Σ → M s p Σ → M s' p Σ
+  usingFrame  :  ∀ {s s' Σ}{p : List (Scope (ı g)) → Set} → Frame s Σ → M s p Σ → M s' p Σ
   usingFrame f a _ = a f
 
-  timeout     :  ∀ {s Σ}{p : List Scope → Set} → M s p Σ
+  timeout     :  ∀ {s Σ}{p : List (Scope (ı g)) → Set} → M s p Σ
   timeout _ _ = nothing
 
-  init        :  ∀ {Σ s' ds es}(s : Scope)⦃ shape : g s ≡ (ds , es) ⦄ →
+  init        :  ∀ {Σ s' ds es}(s : Scope (ı g))⦃ shape : nodeOf⇣ g s ≡ (ds , es) ⦄ →
                  Slots ds Σ → Links es Σ → M s' (Frame s) Σ
   init {Σ} s slots links _ h
     with (initFrame s slots links h)
   ...  | (f' , h') = just (_ , h' , f' , ∷ʳ-⊒ s Σ)
 
-  getv        :  ∀ {s t Σ} → (s ↦ t) → M s (Val t) Σ
+  getv        :  ∀ {s t Σ} → (g ⊢⇣ s ↦ t) → M s (Val t) Σ
   getv p f h = return (getVal p f h) f h
 
-  _^_         :  ∀ {Σ Γ}{p q : List Scope → Set} → ⦃ w : Weakenable q ⦄ →
+  _^_         :  ∀ {Σ Γ}{p q : List (Scope (ı g)) → Set} → ⦃ w : Weakenable q ⦄ →
                  M Γ p Σ → q Σ → M Γ (p ⊗ q) Σ
   (a ^ x) f h
     with (a f h)
   ...  | nothing = nothing
   ...  | just (Σ , h' , v , ext) = just (Σ , h' , (v , wk ext x) , ext)
 
-  sₑ : ∀ {s t} → Expr s t → Scope
+  sₑ : ∀ {s t} → Expr s t → Scope (ı g)
   sₑ {s} _ = s
 
   eval : ℕ → ∀ {s t Σ} → Expr s t → M s (Val t) Σ

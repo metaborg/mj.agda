@@ -7,7 +7,7 @@ open import Agda.Primitive
 open import Data.Unit
 open import Data.Nat hiding (_⊔_ ; _^_)
 open import Data.Integer hiding (_⊔_)
-open import Data.List.Most
+open import Data.List.Most hiding (lookup)
 open import Data.Product
 open import Data.Maybe hiding (All)
 open import Data.List.All as List∀

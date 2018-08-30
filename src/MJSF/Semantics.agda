@@ -1,8 +1,9 @@
+open import Data.Empty
+open import Data.Unit
+open import Data.Bool
+open import Data.Integer
 open import Data.Nat hiding (_^_ ; _+_)
 open import Data.List.Most
-open import Data.Integer
-open import Data.Unit
-open import Data.Empty
 open import Data.Product hiding (map)
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open ≡-Reasoning
@@ -10,12 +11,12 @@ open import Function
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.Star hiding (return ; _>>=_ ; map)
 
-module MJSF.Semantics (k : ℕ) where
+module MJSF.Semantics where
 
-open import MJSF.Syntax k
-open import MJSF.Values k
-open import MJSF.Monad k
-open import ScopesFrames.ScopesFrames k Ty
+open import MJSF.Syntax
+open import MJSF.Values
+open import MJSF.Monad
+open import ScopesFrames.ScopeGraph Ty ℕ Bool
 open import Common.Weakening
 
 -- This file contains the definitional interpreter for MJ using scopes
@@ -23,9 +24,10 @@ open import Common.Weakening
 
 module Semantics (g : Graph) where
 
-  open SyntaxG g
-  open ValuesG g
-  open MonadG g
+  open Graph
+  open Syntax {g}
+  open Values {g}
+  open Monad  {g}
   open UsesVal Valᵗ valᵗ-weaken renaming (getFrame to getFrame') public
 
 
@@ -40,14 +42,14 @@ module Semantics (g : Graph) where
   -- to have a default value.  The `default` function defines a
   -- default value for each value type in MJ.
 
-  default : {Σ : List Scope} → (t : VTy) → Val t Σ
+  default : {Σ : List (Scope (ı g))} → (t : VTy (ı g)) → Val t Σ
   default int     = num (+ 0)
   default (ref s) = null
   default void    = void
 
   -- An alias for mapping `default` over a list of well-typed values:
 
-  defaults : ∀ {fs : List Ty}{Σ} → All (#v (λ _ → ⊤)) fs → Slots fs Σ
+  defaults : ∀ {fs : List (Ty (ı g))}{Σ} → All (#v (λ _ → ⊤)) fs → Slots fs Σ
   defaults fs = map-all (λ{ (#v' {t} _) → vᵗ (default t) }) fs
 
   -- `override` overrides methods in parent objects by overwriting
@@ -60,7 +62,7 @@ module Semantics (g : Graph) where
   -- separately from object representations.
 
   override : ∀ {s Σ oms} →
-             All (#m (λ ts t → (s ↦ (mᵗ ts t)) × Meth s ts t)) oms →
+             All (#m (λ ts t → (g ⊢⇣ s ↦ (mᵗ ts t)) × Meth s ts t)) oms →
              M s (λ _ → ⊤) Σ
   override [] =
     return tt
@@ -163,13 +165,13 @@ module Semantics (g : Graph) where
       eval k e >>= λ{
         null → raise ;
         (ref p' f) →
-          usingFrame f (getv (prepend p' p)) >>= λ{ (vᵗ v) →
+          usingFrame f (getv (prepend⇣ p' p)) >>= λ{ (vᵗ v) →
           return v }}
     eval (suc k) (call e p args) =
       eval k e >>= λ {
         null → raise ;
         (ref p' f) →
-          usingFrame f (getv (prepend p' p)) >>= λ{ (mᵗ f' (meth s b)) →  -- f' is the "self"
+          usingFrame f (getv (prepend⇣ p' p)) >>= λ{ (mᵗ f' (meth s b)) →  -- f' is the "self"
           (eval-args k args ^ f') >>= λ{ (slots , f') →
           init s slots (f' ∷ []) >>= λ f'' →  -- f' is the static link of the method call frame
           usingFrame f'' (eval-body k b) }}}
@@ -208,7 +210,7 @@ module Semantics (g : Graph) where
         null → raise ;
         (ref p' f) →
           (eval k e' ^ f) >>= λ{ (v , f) →
-          usingFrame f (setv (prepend p' p) (vᵗ v)) >>= λ _ → continue }}
+          usingFrame f (setv (prepend⇣ p' p) (vᵗ v)) >>= λ _ → continue }}
     eval-stmt (suc k) (loc s t) =
       getFrame >>= λ f →
       fmap inj₂ (init s (vᵗ (default t) ∷ []) (f ∷ [])) -- initializes a new local variable frame
