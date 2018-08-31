@@ -2,7 +2,6 @@ open import Data.Nat
 open import Data.Fin
 open import Data.List.Most
 open import Data.List.All renaming (lookup to lookup∀)
-open import Data.Vec as Vec hiding (_∈_ ; _∷ʳ_ ; _>>=_ ; init)
 open import Data.Product
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open ≡-Reasoning
@@ -65,7 +64,7 @@ module UsesGraph {g : Graph} where
     -- declarations and edges of the scope:
 
     HeapFrame : Scope (ı g) → HeapTy → Set
-    HeapFrame s Σ = Slots (declsOf⇣ g s) Σ × Links (edgesOf⇣ g s) Σ
+    HeapFrame s Σ = Slots (declsOf♭ g s) Σ × Links (edgesOf♭ g s) Σ
 
     -- A heap typed by `Σ` is given by a list of heap frames such that
     -- each frame location is in the heap is typed by the
@@ -120,7 +119,7 @@ module UsesGraph {g : Graph} where
     -- Agda Standard Library) and a frame pointer into the extended
     -- heap, i.e., the newly allocated and initialized frame.
 
-    initFrame   :  (s : Scope (ı g)) → ∀ {Σ ds es}⦃ shape : nodeOf⇣ g s ≡ (ds , es) ⦄ →
+    initFrame   :  (s : Scope (ı g)) → ∀ {Σ ds es}⦃ shape : nodeOf♭ g s ≡ (ds , es) ⦄ →
                    Slots ds Σ → Links es Σ → Heap Σ → Frame s (Σ ∷ʳ s) × Heap (Σ ∷ʳ s)
     initFrame s {Σ} ⦃ refl ⦄ slots links h =
       let ext = ∷ʳ-⊒ s Σ -- heap extension fact
@@ -143,7 +142,7 @@ module UsesGraph {g : Graph} where
     -- hence the slots can have self-references to the frame currently
     -- being initialized.
 
-    initFrameι : (s : Scope (ı g)) → ∀ {Σ ds es}⦃ shape : nodeOf⇣ g s ≡ (ds , es) ⦄ →
+    initFrameι : (s : Scope (ı g)) → ∀ {Σ ds es}⦃ shape : nodeOf♭ g s ≡ (ds , es) ⦄ →
                  (slotsf : Frame s (Σ ∷ʳ s) → Slots ds (Σ ∷ʳ s)) → Links es Σ → Heap Σ →
                  Frame s (Σ ∷ʳ s) × Heap (Σ ∷ʳ s)
     initFrameι s {Σ} ⦃ refl ⦄ slotsf links h =
@@ -157,7 +156,7 @@ module UsesGraph {g : Graph} where
     -- and a frame pointer, we can fetch the well-typed value stored
     -- in the corresponding frame slot:
 
-    getSlot : ∀ {s t Σ} → t ∈ declsOf⇣ g s → Frame s Σ → Heap Σ → Val t Σ
+    getSlot : ∀ {s t Σ} → t ∈ declsOf♭ g s → Frame s Σ → Heap Σ → Val t Σ
     getSlot d f h
       with (List∀.lookup h f)
     ...  | (slots , links) = List∀.lookup slots d
@@ -166,19 +165,19 @@ module UsesGraph {g : Graph} where
     -- and a frame pointer, we can mutate the corresponding slot in a
     -- type preserving manner:
 
-    setSlot : ∀ {s t Σ} → t ∈ declsOf⇣ g s → Val t Σ → Frame s Σ → Heap Σ → Heap Σ
+    setSlot : ∀ {s t Σ} → t ∈ declsOf♭ g s → Val t Σ → Frame s Σ → Heap Σ → Heap Σ
     setSlot d v f h
       with (List∀.lookup h f)
     ...  | (slots , links) = h All[ f ]≔' (slots All[ d ]≔' v , links)
 
     -- ... and similarly for edges:
 
-    getLink : ∀ {s s' Σ} → s' ∈ edgesOf⇣ g s → Frame s Σ → Heap Σ → Frame s' Σ
+    getLink : ∀ {s s' Σ} → s' ∈ edgesOf♭ g s → Frame s Σ → Heap Σ → Frame s' Σ
     getLink e f h
       with (List∀.lookup h f)
     ...  | (slots , links) = List∀.lookup links e
 
-    setLink : ∀ {s s' Σ} → s' ∈ edgesOf⇣ g s → Frame s' Σ → Frame s Σ → Heap Σ → Heap Σ
+    setLink : ∀ {s s' Σ} → s' ∈ edgesOf♭ g s → Frame s' Σ → Frame s Σ → Heap Σ → Heap Σ
     setLink e f' f h
       with (List∀.lookup h f)
     ...  | (slots , links) = h All[ f ]≔' (slots , links All[ e ]≔' f')
@@ -189,7 +188,7 @@ module UsesGraph {g : Graph} where
     -- corresponding frame links in the heap to arrive at a frame
     -- scoped by `s'`:
 
-    getFrame : ∀ {s s' Σ} → (g ⊢⇣ s ⟶ s') → Frame s Σ → Heap Σ → Frame s' Σ
+    getFrame : ∀ {s s' Σ} → (g ⊢♭ s ⟶ s') → Frame s Σ → Heap Σ → Frame s' Σ
     getFrame []      f h = f
     getFrame (e ∷ p) f h
       with (List∀.lookup h f)
@@ -198,8 +197,8 @@ module UsesGraph {g : Graph} where
     -- Given the definitions above, we can define some shorthand
     -- functions for getting and setting values:
 
-    getVal  :  ∀ {s t} → (g ⊢⇣ s ↦ t) → ∀ {Σ} → Frame s Σ → Heap Σ → Val t Σ
-    getVal (path⇣ p d) f h = getSlot d (getFrame p f h) h
+    getVal  :  ∀ {s t} → (g ⊢♭ s ↦ t) → ∀ {Σ} → Frame s Σ → Heap Σ → Val t Σ
+    getVal (path♭ p d) f h = getSlot d (getFrame p f h) h
 
-    setVal  :  ∀ {s t Σ} → (g ⊢⇣ s ↦ t) → Val t Σ → Frame s Σ → Heap Σ → Heap Σ
-    setVal (path⇣ p d) v f h = setSlot d v (getFrame p f h) h
+    setVal  :  ∀ {s t Σ} → (g ⊢♭ s ↦ t) → Val t Σ → Frame s Σ → Heap Σ → Heap Σ
+    setVal (path♭ p d) v f h = setSlot d v (getFrame p f h) h

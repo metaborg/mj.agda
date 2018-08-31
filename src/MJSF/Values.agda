@@ -101,5 +101,5 @@ module Values {g : Graph} where
   -- as described in the paper.
 
   upcastRef : ∀ {t t' Σ} → t <: t' → Val (ref t) Σ → Val (ref t') Σ
-  upcastRef i (ref i' f) = ref (concat⇣ i' i) f
+  upcastRef i (ref i' f) = ref (concat♭ i' i) f
   upcastRef i null = null

@@ -37,20 +37,20 @@ module ScopesFrames.ScopeGraph (Ty : ℕ → Set)
   declsOf : (g : Graph) → Scope (ı g) → List (Name × Ty (ı g))
   declsOf g s = proj₁ (Vec.lookup s (graph g))
 
-  declsOf⇣ : (g : Graph) → Scope (ı g) → List (Ty (ı g))
-  declsOf⇣ g s = map proj₂ (proj₁ (Vec.lookup s (graph g)))
+  declsOf♭ : (g : Graph) → Scope (ı g) → List (Ty (ı g))
+  declsOf♭ g s = map proj₂ (proj₁ (Vec.lookup s (graph g)))
 
   edgesOf : (g : Graph) → Scope (ı g) → List (Label × Scope (ı g))
   edgesOf g s  = proj₂ (Vec.lookup s (graph g))
 
-  edgesOf⇣ : (g : Graph) → Scope (ı g) → List (Scope (ı g))
-  edgesOf⇣ g s  = map proj₂ (proj₂ (Vec.lookup s (graph g)))
+  edgesOf♭ : (g : Graph) → Scope (ı g) → List (Scope (ı g))
+  edgesOf♭ g s  = map proj₂ (proj₂ (Vec.lookup s (graph g)))
 
   nodeOf : (g : Graph) → Scope (ı g) → Node (ı g)
   nodeOf g s = Vec.lookup s (graph g)
 
-  nodeOf⇣ : (g : Graph) → Scope (ı g) → List (Ty (ı g)) × List (Scope (ı g))
-  nodeOf⇣ g s = let node = Vec.lookup s (graph g) in
+  nodeOf♭ : (g : Graph) → Scope (ı g) → List (Ty (ı g)) × List (Scope (ı g))
+  nodeOf♭ g s = let node = Vec.lookup s (graph g) in
                 map proj₂ (proj₁ node) , map proj₂ (proj₂ node)
 
   -- A resolution path is a witness that we can traverse a sequence of
@@ -61,21 +61,21 @@ module ScopesFrames.ScopeGraph (Ty : ℕ → Set)
     []   :  ∀ {s} → g ⊢ s ⟶ s
     _∷_  :  ∀ {l} {s s' s''} → (l , s') ∈ edgesOf g s → g ⊢ s' ⟶ s'' → g ⊢ s ⟶ s''
 
-  data _⊢⇣_⟶_ (g : Graph) : Scope (ı g) → Scope (ı g) → Set where
-    []   :  ∀ {s} → g ⊢⇣ s ⟶ s
-    _∷_  :  ∀ {s s' s''} → s' ∈ edgesOf⇣ g s → g ⊢⇣ s' ⟶ s'' → g ⊢⇣ s ⟶ s''
+  data _⊢♭_⟶_ (g : Graph) : Scope (ı g) → Scope (ı g) → Set where
+    []   :  ∀ {s} → g ⊢♭ s ⟶ s
+    _∷_  :  ∀ {s s' s''} → s' ∈ edgesOf♭ g s → g ⊢♭ s' ⟶ s'' → g ⊢♭ s ⟶ s''
 
-  convert-path⇣ : {g : Graph} {s s' : Scope (ı g)} →
+  convert-path♭ : {g : Graph} {s s' : Scope (ı g)} →
                   g ⊢  s ⟶ s' →
-                  g ⊢⇣ s ⟶ s'
-  convert-path⇣ [] = []
-  convert-path⇣ (x ∷ p) = ∈⇣ x ∷ convert-path⇣ p
+                  g ⊢♭ s ⟶ s'
+  convert-path♭ [] = []
+  convert-path♭ (x ∷ p) = ∈♭ x ∷ convert-path♭ p
     where
-      ∈⇣ : {A B : Set} {a : A} {b : B} {xs : List (A × B)} →
+      ∈♭ : {A B : Set} {a : A} {b : B} {xs : List (A × B)} →
            (a , b) ∈ xs →
            b ∈ map proj₂ xs
-      ∈⇣ (here refl) = here refl
-      ∈⇣ (there p) = there (∈⇣ p)
+      ∈♭ (here refl) = here refl
+      ∈♭ (there p) = there (∈♭ p)
       
 
   -- path concatenation
@@ -85,24 +85,24 @@ module ScopesFrames.ScopeGraph (Ty : ℕ → Set)
   concat [] p₂ = p₂
   concat (x ∷ p₁) p₂ = x ∷ (concat p₁ p₂)
 
-  concat⇣ : {g : Graph}{s s' s'' : Scope (ı g)}
-              (p1 : g ⊢⇣ s ⟶ s') (p2 : g ⊢⇣ s' ⟶ s'') →
-              g ⊢⇣ s ⟶ s''
-  concat⇣ [] p₂ = p₂
-  concat⇣ (x ∷ p₁) p₂ = x ∷ (concat⇣ p₁ p₂)
+  concat♭ : {g : Graph}{s s' s'' : Scope (ı g)}
+              (p1 : g ⊢♭ s ⟶ s') (p2 : g ⊢♭ s' ⟶ s'') →
+              g ⊢♭ s ⟶ s''
+  concat♭ [] p₂ = p₂
+  concat♭ (x ∷ p₁) p₂ = x ∷ (concat♭ p₁ p₂)
 
   data _⊢_↦_ (g : Graph) (s : Scope (ı g)) (t : Ty (ı g)) : Set where
     path : ∀ {x : Name} {s'} → g ⊢ s ⟶ s' → (x , t) ∈ declsOf g s' → g ⊢ s ↦ t
 
-  data _⊢⇣_↦_ (g : Graph) (s : Scope (ı g)) (t : Ty (ı g)) : Set where
-    path⇣ : ∀ {s'} → g ⊢⇣ s ⟶ s' → t ∈ declsOf⇣ g s' → g ⊢⇣ s ↦ t
+  data _⊢♭_↦_ (g : Graph) (s : Scope (ı g)) (t : Ty (ı g)) : Set where
+    path♭ : ∀ {s'} → g ⊢♭ s ⟶ s' → t ∈ declsOf♭ g s' → g ⊢♭ s ↦ t
 
   prepend : {g : Graph} {s s' : Scope (ı g)} {t : Ty (ı g)}
             (p : g ⊢ s ⟶ s') (q : g ⊢ s' ↦ t) →
             g ⊢ s ↦ t
   prepend p (path p' d) = path (concat p p') d
 
-  prepend⇣ : {g : Graph} {s s' : Scope (ı g)} {t : Ty (ı g)}
-             (p : g ⊢⇣ s ⟶ s') (q : g ⊢⇣ s' ↦ t) →
-             g ⊢⇣ s ↦ t
-  prepend⇣ p (path⇣ p' d) = path⇣ (concat⇣ p p') d
+  prepend♭ : {g : Graph} {s s' : Scope (ı g)} {t : Ty (ı g)}
+             (p : g ⊢♭ s ⟶ s') (q : g ⊢♭ s' ↦ t) →
+             g ⊢♭ s ↦ t
+  prepend♭ p (path♭ p' d) = path♭ (concat♭ p p') d

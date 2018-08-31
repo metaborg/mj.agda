@@ -19,7 +19,7 @@ module ScopesFrames.FrameHeap.Monad.FrameHeap (Ty    : ℕ → Set)
 open import ScopesFrames.ScopeGraph Ty Name Label
 open Graph
 
-module UsesVal (g : Graph)
+module UsesVal {g : Graph}
                (Val : Ty (ı g) → List (Scope (ı g)) → Set)
                (Val-Wk : {t : Ty (ı g)} → Wk (Val t)) where
 
@@ -72,6 +72,7 @@ module UsesVal (g : Graph)
   -- To program in dependent-passing style, we use the variant of
   -- monadic strength also used for STLCSF.
 
+  infixl 3 _^_
   _^_  :  ∀ {Σ Γ}{P Q : List (Scope (ı g)) → Set} ⦃ w : Wk Q ⦄ →
           M Γ P Σ → Q Σ → M Γ (P ⊗ Q) Σ
   (a ^ x) f h
@@ -96,34 +97,34 @@ module UsesVal (g : Graph)
   raise : ∀ {s Σ}{P : List (Scope (ı g)) → Set} → String → M s P Σ
   raise reason _ _ = err reason
 
-  init : ∀ {Σ s' ds es} → (s : (Scope (ı g))) → ⦃ shape : nodeOf⇣ g s ≡ (ds , es) ⦄ →
+  init : ∀ {Σ s' ds es} → (s : (Scope (ı g))) → ⦃ shape : nodeOf♭ g s ≡ (ds , es) ⦄ →
          Slots ds Σ → Links es Σ → M s' (Frame s) Σ
   init {Σ} s slots links _ h
     with (initFrame s slots links h)
   ...  | (f' , h') = ok (_ , h' , f' , ∷ʳ-⊒ s Σ)
 
-  initι : ∀ {Σ s' ds es} → (s : Scope (ı g)) → ⦃ shape : nodeOf⇣ g s ≡ (ds , es) ⦄ →
+  initι : ∀ {Σ s' ds es} → (s : Scope (ı g)) → ⦃ shape : nodeOf♭ g s ≡ (ds , es) ⦄ →
                (Frame s (Σ ∷ʳ s) → Slots ds (Σ ∷ʳ s)) → Links es Σ → M s' (Frame s) Σ
   initι {Σ} s slots links _ h
     with (initFrameι s slots links h)
   ...  | (f' , h') = ok (_ , h' , f' , ∷ʳ-⊒ s Σ)
 
-  getv : ∀ {s t Σ} → (g ⊢⇣ s ↦ t) → M s (Val t) Σ
+  getv : ∀ {s t Σ} → (g ⊢♭ s ↦ t) → M s (Val t) Σ
   getv p f h = return (getVal p f h) f h
 
-  getf : ∀ {s s' Σ} → (g ⊢⇣ s ⟶ s')  → M s (Frame s') Σ
+  getf : ∀ {s s' Σ} → (g ⊢♭ s ⟶ s')  → M s (Frame s') Σ
   getf p f h = return (getFrame' p f h) f h
 
-  getd : ∀ {s t Σ} → t ∈ declsOf⇣ g s → M s (Val t) Σ
+  getd : ∀ {s t Σ} → t ∈ declsOf♭ g s → M s (Val t) Σ
   getd d f h = return (getSlot d f h) f h
 
-  getl : ∀ {s s' Σ} → s' ∈ edgesOf⇣ g s → M s (Frame s') Σ
+  getl : ∀ {s s' Σ} → s' ∈ edgesOf♭ g s → M s (Frame s') Σ
   getl e f h = return (getLink e f h) f h
 
-  setd  :  ∀ {s t Σ} → t ∈ declsOf⇣ g s → Val t Σ → M s (λ _ → ⊤) Σ
+  setd  :  ∀ {s t Σ} → t ∈ declsOf♭ g s → Val t Σ → M s (λ _ → ⊤) Σ
   setd d v f h with (setSlot d v f h)
   ...             | h' = return tt f h'
 
-  setv  :  ∀ {s t Σ} → (g ⊢⇣ s ↦ t) → Val t Σ → M s (λ _ → ⊤) Σ
+  setv  :  ∀ {s t Σ} → (g ⊢♭ s ↦ t) → Val t Σ → M s (λ _ → ⊤) Σ
   setv p v f h with (setVal p v f h)
   ...             | h' = return tt f h'

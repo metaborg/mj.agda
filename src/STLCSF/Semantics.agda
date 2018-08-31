@@ -64,8 +64,8 @@ module Syntax (g : Graph) where
   -- Section 4.2:
   data Expr (s : Scope (ı g)) : Ty → Set where
     unit  : Expr s unit
-    var   : ∀ {t} → (g ⊢⇣ s ↦ t) → Expr s t
-    ƛ     : ∀ {s' a b} → ⦃ shape : nodeOf⇣ g s' ≡ ( [ a ] , [ s ] ) ⦄ → Expr s' b → Expr s (a ⇒ b)
+    var   : ∀ {t} → (g ⊢♭ s ↦ t) → Expr s t
+    ƛ     : ∀ {s' a b} → ⦃ shape : nodeOf♭ g s' ≡ ( [ a ] , [ s ] ) ⦄ → Expr s' b → Expr s (a ⇒ b)
     _·_   : ∀ {a b} → Expr s (a ⇒ b) → Expr s a → Expr s b
     num   : ℤ → Expr s int
     iop   : (ℤ → ℤ → ℤ) → (l r : Expr s int) → Expr s int
@@ -79,7 +79,7 @@ module Syntax (g : Graph) where
   -- Section 4.4:
   data Val : Ty → (Σ : HeapTy) → Set where
     unit   : ∀ {Σ} → Val unit Σ
-    ⟨_,_⟩  : ∀ {Σ s s' a b}⦃ shape : nodeOf⇣ g s' ≡ ( [ a ] , [ s ] ) ⦄ →
+    ⟨_,_⟩  : ∀ {Σ s s' a b}⦃ shape : nodeOf♭ g s' ≡ ( [ a ] , [ s ] ) ⦄ →
              Expr s' b → Frame s Σ → Val (a ⇒ b) Σ
     num    : ∀ {Σ} → ℤ → Val int Σ
 
@@ -130,13 +130,13 @@ module Syntax (g : Graph) where
   timeout     :  ∀ {s Σ}{P : List (Scope (ı g)) → Set} → M s P Σ
   timeout _ _ = nothing
 
-  init        :  ∀ {Σ s' ds es}(s : Scope (ı g))⦃ shape : nodeOf⇣ g s ≡ (ds , es) ⦄ →
+  init        :  ∀ {Σ s' ds es}(s : Scope (ı g))⦃ shape : nodeOf♭ g s ≡ (ds , es) ⦄ →
                  Slots ds Σ → Links es Σ → M s' (Frame s) Σ
   init {Σ} s slots links _ h
     with (initFrame s slots links h)
   ...  | (f' , h') = just (_ , h' , f' , ∷ʳ-⊒ s Σ)
 
-  getv        :  ∀ {s t Σ} → (g ⊢⇣ s ↦ t) → M s (Val t) Σ
+  getv        :  ∀ {s t Σ} → (g ⊢♭ s ↦ t) → M s (Val t) Σ
   getv p f h = return (getVal p f h) f h
 
   _^_         :  ∀ {Σ Γ}{P Q : List (Scope (ı g)) → Set} → ⦃ w : Wk Q ⦄ →

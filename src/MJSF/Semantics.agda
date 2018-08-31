@@ -61,7 +61,7 @@ module Semantics (g : Graph) where
   -- separately from object representations.
 
   override : ∀ {s Σ oms} →
-             All (#m (λ ts t → (g ⊢⇣ s ↦ (mᵗ ts t)) × Meth s ts t)) oms →
+             All (#m (λ ts t → (g ⊢♭ s ↦ (mᵗ ts t)) × Meth s ts t)) oms →
              M s (λ _ → ⊤) Σ
   override [] =
     return tt
@@ -164,13 +164,13 @@ module Semantics (g : Graph) where
       eval k e >>= λ{
         null → raise ;
         (ref p' f) →
-          usingFrame f (getv (prepend⇣ p' p)) >>= λ{ (vᵗ v) →
+          usingFrame f (getv (prepend♭ p' p)) >>= λ{ (vᵗ v) →
           return v }}
     eval (suc k) (call e p args) =
       eval k e >>= λ {
         null → raise ;
         (ref p' f) →
-          usingFrame f (getv (prepend⇣ p' p)) >>= λ{ (mᵗ f' (meth s b)) →  -- f' is the "self"
+          usingFrame f (getv (prepend♭ p' p)) >>= λ{ (mᵗ f' (meth s b)) →  -- f' is the "self"
           (eval-args k args ^ f') >>= λ{ (slots , f') →
           init s slots (f' ∷ []) >>= λ f'' →  -- f' is the static link of the method call frame
           usingFrame f'' (eval-body k b) }}}
@@ -209,7 +209,7 @@ module Semantics (g : Graph) where
         null → raise ;
         (ref p' f) →
           (eval k e' ^ f) >>= λ{ (v , f) →
-          usingFrame f (setv (prepend⇣ p' p) (vᵗ v)) >>= λ _ → continue }}
+          usingFrame f (setv (prepend♭ p' p) (vᵗ v)) >>= λ _ → continue }}
     eval-stmt (suc k) (loc s t) =
       getFrame >>= λ f →
       fmap inj₂ (init s (vᵗ (default t) ∷ []) (f ∷ [])) -- initializes a new local variable frame

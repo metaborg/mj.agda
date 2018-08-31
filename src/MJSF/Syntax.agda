@@ -82,7 +82,7 @@ module Syntax {g : Graph} where
   -- inheritance edges between class scopes in the scope graph:
 
   _<:_ : Scope (ı g) → Scope (ı g) → Set
-  _<:_ = g ⊢⇣_⟶_
+  _<:_ = g ⊢♭_⟶_
 
   -- Scope graphs may be cyclic, and there is (in theory) nothing that
   -- prevents classes from mutually extending one another, thereby
@@ -93,8 +93,8 @@ module Syntax {g : Graph} where
   -- initialization takes finite time (i.e., no need for fuel).
 
   data Inherits : Scope (ı g) → Scope (ı g) → Set where
-    obj   : ∀ s {ds sʳ} ⦃ shape : nodeOf⇣ g s ≡ (ds , [ sʳ ]) ⦄ → Inherits s s
-    super : ∀ {s ds sʳ sᵖ s'} ⦃ shape : nodeOf⇣ g s ≡ (ds , sʳ ∷ sᵖ ∷ []) ⦄ → Inherits sᵖ s' → Inherits s s'
+    obj   : ∀ s {ds sʳ} ⦃ shape : nodeOf♭ g s ≡ (ds , [ sʳ ]) ⦄ → Inherits s s
+    super : ∀ {s ds sʳ sᵖ s'} ⦃ shape : nodeOf♭ g s ≡ (ds , sʳ ∷ sᵖ ∷ []) ⦄ → Inherits sᵖ s' → Inherits s s'
 
 
   ------------
@@ -106,17 +106,17 @@ module Syntax {g : Graph} where
 
   data Expr (s : Scope (ı g)) : VTy (ı g) → Set where
     call     :  ∀ {s' ts t} → Expr s (ref s') → -- receiver
-                (g ⊢⇣ s' ↦ (mᵗ ts t)) →              -- path to method declaration
+                (g ⊢♭ s' ↦ (mᵗ ts t)) →              -- path to method declaration
                 All (Expr s) ts →               -- argument list
                 Expr s t
-    get      :  ∀ {s' t} → Expr s (ref s') → (g ⊢⇣ s' ↦ vᵗ t) → Expr s t
-    var      :  ∀ {t} → (g ⊢⇣ s ↦ vᵗ t) → Expr s t
-    new      :  ∀ {sʳ s'} → g ⊢⇣ s ↦ cᵗ sʳ s' → Expr s (ref s') -- path to class declaration
+    get      :  ∀ {s' t} → Expr s (ref s') → (g ⊢♭ s' ↦ vᵗ t) → Expr s t
+    var      :  ∀ {t} → (g ⊢♭ s ↦ vᵗ t) → Expr s t
+    new      :  ∀ {sʳ s'} → g ⊢♭ s ↦ cᵗ sʳ s' → Expr s (ref s') -- path to class declaration
     null     :  ∀ {s'} → Expr s (ref s')
     num      :  ℤ → Expr s int
     iop      :  (ℤ → ℤ → ℤ) → (l r : Expr s int) → Expr s int
     upcast   :  ∀ {t' t} → t' <: t → Expr s (ref t') → Expr s (ref t)
-    this     :  ∀ {s' self} → g ⊢⇣ s ⟶ s' → self ∈ edgesOf⇣ g s' → -- the `self` of objects is given by the lexical parent edge of a method
+    this     :  ∀ {s' self} → g ⊢♭ s ⟶ s' → self ∈ edgesOf♭ g s' → -- the `self` of objects is given by the lexical parent edge of a method
                 Expr s (ref self)
 
   -- The statements of MJ where the `s` in `Stmt s t s'` is the
@@ -128,9 +128,9 @@ module Syntax {g : Graph} where
     data Stmt (s : Scope (ı g))(r : VTy (ı g)) : Scope (ı g) → Set where
       run   : ∀ {t'} → Expr s t' → Stmt s r s
       ifz   : ∀ {s' s'' : Scope (ı g)} → Expr s int → Stmt s r s → Stmt s r s → Stmt s r s -- branches are blocks
-      set   : ∀ {s' t'} → Expr s (ref s') → (g ⊢⇣ s' ↦ vᵗ t') → Expr s t' → Stmt s r s
-      loc   : ∀ (s' : Scope (ı g))(t' : VTy (ı g))⦃ shape : nodeOf⇣ g s' ≡ ([ vᵗ t' ] , [ s ]) ⦄ → Stmt s r s' -- local variable scope `s'` is connected to lexical context scope `s`
-      asgn  : ∀ {t'} → (g ⊢⇣ s ↦ vᵗ t') → Expr s t' → Stmt s r s
+      set   : ∀ {s' t'} → Expr s (ref s') → (g ⊢♭ s' ↦ vᵗ t') → Expr s t' → Stmt s r s
+      loc   : ∀ (s' : Scope (ı g))(t' : VTy (ı g))⦃ shape : nodeOf♭ g s' ≡ ([ vᵗ t' ] , [ s ]) ⦄ → Stmt s r s' -- local variable scope `s'` is connected to lexical context scope `s`
+      asgn  : ∀ {t'} → (g ⊢♭ s ↦ vᵗ t') → Expr s t' → Stmt s r s
       ret   : Expr s r → Stmt s r s
       block : ∀ {s'} → Stmts s r s' → Stmt s r s
 
@@ -155,7 +155,7 @@ module Syntax {g : Graph} where
 
   data Meth (s : Scope (ı g)) : List (VTy (ı g)) → VTy (ı g) → Set where
     meth  :  ∀ {ts rt}(s' : Scope (ı g))
-             ⦃ shape : nodeOf⇣ g s' ≡ (map vᵗ ts , [ s ]) ⦄ →
+             ⦃ shape : nodeOf♭ g s' ≡ (map vᵗ ts , [ s ]) ⦄ →
              Body s' rt →
              Meth s ts rt
 
@@ -182,17 +182,17 @@ module Syntax {g : Graph} where
 
   data Class (sʳ s : Scope (ı g)) : Set where
     class1  :  ∀ {ms fs oms sᵖ} →
-               g ⊢⇣ sʳ ↦ (cᵗ sʳ sᵖ) →
-               ⦃ shape  :  nodeOf⇣ g s  ≡  (ms ++ fs ,  sʳ ∷ sᵖ ∷ []) ⦄ →
+               g ⊢♭ sʳ ↦ (cᵗ sʳ sᵖ) →
+               ⦃ shape  :  nodeOf♭ g s  ≡  (ms ++ fs ,  sʳ ∷ sᵖ ∷ []) ⦄ →
                All (#m (Meth s)) ms →
                All (#v (λ _ → ⊤)) fs →
-               All (#m (λ ts rt → (g ⊢⇣ s ↦ (mᵗ ts rt)) × Meth s ts rt )) oms → -- overrides
+               All (#m (λ ts rt → (g ⊢♭ s ↦ (mᵗ ts rt)) × Meth s ts rt )) oms → -- overrides
                Class sʳ s
     class0 : ∀ {ms fs oms} →
-             ⦃ shape : nodeOf⇣ g s ≡ (ms ++ fs , [ sʳ ]) ⦄ →
+             ⦃ shape : nodeOf♭ g s ≡ (ms ++ fs , [ sʳ ]) ⦄ →
              All (#m (Meth s)) ms →   -- only methods
              All (#v (λ _ → ⊤)) fs →  -- only values
-             All (#m (λ ts rt → (g ⊢⇣ s ↦ (mᵗ ts rt)) × Meth s ts rt )) oms → -- overrides
+             All (#m (λ ts rt → (g ⊢♭ s ↦ (mᵗ ts rt)) × Meth s ts rt )) oms → -- overrides
              Class sʳ s
 
   -- A program consists of a sequence of well-typed class definitions
@@ -202,7 +202,7 @@ module Syntax {g : Graph} where
 
   data Program (sʳ : Scope (ı g))(a : VTy (ı g)) : Set where
     program :
-      ∀ cs ⦃ shape : nodeOf⇣ g sʳ ≡ (cs , []) ⦄ →
+      ∀ cs ⦃ shape : nodeOf♭ g sʳ ≡ (cs , []) ⦄ →
         -- implementation of all the classes
         All (#c sʳ (λ s → Class sʳ s × ∃ λ s' → Inherits s s')) cs →
         -- main function

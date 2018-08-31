@@ -63,8 +63,8 @@ IntegerImpl = class0 {ms = Data.List.map proj₂ intmethods}{Data.List.map proj�
     (#m' (meth (# 2) (body-void
     (set
       (this [] (here refl))
-      (path⇣ [] (there (here refl)))
-      (get (var (path⇣ [] (here refl))) (path⇣ [] (there (here refl))))
+      (path♭ [] (there (here refl)))
+      (get (var (path♭ [] (here refl))) (path♭ [] (there (here refl))))
     ◅ ε)))) ∷ [])
   (-- fields
     (#v' tt) ∷ [])
@@ -87,14 +87,14 @@ main = body
     (
         loc (# 3) (ref Integer)
       ◅ loc (# 4) (ref Integer)
-      ◅ asgn (path⇣ (here refl ∷ []) (here refl)) (new (path⇣ (here refl ∷ here refl ∷ []) (here refl)))
-      ◅ asgn (path⇣ [] (here refl)) (new (path⇣ (here refl ∷ here refl ∷ []) (here refl)))
-      ◅ set (var (path⇣ (here refl ∷ []) (here refl))) (path⇣ [] (there (here refl))) (num (+ 9))
-      ◅ set (var (path⇣ [] (here refl))) (path⇣ [] (there (here refl))) (num (+ 18))
-      ◅ run (call (var (path⇣ [] (here refl))) (path⇣ [] (here refl)) (var (path⇣ (here refl ∷ []) (here refl)) ∷ []))
+      ◅ asgn (path♭ (here refl ∷ []) (here refl)) (new (path♭ (here refl ∷ here refl ∷ []) (here refl)))
+      ◅ asgn (path♭ [] (here refl)) (new (path♭ (here refl ∷ here refl ∷ []) (here refl)))
+      ◅ set (var (path♭ (here refl ∷ []) (here refl))) (path♭ [] (there (here refl))) (num (+ 9))
+      ◅ set (var (path♭ [] (here refl))) (path♭ [] (there (here refl))) (num (+ 18))
+      ◅ run (call (var (path♭ [] (here refl))) (path♭ [] (here refl)) (var (path♭ (here refl ∷ []) (here refl)) ∷ []))
       ◅ ε
     )
-    (get (var (path⇣ [] (here refl))) (path⇣ [] (there (here refl))))
+    (get (var (path♭ [] (here refl))) (path♭ [] (there (here refl))))
 
 p : Program (# 0) int
 p = program (Data.List.map proj₂ classes) (#c' (IntegerImpl , # 1 , obj (# 1) ⦃ refl ⦄)  ∷ []) main
