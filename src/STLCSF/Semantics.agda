@@ -13,7 +13,7 @@ open import Data.List.All.Properties.Extra
 open import Function
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open ≡-Reasoning
-open import Common.Weakening
+open import Relation.Unary.Weakening.ListPrefix
 
 -- This file contains the definitional interpreter for STLC using
 -- scopes and frames, described in Section 4 of the paper.
@@ -139,8 +139,8 @@ module Syntax (g : Graph) where
   getv        :  ∀ {s t Σ} → (g ⊢⇣ s ↦ t) → M s (Val t) Σ
   getv p f h = return (getVal p f h) f h
 
-  _^_         :  ∀ {Σ Γ}{p q : List (Scope (ı g)) → Set} → ⦃ w : Weakenable q ⦄ →
-                 M Γ p Σ → q Σ → M Γ (p ⊗ q) Σ
+  _^_         :  ∀ {Σ Γ}{P Q : List (Scope (ı g)) → Set} → ⦃ w : Wk Q ⦄ →
+                 M Γ P Σ → Q Σ → M Γ (P ⊗ Q) Σ
   (a ^ x) f h
     with (a f h)
   ...  | nothing = nothing
