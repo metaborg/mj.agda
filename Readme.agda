@@ -17,6 +17,7 @@ open import STLCRef.Examples
 
 open import ScopesFrames.ScopeGraph
 open import ScopesFrames.FrameHeap
+open import ScopesFrames.FrameHeap.Monad.FrameHeap
 
 
 open import STLCSF.Semantics
@@ -28,5 +29,4 @@ open import MJSF.Semantics
 
 open import MJSF.Examples.Integer
 open import MJSF.Examples.DynamicDispatch
-
 
