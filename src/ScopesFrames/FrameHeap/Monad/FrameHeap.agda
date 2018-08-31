@@ -19,9 +19,9 @@ module ScopesFrames.FrameHeap.Monad.FrameHeap (Ty    : ℕ → Set)
 open import ScopesFrames.ScopeGraph Ty Name Label
 open Graph
 
-module MonadWithVal {g : Graph}
-                    (Val : Ty (ı g) → List (Scope (ı g)) → Set)
-                    (Val-Wk : {t : Ty (ı g)} → Wk (Val t)) where
+module FrameHeapMonad {g : Graph}
+                      (Val : Ty (ı g) → List (Scope (ı g)) → Set)
+                      (Val-Wk : {t : Ty (ı g)} → Wk (Val t)) where
 
   open import ScopesFrames.FrameHeap Ty Name Label
   open UsesGraph {g}
