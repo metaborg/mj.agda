@@ -71,18 +71,18 @@ module ScopesFrames.ScopeGraph (Ty : ℕ → Set)
     []   :  ∀ {s} → g ⊢♭ s ⟶ s
     _∷_  :  ∀ {s s' s''} → s' ∈ edgesOf♭ g s → g ⊢♭ s' ⟶ s'' → g ⊢♭ s ⟶ s''
 
-  convert-path♭ : {g : Graph} {s s' : Scope (ı g)} →
-                  g ⊢  s ⟶ s' →
-                  g ⊢♭ s ⟶ s'
-  convert-path♭ [] = []
-  convert-path♭ (x ∷ p) = ∈♭ x ∷ convert-path♭ p
-    where
-      ∈♭ : {A B : Set} {a : A} {b : B} {xs : List (A × B)} →
-           (a , b) ∈ xs →
-           b ∈ map proj₂ xs
-      ∈♭ (here refl) = here refl
-      ∈♭ (there p) = there (∈♭ p)
-      
+  convert-_∈_♭ : {A B : Set} {a : A} {b : B} {xs : List (A × B)} →
+                 (a , b) ∈ xs →
+                 b ∈ map proj₂ xs
+  convert-_∈_♭ (here refl) = here refl
+  convert-_∈_♭ (there p) = there (convert-_∈_♭ p)
+
+
+  convert-reach♭ : {g : Graph} {s s' : Scope (ı g)} →
+                   g ⊢  s ⟶ s' →
+                   g ⊢♭ s ⟶ s'
+  convert-reach♭ [] = []
+  convert-reach♭ (x ∷ p) = convert-_∈_♭ x ∷ convert-reach♭ p
 
   -- path concatenation
   concat : {g : Graph}{s s' s'' : Scope (ı g)}
@@ -92,8 +92,8 @@ module ScopesFrames.ScopeGraph (Ty : ℕ → Set)
   concat (x ∷ p₁) p₂ = x ∷ (concat p₁ p₂)
 
   concat♭ : {g : Graph}{s s' s'' : Scope (ı g)}
-              (p1 : g ⊢♭ s ⟶ s') (p2 : g ⊢♭ s' ⟶ s'') →
-              g ⊢♭ s ⟶ s''
+            (p1 : g ⊢♭ s ⟶ s') (p2 : g ⊢♭ s' ⟶ s'') →
+            g ⊢♭ s ⟶ s''
   concat♭ [] p₂ = p₂
   concat♭ (x ∷ p₁) p₂ = x ∷ (concat♭ p₁ p₂)
 
@@ -102,6 +102,12 @@ module ScopesFrames.ScopeGraph (Ty : ℕ → Set)
 
   data _⊢♭_↦_ (g : Graph) (s : Scope (ı g)) (t : Ty (ı g)) : Set where
     path♭ : ∀ {s'} → g ⊢♭ s ⟶ s' → t ∈ declsOf♭ g s' → g ⊢♭ s ↦ t
+
+  convert-path♭ : {g : Graph} {s : Scope (ı g)} {t : Ty (ı g)} →
+                  g ⊢  s ↦ t →
+                  g ⊢♭ s ↦ t
+  convert-path♭ (path r d) =
+    path♭ (convert-reach♭ r) (convert-_∈_♭ d)
 
   prepend : {g : Graph} {s s' : Scope (ı g)} {t : Ty (ı g)}
             (p : g ⊢ s ⟶ s') (q : g ⊢ s' ↦ t) →
