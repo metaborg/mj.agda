@@ -92,7 +92,7 @@ module Syntax (g : Graph) where
   -- library.  As described in Section 4.3 of the paper, our notion of
   -- frame assumes a notion of weakenable value, to be passed as
   -- module arguments to `UsesVal`:
-  open UsesVal Val val-weaken renaming (getFrame to getFrame')
+  open UsesVal Val (record { wk = val-weaken }) renaming (getFrame to getFrame')
 
   -- We rename `getFrame` from the scopes-and-frames library so that
   -- we can use `getFrame` as the name of the monadic operation which

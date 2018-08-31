@@ -88,7 +88,7 @@ module Values {g : Graph} where
 
   -- And pass these to the scope graph definition:
 
-  open UsesVal Valᵗ valᵗ-weaken renaming (getFrame to getFrame')
+  open UsesVal Valᵗ (record { wk = valᵗ-weaken }) renaming (getFrame to getFrame')
 
 
   --------------

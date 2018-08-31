@@ -27,7 +27,7 @@ module Semantics (g : Graph) where
   open Syntax {g}
   open Values {g}
   open Monad  {g}
-  open UsesVal Valᵗ valᵗ-weaken renaming (getFrame to getFrame') public
+  open UsesVal Valᵗ (record { wk = valᵗ-weaken }) renaming (getFrame to getFrame') public
 
 
   -----------------

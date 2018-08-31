@@ -21,7 +21,7 @@ module Monad {g : Graph} where
   open Graph
   open Syntax {g}
   open Values {g}
-  open UsesVal Valᵗ valᵗ-weaken renaming (getFrame to getFrame')
+  open UsesVal Valᵗ (record { wk = valᵗ-weaken }) renaming (getFrame to getFrame')
   open import Relation.Unary.Weakening.ListPrefix
 
   -- Computations may either time out, raise a null-pointer exception,

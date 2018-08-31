@@ -46,7 +46,7 @@ module UsesGraph {g : Graph} where
   -- a language-specific notion of weakenable value.
 
   module UsesVal (Val : Ty (ı g) → HeapTy → Set)
-                 (weaken-val : ∀ {t Σ Σ'} → Σ ⊑ Σ' → Val t Σ → Val t Σ') where
+                 (Val-Wk : {t : Ty (ı g)} → Wk (Val t)) where
 
     -- Slots are given by a list of values that are in one-to-one
     -- correspondence with a list of declarations (types):
@@ -90,8 +90,8 @@ module UsesGraph {g : Graph} where
     -- to the instance argument scope:
 
     instance
-      weaken-val' : ∀ {t} → Wk (λ Σ → Val t Σ)
-      weaken-val' = record { wk = weaken-val }
+      weaken-val' : ∀ {t} → Wk (Val t)
+      weaken-val' = Val-Wk
 
       weaken-heapframe : ∀ {s} → Wk (HeapFrame s)
       weaken-heapframe = record { wk = λ{ ext (slots , links) → (wk ext slots , wk ext links) } }
