@@ -53,10 +53,10 @@ module ScopesFrames.ScopeGraph (Ty : ℕ → Set)
   nodeOf♭ g s = let node = Vec.lookup s (graph g) in
                 map proj₂ (proj₁ node) , map proj₂ (proj₂ node)
 
-  convert-nodeShape♭ : {g : Graph} {s : Scope (ı g)} {ds : Decls (ı g)} {es : Edges (ı g)} →
-                       nodeOf g s ≡ (ds , es) →
-                       nodeOf♭ g s ≡ (map proj₂ ds , map proj₂ es)
-  convert-nodeShape♭ shape rewrite shape = refl
+  convert-shape♭ : {g : Graph} {s : Scope (ı g)} {ds : Decls (ı g)} {es : Edges (ı g)} →
+                   nodeOf g s ≡ (ds , es) →
+                   nodeOf♭ g s ≡ (map proj₂ ds , map proj₂ es)
+  convert-shape♭ shape rewrite shape = refl
 
   -- A resolution path is a witness that we can traverse a sequence of
   -- scope edges (`_⟶_`) in `g` to arrive at a declaration of type
