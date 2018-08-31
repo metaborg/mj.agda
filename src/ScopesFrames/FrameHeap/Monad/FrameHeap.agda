@@ -40,7 +40,7 @@ module FrameHeapMonad {g : Graph}
   -- `Res` instead of `Maybe`:
 
   M : (s : Scope (ı g)) → (List (Scope (ı g)) → Set) → List (Scope (ı g)) → Set
-  M s p Σ = Frame s Σ → Heap Σ → Res (∃ λ Σ' → (Heap Σ' × p Σ' × Σ ⊑ Σ'))
+  M s P Σ = Frame s Σ → Heap Σ → Res (∃ λ Σ' → (Heap Σ' × P Σ' × Σ ⊑ Σ'))
 
   -- We define some usual monad operations:
 
