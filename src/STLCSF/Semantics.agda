@@ -106,10 +106,10 @@ module Syntax (g : Graph) where
   -- These definitions correspond to Section 4.4.
 
   M : (s : Scope (ı g)) → (HeapTy → Set) → HeapTy → Set
-  M s p Σ = Frame s Σ → Heap Σ → Maybe (∃ λ Σ' → (Heap Σ' × p Σ' × Σ ⊑ Σ'))
+  M s P Σ = Frame s Σ → Heap Σ → Maybe (∃ λ Σ' → (Heap Σ' × P Σ' × Σ ⊑ Σ'))
 
-  _>>=_       :  ∀ {s Σ}{p q : List (Scope (ı g)) → Set} →
-                 M s p Σ → (∀ {Σ'} → p Σ' → M s q Σ') → M s q Σ
+  _>>=_       :  ∀ {s Σ}{P Q : List (Scope (ı g)) → Set} →
+                 M s P Σ → (∀ {Σ'} → P Σ' → M s Q Σ') → M s Q Σ
   (a >>= b) f h
     with (a f h)
   ...  | nothing = nothing
@@ -118,16 +118,16 @@ module Syntax (g : Graph) where
   ...     | nothing = nothing
   ...     | just (Σ' , h'' , v' , ext') = just (Σ' , h'' , v' , ext ⊚ ext')
 
-  return      :  ∀ {s Σ}{p : List (Scope (ı g)) → Set} → p Σ → M s p Σ
+  return      :  ∀ {s Σ}{P : List (Scope (ı g)) → Set} → P Σ → M s P Σ
   return v f h = just (_ , h , v , ⊑-refl)
 
   getFrame    :  ∀ {s Σ} → M s (Frame s) Σ
   getFrame f = return f f
 
-  usingFrame  :  ∀ {s s' Σ}{p : List (Scope (ı g)) → Set} → Frame s Σ → M s p Σ → M s' p Σ
+  usingFrame  :  ∀ {s s' Σ}{P : List (Scope (ı g)) → Set} → Frame s Σ → M s P Σ → M s' P Σ
   usingFrame f a _ = a f
 
-  timeout     :  ∀ {s Σ}{p : List (Scope (ı g)) → Set} → M s p Σ
+  timeout     :  ∀ {s Σ}{P : List (Scope (ı g)) → Set} → M s P Σ
   timeout _ _ = nothing
 
   init        :  ∀ {Σ s' ds es}(s : Scope (ı g))⦃ shape : nodeOf⇣ g s ≡ (ds , es) ⦄ →
