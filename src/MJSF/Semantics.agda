@@ -17,7 +17,6 @@ open import MJSF.Syntax
 open import MJSF.Values
 open import MJSF.Monad
 open import ScopesFrames.ScopeGraph Ty ℕ Bool
-open import Common.Weakening
 
 -- This file contains the definitional interpreter for MJ using scopes
 -- and frames, described in Section 5 of the paper.

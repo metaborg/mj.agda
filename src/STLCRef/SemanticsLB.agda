@@ -19,7 +19,7 @@ open import Data.List.Prefix
 open import Data.List.Properties.Extra
 open import Data.List.All.Properties.Extra
 open import Function
-open import Common.Weakening
+open import Relation.Unary.Weakening.ListPrefix
 
 ------------
 -- SYNTAX --

@@ -16,7 +16,7 @@ open import Data.List.Prefix
 open import Data.List.Properties.Extra
 open import Data.List.All.Properties.Extra
 open import Function
-open import Common.Weakening
+open import Relation.Unary.Weakening.ListPrefix
 
 ------------
 -- SYNTAX --
@@ -106,7 +106,7 @@ mutual
 -- `Common.Weakening` in this artifact.
 
 instance
-  weaken-val' : ∀ {t} → Weakenable (Val t)
+  weaken-val' : ∀ {t} → Wk (Val t)
   weaken-val' = record { wk = weaken-val }
 
 return   :    ∀ {Σ Γ}{p : List Ty → Set} → p Σ → M Γ p Σ
@@ -143,8 +143,8 @@ deref x E μ = return (lookup μ x) E μ
 update   :    ∀ {Σ Γ t} → t ∈ Σ → Val t Σ → M Γ (λ _ → ⊤) Σ
 update x v E μ = return tt E (update-store x v μ)
 
-weaken : ∀ {i}{p : List Ty → Set i}⦃ w : Weakenable p ⦄ → ∀ {Σ Σ'} → Σ ⊑ Σ' → p Σ → p Σ'
-weaken ⦃ w ⦄ ext v = Weakenable.wk w ext v
+weaken : ∀ {i}{p : List Ty → Set i}⦃ w : Wk p ⦄ → ∀ {Σ Σ'} → Σ ⊑ Σ' → p Σ → p Σ'
+weaken ⦃ w ⦄ ext v = Wk.wk w ext v
 
 
 --------------------------------
@@ -156,7 +156,7 @@ weaken ⦃ w ⦄ ext v = Weakenable.wk w ext v
 -- The definition of `_^_` below is defined in terms of the `_⊗_`
 -- type, which is defined in `Common.Weakening` in this artifact.
 
-_^_  : ∀ {Σ Γ}{p q : StoreTy → Set} → ⦃ w : Weakenable q ⦄ → M Γ p Σ → q Σ → M Γ (p ⊗ q) Σ
+_^_  : ∀ {Σ Γ}{p q : StoreTy → Set} → ⦃ w : Wk q ⦄ → M Γ p Σ → q Σ → M Γ (p ⊗ q) Σ
 (f ^ x) E μ = case (f E μ) of λ {
   nothing → nothing ;
   (just (Σ , μ' , y , ext)) → just (Σ , μ' , (y , weaken ext x) , ext) }

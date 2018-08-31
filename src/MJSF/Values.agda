@@ -19,7 +19,7 @@ module Values {g : Graph} where
   open Graph
   open Syntax {g}
   open UsesGraph {g} public
-  open import Common.Weakening
+  open import Relation.Unary.Weakening.ListPrefix
 
   ------------
   -- VALUES --
@@ -78,7 +78,7 @@ module Values {g : Graph} where
   val-weaken ext void     =  void
 
   instance
-    val-weakenable : ∀ {t} → Weakenable (Val t)
+    val-weakenable : ∀ {t} → Wk (Val t)
     val-weakenable = record { wk = val-weaken }
 
   valᵗ-weaken : ∀ {t Σ Σ'} → Σ ⊑ Σ' → Valᵗ t Σ → Valᵗ t Σ'

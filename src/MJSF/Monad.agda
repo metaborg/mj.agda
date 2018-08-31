@@ -22,7 +22,7 @@ module Monad {g : Graph} where
   open Syntax {g}
   open Values {g}
   open UsesVal Valᵗ valᵗ-weaken renaming (getFrame to getFrame')
-  open import Common.Weakening
+  open import Relation.Unary.Weakening.ListPrefix
 
   -- Computations may either time out, raise a null-pointer exception,
   -- or successfully terminate to produce a result:
@@ -68,8 +68,8 @@ module Monad {g : Graph} where
   -- To program in dependent-passing style, we use the variant of
   -- monadic strength also used for STLCSF.
 
-  _^_  :  ∀ {Σ Γ}{p q : List (Scope (ı g)) → Set} ⦃ w : Weakenable q ⦄ →
-          M Γ p Σ → q Σ → M Γ (p ⊗ q) Σ
+  _^_  :  ∀ {Σ Γ}{P Q : List (Scope (ı g)) → Set} ⦃ w : Wk Q ⦄ →
+          M Γ P Σ → Q Σ → M Γ (P ⊗ Q) Σ
   (a ^ x) f h
     with (a f h)
   ...  | timeout = timeout
