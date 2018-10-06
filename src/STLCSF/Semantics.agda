@@ -41,7 +41,7 @@ data Ty : Set where
 --
 -- * `Ty` is the type of declarations in the scope graph
 
-open import ScopesFrames.ScopeGraph (λ _ → Ty) ℕ ⊤
+open import ScopesFrames.ScopeGraph Ty ℕ ⊤
 open Graph
 
 -- Our interpreter is parameterized by a scope graph, via the module
@@ -52,7 +52,7 @@ module Syntax (g : Graph) where
   -- We load all the scope graph definitions in the scope graph
   -- library, by passing the object scope graph `g` as module
   -- parameter:
-  open import ScopesFrames.FrameHeap (λ _ → Ty) ℕ ⊤
+  open import ScopesFrames.FrameHeap Ty ℕ ⊤
   open UsesGraph {g}
 
 
@@ -62,10 +62,10 @@ module Syntax (g : Graph) where
 
   -- We can now define our well-typed syntax as described in the paper
   -- Section 4.2:
-  data Expr (s : Scope (ı g)) : Ty → Set where
+  data Expr (s : Scope) : Ty → Set where
     unit  : Expr s unit
-    var   : ∀ {t} → (g ⊢♭ s ↦ t) → Expr s t
-    ƛ     : ∀ {s' a b} → ⦃ shape : nodeOf♭ g s' ≡ ( [ a ] , [ s ] ) ⦄ → Expr s' b → Expr s (a ⇒ b)
+    var   : ∀ {t} → (g ⊢ s ↦ t) → Expr s t
+    ƛ     : ∀ {s' a b} (x : ℕ) ⦃ shape : shapeOf g s' ≡ ( [ (x , a) ] , [ (tt , s) ] ) ⦄ → Expr s' b → Expr s (a ⇒ b)
     _·_   : ∀ {a b} → Expr s (a ⇒ b) → Expr s a → Expr s b
     num   : ℤ → Expr s int
     iop   : (ℤ → ℤ → ℤ) → (l r : Expr s int) → Expr s int
@@ -79,12 +79,14 @@ module Syntax (g : Graph) where
   -- Section 4.4:
   data Val : Ty → (Σ : HeapTy) → Set where
     unit   : ∀ {Σ} → Val unit Σ
-    ⟨_,_⟩  : ∀ {Σ s s' a b}⦃ shape : nodeOf♭ g s' ≡ ( [ a ] , [ s ] ) ⦄ →
-             Expr s' b → Frame s Σ → Val (a ⇒ b) Σ
+    ⟨_,_,_⟩  : ∀ {Σ s s' a b} →
+             (x : ℕ) → Expr s' b → Frame s Σ →
+             ⦃ shape : shapeOf g s' ≡ ( [ (x , a) ] , [ (tt , s) ] ) ⦄ →
+             Val (a ⇒ b) Σ
     num    : ∀ {Σ} → ℤ → Val int Σ
 
   val-weaken : ∀ {t Σ Σ'} → Σ ⊑ Σ' → Val t Σ → Val t Σ'
-  val-weaken ext ⟨ e , f ⟩ = ⟨ e , wk ext f ⟩
+  val-weaken ext ⟨ x , e , f ⟩ = ⟨ x , e , wk ext f ⟩
   val-weaken ext unit      = unit
   val-weaken ext (num z)   = num z
 
@@ -105,10 +107,10 @@ module Syntax (g : Graph) where
 
   -- These definitions correspond to Section 4.4.
 
-  M : (s : Scope (ı g)) → (HeapTy → Set) → HeapTy → Set
+  M : (s : Scope) → (HeapTy → Set) → HeapTy → Set
   M s P Σ = Frame s Σ → Heap Σ → Maybe (∃ λ Σ' → (Heap Σ' × P Σ' × Σ ⊑ Σ'))
 
-  _>>=_       :  ∀ {s Σ}{P Q : List (Scope (ı g)) → Set} →
+  _>>=_       :  ∀ {s Σ}{P Q : List Scope → Set} →
                  M s P Σ → (∀ {Σ'} → P Σ' → M s Q Σ') → M s Q Σ
   (a >>= b) f h
     with (a f h)
@@ -118,35 +120,35 @@ module Syntax (g : Graph) where
   ...     | nothing = nothing
   ...     | just (Σ' , h'' , v' , ext') = just (Σ' , h'' , v' , ext ⊚ ext')
 
-  return      :  ∀ {s Σ}{P : List (Scope (ı g)) → Set} → P Σ → M s P Σ
+  return      :  ∀ {s Σ}{P : List Scope → Set} → P Σ → M s P Σ
   return v f h = just (_ , h , v , ⊑-refl)
 
   getFrame    :  ∀ {s Σ} → M s (Frame s) Σ
   getFrame f = return f f
 
-  usingFrame  :  ∀ {s s' Σ}{P : List (Scope (ı g)) → Set} → Frame s Σ → M s P Σ → M s' P Σ
+  usingFrame  :  ∀ {s s' Σ}{P : List Scope → Set} → Frame s Σ → M s P Σ → M s' P Σ
   usingFrame f a _ = a f
 
-  timeout     :  ∀ {s Σ}{P : List (Scope (ı g)) → Set} → M s P Σ
+  timeout     :  ∀ {s Σ}{P : List Scope → Set} → M s P Σ
   timeout _ _ = nothing
 
-  init        :  ∀ {Σ s' ds es}(s : Scope (ı g))⦃ shape : nodeOf♭ g s ≡ (ds , es) ⦄ →
+  init        :  ∀ {Σ s' ds es}(s : Scope)⦃ shape : shapeOf g s ≡ (ds , es) ⦄ →
                  Slots ds Σ → Links es Σ → M s' (Frame s) Σ
   init {Σ} s slots links _ h
     with (initFrame s slots links h)
   ...  | (f' , h') = just (_ , h' , f' , ∷ʳ-⊒ s Σ)
 
-  getv        :  ∀ {s t Σ} → (g ⊢♭ s ↦ t) → M s (Val t) Σ
+  getv        :  ∀ {s t Σ} → (g ⊢ s ↦ t) → M s (Val t) Σ
   getv p f h = return (getVal p f h) f h
 
-  _^_         :  ∀ {Σ Γ}{P Q : List (Scope (ı g)) → Set} → ⦃ w : Wk Q ⦄ →
+  _^_         :  ∀ {Σ Γ}{P Q : List Scope → Set} → ⦃ w : Wk Q ⦄ →
                  M Γ P Σ → Q Σ → M Γ (P ⊗ Q) Σ
   (a ^ x) f h
     with (a f h)
   ...  | nothing = nothing
   ...  | just (Σ , h' , v , ext) = just (Σ , h' , (v , wk ext x) , ext)
 
-  sₑ : ∀ {s t} → Expr s t → Scope (ı g)
+  sₑ : ∀ {s t} → Expr s t → Scope
   sₑ {s} _ = s
 
   eval : ℕ → ∀ {s t Σ} → Expr s t → M s (Val t) Σ
@@ -156,13 +158,13 @@ module Syntax (g : Graph) where
     return unit
   eval (suc k) (var x) =
     getv x
-  eval (suc k) (ƛ e)   =
+  eval (suc k) (ƛ x e)   =
     getFrame >>= λ f →
-    return ⟨ e , f ⟩
+    return ⟨ x , e , f ⟩
   eval (suc k) (l · r) =
-    eval k l >>= λ{ ⟨ e , f ⟩ →
+    eval k l >>= λ{ (⟨ x , e , f ⟩ ⦃ sh ⦄) →
     (eval k r ^ f) >>= λ{ (v , f) →
-    init (sₑ e) (v ∷ []) (f ∷ []) >>= λ f' →
+    init (sₑ e) ⦃ sh ⦄ (v ∷ []) (f ∷ []) >>= λ f' →
     usingFrame f' (eval k e) }}
   eval (suc k) (num z) =
     return (num z)
