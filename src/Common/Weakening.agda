@@ -55,8 +55,8 @@ module _ {i} {A : Set i} where
     all-weakenable {{wₐ}} = record {
       wk = λ ext v → All.map (λ {a} y → Weakenable.wk wₐ ext y) v }
 
-    const-weakenable : ∀ {j}{I : Set j} → Weakenable {A = I} (λ _ → A)
-    const-weakenable = record { wk = λ ext c → c }
+    -- const-weakenable : ∀ {j}{I : Set j} → Weakenable {A = I} (λ _ → A)
+    -- const-weakenable = record { wk = λ ext c → c }
 
     list-weakenable : ∀ {b}{B : List A → Set b}
                     → {{wb : Weakenable B}} → Weakenable (λ W → List (B W))

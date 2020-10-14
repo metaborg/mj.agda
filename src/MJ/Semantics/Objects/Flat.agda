@@ -12,14 +12,14 @@ open import Data.Vec hiding (_++_; lookup; drop)
 open import Data.Star
 open import Data.List
 open import Data.List.First.Properties
-open import Data.List.Any.Membership.Propositional
+open import Data.List.Membership.Propositional
 open import Data.List.Any.Properties
-open import Data.List.All as List∀
+open import Data.List.All as All
 open import Data.List.All.Properties.Extra
 open import Data.List.Prefix
 open import Data.List.Properties.Extra
-open import Data.Maybe as Maybe hiding (All; map)
-open import Data.Maybe.All as MayAll using ()
+open import Data.Maybe as Maybe
+open import Data.Maybe.Relation.Unary.All as MayAll using ()
 open import Data.String using (String)
 open import Relation.Binary.PropositionalEquality
 
@@ -53,13 +53,14 @@ private
   Obj W cid = All (λ d → Val W (proj₂ d)) (collect-members cid FIELD)
 
   weaken-obj : ∀ {W W'} cid → W' ⊒ W → Obj W cid → Obj W' cid
-  weaken-obj cid ext O = List∀.map (weaken-val ext) O
+  weaken-obj cid ext O = All.map (weaken-val ext) O
 
   {-
   We can relate the flat Object structure with the hierarchical notion of membership
   through the definition of `collect`.
   This allows us to get and set members on Objects.
   -}
+  {-# TERMINATING #-}
   getter : ∀ {W n a} cid → Obj W cid → IsMember cid FIELD n a → Val W a
   getter cid O q with rooted cid
   getter .Object O (.Object , ε , def) | ε = ∈-all (proj₁ (first⟶∈ def)) O
@@ -72,11 +73,12 @@ private
   ... | own , inherited rewrite <:-unique z (rooted (Class.parent (Σ (cls cid)))) =
     getter _ inherited (pid , s , def)
 
+  {-# TERMINATING #-}
   setter : ∀ {W f a} cid → Obj W cid → IsMember cid FIELD f a → Val W a → Obj W cid
   setter (cls cid) O q v with rooted (cls cid)
   setter (cls cid) O (._ , ε , def) v | super ◅ z with split-++ (Class.decls (Σ (cls _)) FIELD) _ O
   ... | own , inherited =
-    (own All[ proj₁ (first⟶∈ def) ]≔' v) ++-all inherited
+    (own All.[ proj₁ (first⟶∈ def) ]≔ v) ++-all inherited
   setter (cls cid) O (._ , super ◅ s , def) v | super ◅ z with split-++ (Class.decls (Σ (cls _)) FIELD) _ O
   ... | own , inherited rewrite <:-unique z (rooted (Class.parent (Σ (cls cid)))) =
     own ++-all setter _ inherited (_ , s , def) v
@@ -90,7 +92,7 @@ private
   defaultObject' ε rewrite Σ-Object = []
   defaultObject' {cid = Object} (() ◅ _)
   defaultObject' {cid = cls x} (super ◅ z) =
-    List∀.tabulate {xs = Class.decls (Σ (cls x)) FIELD} (λ{ {_ , ty} _ → default ty})
+    All.tabulate {xs = Class.decls (Σ (cls x)) FIELD} (λ{ {_ , ty} _ → default ty})
     ++-all
     defaultObject' z
 

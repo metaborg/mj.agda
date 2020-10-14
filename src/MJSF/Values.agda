@@ -1,5 +1,9 @@
 open import Data.Nat
-open import Data.List.Most
+open import Data.List as List hiding (null)
+open import Data.List.Membership.Propositional
+open import Data.List.Relation.Unary.Any
+open import Data.List.Relation.Unary.All
+open import Data.List.Prefix
 open import Data.Integer
 open import Data.Product
 

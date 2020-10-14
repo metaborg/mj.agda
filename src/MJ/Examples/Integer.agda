@@ -1,14 +1,14 @@
 module MJ.Examples.Integer where
 
 open import Prelude
-open import Data.Maybe hiding (All)
-open import Data.Vec hiding (_∈_; init)
+open import Data.Maybe
+open import Data.Vec
 import Data.Vec.All as Vec∀
 open import Data.Star
 open import Data.Bool
 open import Data.List
 open import Data.List.Any
-open import Data.List.Any.Membership.Propositional
+open import Data.List.Membership.Propositional
 open import Data.List.All hiding (lookup)
 open import Data.Product hiding (Σ)
 open import Relation.Binary.PropositionalEquality

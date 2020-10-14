@@ -3,8 +3,10 @@
 open import Level
 open import Relation.Unary using (Pred)
 open import Data.Product hiding (swap; curry)
-open import Data.List.Most
-open import Data.List.All as List∀
+open import Data.List
+open import Data.List.Relation.Unary.All as All
+open import Data.List.Relation.Unary.Any
+open import Data.List.Membership.Propositional
 open import Data.List.Prefix
 open import Function as Fun using (case_of_)
 open import Relation.Binary.PropositionalEquality

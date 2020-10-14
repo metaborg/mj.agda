@@ -1,5 +1,9 @@
 open import Data.Nat hiding (_^_ ; _+_)
-open import Data.List.Most
+open import Data.List as List hiding (null)
+open import Data.List.Membership.Propositional
+open import Data.List.Relation.Unary.Any
+open import Data.List.Relation.Unary.All as All
+open import Data.List.All.Properties.Extra
 open import Data.Integer
 open import Data.Unit
 open import Data.Empty
@@ -48,7 +52,7 @@ module Semantics (g : Graph) where
   -- An alias for mapping `default` over a list of well-typed values:
 
   defaults : ∀ {fs : List Ty}{Σ} → All (#v (λ _ → ⊤)) fs → Slots fs Σ
-  defaults fs = map-all (λ{ (#v' {t} _) → vᵗ (default t) }) fs
+  defaults fs = All.map (λ{ (#v' {t} _) → vᵗ (default t) }) fs
 
   -- `override` overrides methods in parent objects by overwriting
   -- method slots in super class frames by overriding child methods.
@@ -92,7 +96,7 @@ module Semantics (g : Graph) where
   init-obj : ∀ {sʳ s s' Σ} → Class sʳ s → Inherits s s' → M sʳ (Frame s) Σ
   init-obj (class0 ms fs oms) (obj _)
     = getFrame >>= λ f →
-      initι _ (λ fc → (map-all (λ{ (#m' m) → mᵗ fc m }) ms) ++-all (defaults fs)) (f ∷ []) >>= λ f' →
+      initι _ (λ fc → (All.map (λ{ (#m' m) → mᵗ fc m }) ms) ++-all (defaults fs)) (f ∷ []) >>= λ f' →
       (usingFrame f' (override oms) ^ f') >>= λ{ (_ , f') →
       return f' }
   init-obj (class0 ⦃ shape ⦄ _ _ _) (super ⦃ shape' ⦄ _)
@@ -103,7 +107,7 @@ module Semantics (g : Graph) where
   ...  | refl =
     getv p >>= λ{ (cᵗ class' ic f') →
     (usingFrame f' (init-obj class' x) ^ f') >>= λ{ (f , f') →
-    initι _ ⦃ shape ⦄ (λ fc → (map-all (λ{ (#m' m) → mᵗ fc m }) ms) ++-all (defaults fs)) (f' ∷ f ∷ []) >>= λ f'' →
+    initι _ ⦃ shape ⦄ (λ fc → (All.map (λ{ (#m' m) → mᵗ fc m }) ms) ++-all (defaults fs)) (f' ∷ f ∷ []) >>= λ f'' →
     (usingFrame f'' (override oms) ^ f'') >>= λ{ (_ , f'') →
     return f'' }}}
   init-obj (class1 _ ⦃ shape ⦄ _ _ _) (obj _ ⦃ shape' ⦄)
@@ -178,7 +182,7 @@ module Semantics (g : Graph) where
       usingFrame f (getl e) >>= λ f' →
       return (ref [] f')
 
-    eval-args : ℕ → ∀ {s ts Σ} → All (Expr s) ts → M s (Slots (map vᵗ ts)) Σ
+    eval-args : ℕ → ∀ {s ts Σ} → All (Expr s) ts → M s (Slots (List.map vᵗ ts)) Σ
     eval-args zero _ = timeoutᴹ
     eval-args (suc k) [] = return []
     eval-args (suc k) (e ∷ es) =
@@ -265,7 +269,7 @@ module Semantics (g : Graph) where
 
   eval-program : ℕ → ∀ {sʳ t} → Program sʳ t → Res (∃ λ Σ' → (Heap Σ' × Val t Σ'))
   eval-program k (program _ cs b) =
-    let (f₀ , h₀) = initFrameι _ (λ f → map-all (λ{ (#c' (c , _ , ic)) → cᵗ c ic f }) cs) [] []
+    let (f₀ , h₀) = initFrameι _ (λ f → All.map (λ{ (#c' (c , _ , ic)) → cᵗ c ic f }) cs) [] []
     in case (eval-body k b f₀ h₀) of λ{
          (ok (Σ' , h' , v , _)) → ok (Σ' , h' , v)
        ; timeout → timeout

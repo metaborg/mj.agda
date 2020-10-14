@@ -7,6 +7,7 @@ open import Data.List
 
 open import Relation.Binary.Core
 open import Relation.Nullary
+open import Relation.Binary
 
 data Cid (c : ℕ) : Set where
   cls : Fin c → Cid c

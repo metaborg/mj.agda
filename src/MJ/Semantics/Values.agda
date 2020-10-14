@@ -6,7 +6,8 @@ module MJ.Semantics.Values {c}(Ct : Core.Classtable c) where
 open import Prelude
 
 open import Level renaming (suc to lsuc; zero to lzero)
-open import Data.List.Most
+open import Data.List hiding (null)
+open import Data.List.Membership.Propositional
 open import Data.List.Prefix
 
 open Core c

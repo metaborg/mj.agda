@@ -10,9 +10,9 @@ open import MJ.Syntax.Program Σ
 open import MJ.Semantics Σ Lib
 open import MJ.Semantics.Values Σ
 open import Data.List.Any
-open import Data.List.Any.Membership.Propositional
+open import Data.List.Membership.Propositional
 open import Data.Star
-open import Data.Bool as Bools
+open import Data.Bool as Bools hiding (_≤?_)
 open import Relation.Nullary.Decidable
 
 -- a simple program that computes 10 using a while loop

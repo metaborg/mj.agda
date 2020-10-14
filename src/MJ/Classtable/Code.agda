@@ -3,18 +3,17 @@ import MJ.Classtable.Core as Core
 
 module MJ.Classtable.Code {c}(Ct : Core.Classtable c) where
 
-open import Prelude hiding (erase)
+open import Prelude
 open import Data.Maybe as Maybe using (Maybe; just; nothing)
-open import Data.Maybe.All as MayAll
-open import Data.Vec as Vec hiding (_∈_)
 open import Data.Star as Star
-open import Data.List.Most as List
+open import Data.List
+open import Data.List.Relation.Unary.All hiding (construct)
 open import Data.List.Properties.Extra as List+
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary.Decidable
 open import Data.String
 
-import Data.Vec.All as Vec∀
+import Data.Vec.Relation.Unary.All as Vec∀
 
 open Core c
 open Classtable Ct

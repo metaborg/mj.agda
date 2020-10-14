@@ -1,6 +1,9 @@
 open import Data.Nat
 open import Data.Fin using (Fin; #_; suc; zero)
-open import Data.List.Most
+open import Data.List as List hiding (null)
+open import Data.List.Membership.Propositional
+open import Data.List.Relation.Unary.Any
+open import Data.List.Relation.Unary.All
 open import Data.Integer hiding (suc)
 open import Data.Product hiding (map)
 open import Data.Unit
@@ -158,7 +161,7 @@ module SyntaxG (g : Graph) where
 
   data Meth (s : Scope) : List VTy → VTy → Set where
     meth  :  ∀ {ts rt}(s' : Scope)
-             ⦃ shape : g s' ≡ (map vᵗ ts , [ s ]) ⦄ →
+             ⦃ shape : g s' ≡ (List.map vᵗ ts , [ s ]) ⦄ →
              Body s' rt →
              Meth s ts rt
 

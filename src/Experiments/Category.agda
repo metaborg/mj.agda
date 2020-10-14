@@ -8,7 +8,7 @@ open Preorder APO renaming (_∼_ to _≤_)
 open import Function as Fun using (flip)
 open import Relation.Unary using (Pred)
 open import Data.Product as Prod using (_,_; _×_)
-import Relation.Binary.PropositionalEquality as PEq
+open import Relation.Binary.PropositionalEquality as PEq using (_≡_; cong)
 open PEq.≡-Reasoning
 open import Function.Inverse using (Inverse)
 open import Algebra.FunctionProperties
@@ -188,25 +188,35 @@ module Forall (funext : ∀ {a b} → PEq.Extensionality a b) where
 module ListAll where
   -- quantification over the elements in a list
 
+  open import Data.Nat
   open import Data.List
-  import Data.List.All as All'
+  import Data.List.All as All
+  open import Data.List.All.Properties
   open import Data.List.All.Properties.Extra
+
+  module _ {a p} {A : Set a} {P : A → Set p} where
+
+    map-id' : ∀ {xs} (pxs : All.All P xs) → All.map {P = P} {Q = P} (λ x → x) pxs ≡ pxs
+    map-id' All.[]         = PEq.refl
+    map-id' (px All.∷ pxs) = cong (px All.∷_)  (map-id' pxs)
 
   All : ∀ {ℓ₁}{I : Set ℓ₁}(P : I → MP ℓ₂) → List I → MP _
   All P xs = mp
-    (λ c → All'.All (λ x → P x · c) xs)
+    (λ c → All.All (λ x → P x · c) xs)
     (record {
-      monotone = λ c~c' ps → All'.map (λ {i} x → MP.monotone (P i) c~c' x ) ps ;
+      monotone = λ c~c' ps → All.map (λ {i} x → MP.monotone (P i) c~c' x ) ps ;
       monotone-refl = λ p → (begin
-        All'.map (λ {i} x → MP.monotone (P i) refl x) p
-          ≡⟨ map-id p (λ i → MP.monotone-refl (P i)) ⟩
+        All.map (λ {i} x → MP.monotone (P i) refl x) p
+          ≡⟨ map-cong p (λ {i} px → MP.monotone-refl (P i) px) ⟩
+        All.map (λ x → x) p
+          ≡⟨ map-id' p ⟩
         p ∎) ;
       monotone-trans = λ p c~c' c'~c'' → (begin
-       All'.map (λ {i} x → MP.monotone (P i) (trans c~c' c'~c'') x) p
-         ≡⟨ map-cong p (λ i p → MP.monotone-trans (P i) p c~c' c'~c'') ⟩
-       All'.map (λ {i} x → MP.monotone (P i) c'~c'' (MP.monotone (P i) c~c' x)) p
+       All.map (λ {i} x → MP.monotone (P i) (trans c~c' c'~c'') x) p
+         ≡⟨ map-cong p (λ {i} p → MP.monotone-trans (P i) p c~c' c'~c'') ⟩
+       All.map (λ {i} x → MP.monotone (P i) c'~c'' (MP.monotone (P i) c~c' x)) p
          ≡⟨ PEq.sym (map-map p) ⟩
-       All'.map (λ {i} x → MP.monotone (P i) c'~c'' x) (All'.map (λ {i} x → MP.monotone (P i) c~c' x) p)
+       All.map (λ {i} x → MP.monotone (P i) c'~c'' x) (All.map (λ {i} x → MP.monotone (P i) c~c' x) p)
        ∎) })
 
 module Exists where

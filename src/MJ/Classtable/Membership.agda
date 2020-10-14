@@ -8,13 +8,13 @@ open Classtable Ct
 
 open import Prelude
 open import Data.Star
+open import Data.Product hiding (Σ)
 open import Data.List
-open import Data.List.Any
-open import Data.List.Any.Properties
+open import Data.List.Relation.Unary.Any
+open import Data.List.Relation.Unary.Any.Properties
 open import Data.List.First.Membership
-open import Relation.Binary.Product.Pointwise
+open import Data.Product.Relation.Binary.Pointwise.NonDependent
 open import Relation.Nullary.Decidable
-open import Data.Vec hiding (_∈_)
 open import Data.Maybe
 open import Data.String as Str
 open import Function.Equality using (Π)
@@ -81,7 +81,7 @@ sound p = toWitness p
 Declarative members are inherited:
 -}
 inherit' : ∀ {C P ns m a} → Σ ⊢ C <: P → IsMember P ns m a → IsMember C ns m a
-inherit' S (_ , S' , def) = , S ◅◅ S' , def
+inherit' S (_ , S' , def) = -, S ◅◅ S' , def
 
 {-
 Accessible members are inherited (but may point to different definitions thanks to overrides):

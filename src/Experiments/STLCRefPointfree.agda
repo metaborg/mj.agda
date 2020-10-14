@@ -6,9 +6,13 @@ open import Level
 open import Data.Nat hiding (_^_)
 import Data.Unit as Unit
 open import Data.List
-open import Data.List.Most
+open import Data.List.Prefix
+open import Data.List.Properties.Extra
+open import Data.List.All.Properties.Extra
+open import Data.List.Membership.Propositional
+open import Data.List.Relation.Unary.Any
+open import Data.List.Relation.Unary.All as All
 open import Data.Product hiding (curry; swap)
-open import Data.Maybe as Maybe hiding (All)
 open import Function as Fun using (case_of_)
 import Relation.Binary.PropositionalEquality as PEq
 import Relation.Binary.HeterogeneousEquality as H
@@ -116,12 +120,12 @@ alloc {a} = mk⇒
     let ext' = ∷ʳ-⊒ a Σ₁ in
       (Σ₁ ∷ʳ a) ,
       ext' ,
-      ((map-all (MP.monotone (Val _) ext') μ₁) all-∷ʳ MP.monotone (Val _) (⊑-trans ext ext') v) ,
+      ((All.map (MP.monotone (Val _) ext') μ₁) all-∷ʳ MP.monotone (Val _) (⊑-trans ext ext') v) ,
       ref (∈-∷ʳ Σ₁ a))
   (λ c~c' {p} → funext³ λ q ext μ →
     mcong {P = (Val (ref a))} refl H.refl
     (H.≡-to-≅ (
-      cong (λ u → map-all _ μ all-∷ʳ u)
+      cong (λ u → All.map _ μ all-∷ʳ u)
         (trans
           (sym (MP.monotone-trans (Val a) p c~c' _))
           (cong (λ u → (MP.monotone (Val a) u p)) ⊑-trans-assoc)
@@ -142,12 +146,12 @@ load  {a} = mk⇒
 store : ∀ {a} → (Val (ref a) ⊗ Val a) ⇒ M ⊤
 store = mk⇒
   (λ x Σ₁ ext μ₁ → case x of λ{
-    (ref l , v) → Σ₁ , ⊑-refl , (μ₁ All[ ∈-⊒ l ext ]≔' MP.monotone (Val _) ext v) , Unit.tt
+    (ref l , v) → Σ₁ , ⊑-refl , (μ₁ All.[ ∈-⊒ l ext ]≔ MP.monotone (Val _) ext v) , Unit.tt
   })
   (λ{ c~c' {ref x , v} →
     funext³ λ p q r →
     mcong {P = ⊤} refl H.refl
-      (H.cong₂ (λ u v → r All[ u ]≔' v)
+      (H.cong₂ (λ u v → r All.[ u ]≔ v)
         (H.≡-to-≅ (sym (∈-⊒-trans c~c' q)))
         (H.≡-to-≅ (sym (MP.monotone-trans (Val _) v _ _))))
       H.refl
@@ -157,9 +161,10 @@ store = mk⇒
 ------------------------------------------------------------------------
 
 envlookup : ∀ {a Γ} → a ∈ Γ → Env Γ ⇒ Val a
-envlookup x = mk⇒ (λ E → lookup E x) λ{ c~c' {E} → sym (lem c~c' E x)}
+envlookup x = mk⇒ (λ E → All.lookup E x) λ{ c~c' {E} → sym (lem c~c' E x)}
   where
-    lem : ∀ {Γ Σ Σ' a} → (p : Σ ⊑ Σ') → (E : Env' Γ Σ) → (e : a ∈ Γ) → val-mono p (lookup E e) ≡ lookup (env-mono p E) e
+    lem : ∀ {Γ Σ Σ' a} → (p : Σ ⊑ Σ') → (E : Env' Γ Σ) → (e : a ∈ Γ) 
+        → val-mono p (All.lookup E e) ≡ All.lookup (env-mono p E) e
     lem p (px ∷ E) (here refl) = refl
     lem p (px ∷ E) (there e) = lem p E e
 

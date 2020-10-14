@@ -12,9 +12,17 @@ import MJ.Classtable.Code as Code
 module MJ.Semantics.Monadic {c} (Ct : Core.Classtable c)(ℂ : Code.Code Ct) where
 
 open import Prelude hiding (_^_)
-open import Data.Vec hiding (init; _>>=_; _∈_)
+open import Data.Vec hiding (init; _>>=_)
 open import Data.Vec.All.Properties.Extra as Vec∀++
-open import Data.List.Most
+open import Data.List hiding (null)
+open import Data.List.Properties.Extra
+open import Data.List.All.Properties.Extra
+open import Data.List.Prefix
+open import Data.List.First
+open import Data.List.First.Properties
+open import Data.List.Relation.Unary.All as All
+open import Data.List.Relation.Unary.Any
+open import Data.List.Membership.Propositional
 open import Relation.Nullary.Decidable
 open import Data.Star hiding (return; _>>=_)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
@@ -87,7 +95,7 @@ _>>=_   : ∀ {Γ W}{A B : WSet} → M Γ W A → (∀ {W'} → A W' → M Γ W'
 (k >>= f) E μ with k E μ
 ... | exception ext μ' e = exception ext μ' e
 ... | timeout = timeout
-... | returns ext μ' v = result-strengthen ext $ f v (map-all (wk ext) E) μ'
+... | returns ext μ' v = result-strengthen ext $ f v (All.map (wk ext) E) μ'
 
 infixl 10 _^_
 _^_  :  ∀ {Σ Γ}{A B : WSet} ⦃ w : Weakenable B ⦄ → M Γ Σ A → B Σ → M Γ Σ (A ⊗ B)
@@ -108,11 +116,11 @@ store   : ∀ {Γ W a} → StoreVal W a → M Γ W (λ W' → a ∈ W')
 store {Γ}{W}{a} sv E μ =
   let
     ext = ∷ʳ-⊒ a W
-    μ'  = (map-all (wk ext) μ) all-∷ʳ (wk ext sv)
+    μ'  = (All.map (wk ext) μ) all-∷ʳ (wk ext sv)
   in returns ext μ' (∈-∷ʳ W a)
 
 update   : ∀ {Γ W a} → a ∈ W → StoreVal W a → M Γ W (λ W' → ⊤)
-update ptr v E μ = returns ⊑-refl (μ All[ ptr ]≔' v) tt
+update ptr v E μ = returns ⊑-refl (μ All.[ ptr ]≔ v) tt
 
 deref : ∀ {Γ W a} → a ∈ W → M Γ W (flip StoreVal a)
 deref ptr E μ = returns ⊑-refl μ (∈-all ptr μ)
@@ -147,7 +155,7 @@ write-field m (ref o s) v E μ with ∈-all o μ
 write-field m (ref o s) v E μ | obj cid O =
   let
     vobj = obj cid (setter _ O (inherit' s m) v)
-    μ' = μ All[ o ]≔' vobj
+    μ' = μ All.[ o ]≔ vobj
   in returns ⊑-refl μ' (ref o s)
 
 -- Get the implementation of any method definition of a class
@@ -181,7 +189,7 @@ mutual
   eval-args : ∀ {Γ as W} → ℕ → All (Expr Γ) as → M Γ W (λ W' → All (λ a → (vty a) ∈ W') as)
   eval-args k args =
     evalₑ* k args >>= λ vs →
-    store* (map-all val vs)
+    store* (All.map val vs)
 
   {-
   Object initialization:

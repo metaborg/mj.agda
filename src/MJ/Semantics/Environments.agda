@@ -4,7 +4,10 @@ import MJ.Classtable.Core as Core
 module MJ.Semantics.Environments {c}(Ct : Core.Classtable c) where
 
 open import Prelude
-open import Data.List.Most
+open import Data.List
+open import Data.List.Membership.Propositional
+open import Data.List.Relation.Unary.All as All
+open import Data.List.Relation.Unary.Any
 
 open import MJ.LexicalScope c
 
@@ -26,4 +29,4 @@ _⊕_ E v = v ∷ E
 
 open import Data.List.Any
 getvar : ∀ {Γ W a} → Var Γ a → Env Γ W → vty a ∈ W
-getvar px E = ∈-all px E
+getvar px E = All.lookup E px

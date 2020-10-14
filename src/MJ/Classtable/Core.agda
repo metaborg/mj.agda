@@ -1,17 +1,17 @@
-open import Prelude hiding (begin_; _∎; _≡⟨_⟩_)
+open import Prelude hiding (begin_; step-≡; _∎)
 
 module MJ.Classtable.Core (c : ℕ) where
 
+open import Data.Product.Relation.Binary.Pointwise.NonDependent using (_×-≟_)
 open import Data.List
-open import Data.List.Any.Membership.Propositional
-open import Relation.Binary.Core using (Transitive)
-open import Data.Vec hiding (_∈_)
+open import Data.List.Membership.Propositional
+open import Data.List.Relation.Binary.Pointwise using (decidable-≡)
+open import Relation.Binary
+open import Data.Vec
 open import Data.Maybe
 open import Data.String
 
 open import Relation.Binary using (Decidable)
-open import Relation.Binary.Product.Pointwise using (_×-≟_)
-open import Relation.Binary.List.Pointwise using (decidable-≡)
 
 open import MJ.Types as Types
 
@@ -141,16 +141,16 @@ record Classtable : Set where
         ... | no ¬q with helper (p ◅◅ (super ◅ p)) gap
         ... | z , q = z , (begin
             suc (gap + len p)
-              ≡⟨ sym $ m+1+n≡1+m+n gap (len p) ⟩
+              ≡⟨ sym $ m+n+o≡n+m+o gap 1 (len p) ⟩
             gap + (len (super ◅ p))
-              ≤⟨ +-mono-≤ { gap } ≤-refl (≤-steps (len p) ≤-refl) ⟩
+              ≤⟨ +-mono-≤ { gap } ≤-refl (≤-stepsˡ (len p) ≤-refl) ⟩
             gap + (len p + len (super ◅ p))
               ≡⟨ cong (_+_ gap) (sym $ len-◅◅ p (super ◅ p)) ⟩
             gap + (len (p ◅◅ (super ◅ p)))
               ≤⟨ q ⟩
             len z ∎)
           where open import Data.Nat.Properties.Extra
-    ... | py , z = super ◅ px ◅◅ py , s≤s (subst (_≤_ n) (sym $ len-◅◅ px py) (≤-steps (len px) (m+n≤o⇒m≤o n z)))
+    ... | py , z = super ◅ px ◅◅ py , s≤s (subst (_≤_ n) (sym $ len-◅◅ px py) (≤-stepsˡ (len px) (m+n≤o⇒m≤o n z)))
 
   -- Proves that a parent can't inherit from it's children,
   Σ-acyclic : ∀ c → ¬ Σ ⊢ Class.parent (Σ (cls c)) <: (cls c)
