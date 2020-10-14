@@ -1,11 +1,13 @@
 VERSION = 1.0.0-SNAPSHOT
 
+AGDA = agda -W noDeprecationWarning
+
 # some library paths
 docs/%.html: %.agda
-	agda $< --html --html-dir=./docs/
+	$(AGDA) $< --html --html-dir=./docs/
 
 %.agdai: %.agda
-	agda $<
+	$(AGDA) $<
 
 all: lib Readme.agdai
 
@@ -19,10 +21,7 @@ docs: lib docs/Readme.html
 	cp docs/Readme.html docs/index.html
 
 ### libraries
-lib: lib/stdlib/.git lib/stdlib++/.git
-
-lib/stdlib++/.git:
-	git submodule update --init lib/stdlib++
+lib: lib/stdlib/.git
 
 lib/stdlib/.git:
 	git submodule update --init lib/stdlib

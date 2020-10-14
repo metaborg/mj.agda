@@ -17,8 +17,8 @@
 
         installPhase = "";
 
-        LANG   = "en_US.utf8";
-        LC_ALL = "C";
+        LANG   = "en_US.UTF-8";
+        LC_ALL = "en_US.UTF-8";
       };
   };
 }
