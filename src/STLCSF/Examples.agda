@@ -1,5 +1,14 @@
 module STLCSF.Examples where
 
+open import Data.Fin hiding (_+_)
+open import Data.Product
+open import Data.List
+open import Data.List.Membership.Propositional
+open import Data.List.Relation.Unary.Any
+open import Data.List.Relation.Unary.All
+open import Data.Maybe
+open import Data.Integer hiding (suc)
+
 -- This file contains a few example programs for the definitional
 -- interpreter for STLC using scopes and frames in Section 4.
 
@@ -11,10 +20,6 @@ module Id where
 
   open import STLCSF.Semantics 2
   open import ScopesFrames.ScopesFrames 2 Ty
-  open import Data.Fin
-  open import Data.Product
-  open import Data.List.Most
-  open import Data.Maybe
 
   -- Whereas Agda can infer the structure of ordinary type contexts,
   -- the scope graph library represents scope graphs as "lookup
@@ -60,11 +65,6 @@ module Curry where
 
   open import STLCSF.Semantics 3
   open import ScopesFrames.ScopesFrames 3 Ty
-  open import Data.Fin hiding (_+_)
-  open import Data.Product
-  open import Data.List.Most
-  open import Data.Maybe
-  open import Data.Integer hiding (suc)
 
   -- Whereas Agda can infer the structure of ordinary type contexts,
   -- the scope graph library represents scope graphs as "lookup

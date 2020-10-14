@@ -2,11 +2,12 @@ open import Agda.Primitive
 open import Data.Unit
 open import Data.Nat hiding (_⊔_ ; _^_)
 open import Data.Integer hiding (_⊔_)
-open import Data.List.Most
+open import Data.List
+open import Data.List.Relation.Unary.Any
+open import Data.List.Relation.Unary.All as All
+open import Data.List.Membership.Propositional
 open import Data.Product
-open import Data.Maybe hiding (All)
-open import Data.List.All as List∀
-open import Data.List.Any
+open import Data.Maybe hiding (_>>=_)
 open import Data.List.Prefix
 open import Data.List.Properties.Extra
 open import Data.List.All.Properties.Extra
