@@ -5,8 +5,10 @@ module STLC.Semantics where
 
 open import Data.Nat
 open import Data.Integer
-open import Data.List.Most
-open import Data.Maybe hiding (All)
+open import Data.List
+open import Data.List.Membership.Propositional
+open import Data.List.Relation.Unary.All as All
+open import Data.Maybe.Base hiding (_>>=_)
 
 
 ------------
@@ -100,7 +102,7 @@ eval (suc k)  unit        =
   return unit
 eval (suc k)  (var x)     =
   getEnv >>= λ E →
-  return (lookup E x)
+  return (All.lookup E x)
 eval (suc k)  (ƛ b)       =
   getEnv >>= λ E →
   return ⟨ b , E ⟩

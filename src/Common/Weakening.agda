@@ -1,11 +1,13 @@
-open import Agda.Primitive
+module Common.Weakening where
+
+-- open import Agda.Primitive
 import Data.List as List
-open import Data.List.Most
-open import Data.List.All as List∀
+open import Data.List.Base
+open import Data.List.Membership.Propositional
+open import Data.List.Relation.Unary.All as All
+open import Data.List.Prefix
 open import Function
 open import Level
-
-module Common.Weakening where
 
 {-
   The following `Weakenable` record defines a class of weakenable (or
@@ -42,26 +44,27 @@ open Weakenable ⦃...⦄ public
   commonly.
 -}
 
-instance
-  any-weakenable : ∀ {i}{A : Set i}{x : A} → Weakenable (λ xs → x ∈ xs)
-  any-weakenable = record { wk = λ ext l → ∈-⊒ l ext }
+module _ {i} {A : Set i} where
+  instance
+    any-weakenable : ∀ {x : A} → Weakenable (λ xs → x ∈ xs)
+    any-weakenable = record { wk = λ ext l → ∈-⊒ l ext }
 
-  all-weakenable : ∀ {i}{A : Set i}{j}{B : Set j}{xs : List B}
-                     {k}{C : B → List A → Set k}( wₐ : ∀ x → Weakenable (C x) ) →
-                     Weakenable (λ ys → All (λ x → C x ys) xs)
-  all-weakenable wₐ = record {
-    wk = λ ext v → List∀.map (λ {a} y → Weakenable.wk (wₐ a) ext y) v }
+    all-weakenable : ∀ {j} {B : Set j} {xs : List B}
+                   → ∀ {k} {C : B → List A → Set k} {{wₐ : ∀ {x} → Weakenable (C x)}}
+                   → Weakenable (λ ys → All (λ x → C x ys) xs)
+    all-weakenable {{wₐ}} = record {
+      wk = λ ext v → All.map (λ {a} y → Weakenable.wk wₐ ext y) v }
 
-  const-weakenable : ∀ {j i}{I : Set i}{A : Set j} → Weakenable {A = I} (λ _ → A)
-  const-weakenable = record { wk = λ ext c → c }
+    const-weakenable : ∀ {j}{I : Set j} → Weakenable {A = I} (λ _ → A)
+    const-weakenable = record { wk = λ ext c → c }
 
-  list-weakenable : ∀ {i b}{A : Set i}{B : List A → Set b}
-                    ⦃ wb : Weakenable B ⦄ → Weakenable (λ W → List (B W))
-  list-weakenable ⦃ wₐ ⦄ = record {wk = λ ext v → List.map (wk ext) v }
+    list-weakenable : ∀ {b}{B : List A → Set b}
+                    → {{wb : Weakenable B}} → Weakenable (λ W → List (B W))
+    list-weakenable {{ wₐ }} = record {wk = λ ext v → List.map (wk ext) v }
 
 -- Nicer syntax for transitivity of prefixes:
 infixl 30 _⊚_
-_⊚_ : ∀ {i}{A : Set i}{W W' W'' : List A} → W' ⊒ W → W'' ⊒ W' → W'' ⊒ W
+_⊚_ : ∀ {i} {A : Set i} {W W' W'' : List A} → W' ⊒ W → W'' ⊒ W' → W'' ⊒ W
 _⊚_ co₁ co₂ = ⊑-trans co₁ co₂
 
 {-
@@ -78,6 +81,6 @@ _⊗_ = _∩_
 -- then `_⊗_` is an instance of `Weakenable`:
 instance
   weaken-pair : ∀ {a}{A : Set a}{i j}{p : List A → Set i}{q : List A → Set j}
-                  ⦃ wp : Weakenable p ⦄ ⦃ wq : Weakenable q ⦄ →
-                  Weakenable (p ⊗ q)
+              → {{wp : Weakenable p}} {{wq : Weakenable q}}
+              → Weakenable (p ⊗ q)
   weaken-pair = record { wk = λ{ ext (x , y) → (wk ext x , wk ext y) } }

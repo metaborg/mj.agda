@@ -3,12 +3,15 @@ module STLC.Examples where
 -- This file contains a few example programs for the definitional
 -- interpreter for STLC in Section 2.
 
-open import STLC.Semantics
-open import Data.List.Most
-open import Relation.Binary.PropositionalEquality -- for de Bruijn numerals
+open import Data.Maybe.Base
+open import Data.List.Base
+open import Data.List.Relation.Unary.Any
+open import Data.List.Relation.Unary.All
+open import Data.List.Membership.Propositional
 open import Data.Integer hiding (suc)
-open import Agda.Builtin.Nat hiding (_+_)
-open import Data.Maybe
+open import Relation.Binary.PropositionalEquality -- for de Bruijn numerals
+
+open import STLC.Semantics
 
 -- The identity function: λ x . x
 --

@@ -3,4 +3,3 @@ include:
   .
   ./src/
   ./lib/stdlib/src/
-  ./lib/stdlib++/src/
