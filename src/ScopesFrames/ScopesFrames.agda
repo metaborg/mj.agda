@@ -1,18 +1,17 @@
 open import Data.Nat
 open import Data.Fin
-open import Data.List.Most
-open import Data.List.All renaming (lookup to lookup∀)
-open import Data.Vec hiding (_∈_ ; _∷ʳ_ ; _>>=_ ; init)
+open import Data.List
+open import Data.List.Membership.Propositional
+open import Data.List.Relation.Unary.All as All
+open import Data.List.All.Properties.Extra
+open import Data.Vec hiding (_∷ʳ_ ; _>>=_ ; init)
 open import Data.Product
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open ≡-Reasoning
 open import Data.Unit
 open import Data.List.Prefix
 open import Data.List.Properties.Extra
-open import Data.List.All.Properties.Extra
-open import Data.List.All as List∀ hiding (lookup)
-open import Coinduction
-open import Data.Maybe hiding (All)
+open import Data.Maybe
 open import Common.Weakening
 
 -- This file contains the Agda Scope Graph Library described in
@@ -148,9 +147,6 @@ module UsesGraph (g : Graph) where
       weaken-val' : ∀ {t} → Weakenable (λ Σ → Val t Σ)
       weaken-val' = record { wk = weaken-val }
 
-      weaken-heapframe : ∀ {s} → Weakenable (HeapFrame s)
-      weaken-heapframe = record { wk = λ{ ext (slots , links) → (wk ext slots , wk ext links) } }
-
       weaken-frame : ∀ {s} → Weakenable (Frame s)
       weaken-frame = record { wk = Weakenable.wk any-weakenable }
 
@@ -213,8 +209,8 @@ module UsesGraph (g : Graph) where
 
     getSlot : ∀ {s t Σ} → t ∈ declsOf s → Frame s Σ → Heap Σ → Val t Σ
     getSlot d f h
-      with (List∀.lookup h f)
-    ...  | (slots , links) = List∀.lookup slots d
+      with (All.lookup h f)
+    ...  | (slots , links) = All.lookup slots d
 
     -- Given a witness that a declaration typed by `t` is in a scope,
     -- and a frame pointer, we can mutate the corresponding slot in a
@@ -222,20 +218,20 @@ module UsesGraph (g : Graph) where
 
     setSlot : ∀ {s t Σ} → t ∈ declsOf s → Val t Σ → Frame s Σ → Heap Σ → Heap Σ
     setSlot d v f h
-      with (List∀.lookup h f)
-    ...  | (slots , links) = h All[ f ]≔' (slots All[ d ]≔' v , links)
+      with (All.lookup h f)
+    ...  | (slots , links) = h All.[ f ]≔ (slots All.[ d ]≔ v , links)
 
     -- ... and similarly for edges:
 
     getLink : ∀ {s s' Σ} → s' ∈ edgesOf s → Frame s Σ → Heap Σ → Frame s' Σ
     getLink e f h
-      with (List∀.lookup h f)
-    ...  | (slots , links) = List∀.lookup links e
+      with (All.lookup h f)
+    ...  | (slots , links) = All.lookup links e
 
     setLink : ∀ {s s' Σ} → s' ∈ edgesOf s → Frame s' Σ → Frame s Σ → Heap Σ → Heap Σ
     setLink e f' f h
-      with (List∀.lookup h f)
-    ...  | (slots , links) = h All[ f ]≔' (slots , links All[ e ]≔' f')
+      with (All.lookup h f)
+    ...  | (slots , links) = h All.[ f ]≔ (slots , links All.[ e ]≔ f')
 
     -- Given a witness that there is a path through the scope graph
     -- from scope `s` to scope `s'`, a frame typed by `s`, and a
@@ -246,8 +242,8 @@ module UsesGraph (g : Graph) where
     getFrame : ∀ {s s' Σ} → (s ⟶ s') → Frame s Σ → Heap Σ → Frame s' Σ
     getFrame []      f h = f
     getFrame (e ∷ p) f h
-      with (List∀.lookup h f)
-    ...  | (slots , links) = getFrame p (List∀.lookup links e) h
+      with (All.lookup h f)
+    ...  | (slots , links) = getFrame p (All.lookup links e) h
 
     -- Given the definitions above, we can define some shorthand
     -- functions for getting and setting values:
