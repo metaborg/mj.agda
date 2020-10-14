@@ -5,7 +5,9 @@ module STLCRef.Examples where
 -- 3.
 
 open import STLCRef.Semantics
-open import Data.List.Most
+open import Data.List
+open import Data.List.Relation.Unary.Any
+open import Data.List.Relation.Unary.All
 open import Relation.Binary.PropositionalEquality
 open import Data.Integer hiding (suc)
 open import Agda.Builtin.Nat hiding (_+_)
